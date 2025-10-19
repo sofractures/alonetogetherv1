@@ -23,7 +23,7 @@ export function getAudioController(): AudioController {
     element.loop = true;
   }
 
-  let isReady = false;
+  const isReady = false;
   let isPlaying = false;
   let volume = 0.5; // default 50%
 
@@ -32,7 +32,7 @@ export function getAudioController(): AudioController {
     try {
       await element.play();
       isPlaying = true;
-    } catch (_) {
+    } catch {
       // Autoplay may fail; ignoring per user preference (no fallback UI)
     }
   }
