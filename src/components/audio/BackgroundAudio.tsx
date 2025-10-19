@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getAudioController } from "@/lib/audio-context";
 
 export default function BackgroundAudio() {
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
+
   useEffect(() => {
     const c = getAudioController();
     console.log("BackgroundAudio: Initializing audio controller", c);
@@ -22,15 +24,42 @@ export default function BackgroundAudio() {
       c.element.addEventListener("abort", () => console.log("Audio: abort"));
     }
     
+    // Try to play immediately (will fail due to autoplay policy)
     console.log("BackgroundAudio: Attempting to play audio");
     c.play().catch((error) => {
-      console.error("BackgroundAudio: Failed to play audio", error);
+      console.log("BackgroundAudio: Autoplay blocked, waiting for user interaction");
     });
+
+    // Set up user interaction handler
+    const handleUserInteraction = async () => {
+      if (!hasUserInteracted) {
+        console.log("BackgroundAudio: User interaction detected, starting audio");
+        setHasUserInteracted(true);
+        try {
+          await c.play();
+          console.log("BackgroundAudio: Audio started successfully after user interaction");
+        } catch (error) {
+          console.error("BackgroundAudio: Still failed to play after interaction", error);
+        }
+        // Remove event listeners after first interaction
+        document.removeEventListener("click", handleUserInteraction);
+        document.removeEventListener("touchstart", handleUserInteraction);
+        document.removeEventListener("keydown", handleUserInteraction);
+      }
+    };
+
+    // Add event listeners for user interaction
+    document.addEventListener("click", handleUserInteraction);
+    document.addEventListener("touchstart", handleUserInteraction);
+    document.addEventListener("keydown", handleUserInteraction);
     
     return () => {
-      // keep state; do not pause on unmount to allow seamless navigation
+      // Clean up event listeners
+      document.removeEventListener("click", handleUserInteraction);
+      document.removeEventListener("touchstart", handleUserInteraction);
+      document.removeEventListener("keydown", handleUserInteraction);
     };
-  }, []);
+  }, [hasUserInteracted]);
 
   return null;
 }
