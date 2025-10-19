@@ -59,6 +59,10 @@ export function getAudioController(): AudioController {
     const startTime = performance.now();
     return new Promise<void>((resolve) => {
       function step(now: number) {
+        if (!element) {
+          resolve();
+          return;
+        }
         const t = Math.min(1, (now - startTime) / ms);
         const v = start * (1 - t);
         element.volume = v;
@@ -79,6 +83,10 @@ export function getAudioController(): AudioController {
     const startTime = performance.now();
     return new Promise<void>((resolve) => {
       function step(now: number) {
+        if (!element) {
+          resolve();
+          return;
+        }
         const t = Math.min(1, (now - startTime) / ms);
         const v = start + (end - start) * t;
         element.volume = v;
