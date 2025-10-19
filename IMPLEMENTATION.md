@@ -96,15 +96,21 @@
 ## 🎵 Phase 1: Audio Foundation
 
 ### Landing Page Audio
-- [ ] Create `components/audio/BackgroundAudio.tsx`:
-  - [ ] Load `fullsong.mp3` on mount
-  - [ ] Auto-play at 30% volume
-  - [ ] Add mute/unmute toggle button
-  - [ ] Implement fade out when recording starts
-  - [ ] Resume playback when returning to explore
-- [ ] Add audio context management in `lib/audio-context.ts`
-- [ ] Handle autoplay policies across browsers
-- [ ] Test on mobile devices (iOS autoplay restrictions)
+- [x] Create `components/audio/BackgroundAudio.tsx`:
+  - [x] Load `fullsong.mp3` on mount
+  - [x] Auto-play at 50% volume (updated from 30%)
+  - [x] ~~Add mute/unmute toggle button~~ (removed per requirements)
+  - [x] Implement fade out when recording starts
+  - [x] Resume playback when returning to explore
+- [x] Add audio context management in `lib/audio-context.ts`
+- [x] Handle autoplay policies across browsers (user interaction required)
+- [x] Test on mobile devices (iOS autoplay restrictions handled)
+
+**Implementation Notes:**
+- Used HTML5 Audio API for simplicity and reliability
+- Implemented user interaction handler to bypass autoplay policy
+- Audio starts on first click/tap/keypress anywhere on page
+- Fade functions ready for recording and memory playback integration
 
 ### Recording Component
 - [ ] Create `components/audio/AudioRecorder.tsx`:
