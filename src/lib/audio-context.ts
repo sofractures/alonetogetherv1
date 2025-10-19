@@ -28,11 +28,17 @@ export function getAudioController(): AudioController {
   let volume = 0.5; // default 50%
 
   async function play() {
-    if (!element) return;
+    if (!element) {
+      console.log("AudioController: No element available for play");
+      return;
+    }
     try {
+      console.log("AudioController: Attempting to play audio, current src:", element.src);
       await element.play();
       isPlaying = true;
-    } catch {
+      console.log("AudioController: Successfully started playing");
+    } catch (error) {
+      console.error("AudioController: Failed to play audio", error);
       // Autoplay may fail; ignoring per user preference (no fallback UI)
     }
   }
@@ -49,7 +55,11 @@ export function getAudioController(): AudioController {
   }
 
   function setSrc(src: string) {
-    if (!element) return;
+    if (!element) {
+      console.log("AudioController: No element available for setSrc");
+      return;
+    }
+    console.log("AudioController: Setting src to:", src);
     element.src = src;
   }
 
