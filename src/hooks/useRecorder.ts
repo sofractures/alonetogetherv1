@@ -176,11 +176,13 @@ export function useRecorder(): UseRecorderReturn {
     const analyser = analyserRef.current;
     const buffer = timeDomainBufferRef.current;
     if (!analyser || !buffer) return 0;
-    analyser.getFloatTimeDomainData(buffer);
+    // Create an ArrayBuffer-backed view to satisfy TS' stricter signature
+    const target = new Float32Array(buffer.buffer as ArrayBuffer, buffer.byteOffset, buffer.length);
+    analyser.getFloatTimeDomainData(target as unknown as Float32Array<ArrayBuffer>);
     // Compute RMS of float samples already in -1..1
     let sumSquares = 0;
-    for (let i = 0; i < buffer.length; i++) {
-      const v = buffer[i];
+    for (let i = 0; i < target.length; i++) {
+      const v = target[i];
       sumSquares += v * v;
     }
     const rms = Math.sqrt(sumSquares / buffer.length);
