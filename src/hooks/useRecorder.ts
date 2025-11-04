@@ -17,6 +17,7 @@ const MAX_DURATION_MS = 30_000; // 30 seconds cap
 
 type ExtendedWindow = Window & {
   MediaRecorder?: typeof MediaRecorder;
+  AudioContext?: typeof AudioContext;
   webkitAudioContext?: typeof AudioContext;
 };
 
@@ -118,7 +119,7 @@ export function useRecorder(): UseRecorderReturn {
 
       // Setup Web Audio analyser for level meter
       const win = window as ExtendedWindow;
-      const AudioCtx: typeof AudioContext = win.AudioContext ?? (win.webkitAudioContext as unknown as typeof AudioContext);
+      const AudioCtx: typeof AudioContext = (win.AudioContext ?? win.webkitAudioContext) as typeof AudioContext;
       const audioContext = new AudioCtx();
       audioContextRef.current = audioContext;
       const source = audioContext.createMediaStreamSource(stream);
