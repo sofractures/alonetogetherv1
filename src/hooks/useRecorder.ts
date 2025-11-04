@@ -53,7 +53,7 @@ export function useRecorder(): UseRecorderReturn {
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const timeDomainBufferRef = useRef<Uint8Array | null>(null);
+  const timeDomainBufferRef = useRef<Float32Array | null>(null);
 
   const cleanupStream = useCallback(() => {
     if (mediaStreamRef.current) {
@@ -128,8 +128,8 @@ export function useRecorder(): UseRecorderReturn {
       analyser.fftSize = 2048;
       analyserRef.current = analyser;
       source.connect(analyser);
-      // Allocate a time-domain buffer compatible with Web Audio typing
-      timeDomainBufferRef.current = new Uint8Array(analyser.fftSize) as unknown as Uint8Array;
+      // Allocate a time-domain buffer for float samples (-1..1)
+      timeDomainBufferRef.current = new Float32Array(analyser.fftSize);
 
       const mimeType = getSupportedMimeType();
       const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
@@ -176,11 +176,11 @@ export function useRecorder(): UseRecorderReturn {
     const analyser = analyserRef.current;
     const buffer = timeDomainBufferRef.current;
     if (!analyser || !buffer) return 0;
-    analyser.getByteTimeDomainData(buffer as unknown as Uint8Array);
-    // Compute RMS
+    analyser.getFloatTimeDomainData(buffer);
+    // Compute RMS of float samples already in -1..1
     let sumSquares = 0;
     for (let i = 0; i < buffer.length; i++) {
-      const v = (buffer[i] - 128) / 128; // normalize -1..1
+      const v = buffer[i];
       sumSquares += v * v;
     }
     const rms = Math.sqrt(sumSquares / buffer.length);
