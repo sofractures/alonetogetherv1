@@ -112,6 +112,9 @@
 - Audio starts on first click/tap/keypress anywhere on page
 - Fade functions ready for recording and memory playback integration
 
+**Status:**
+- [x] Confirm next step: Recording Component
+
 ### Recording Component
 - [ ] Create `components/audio/AudioRecorder.tsx`:
   - [ ] Implement RecordRTC for browser recording
