@@ -26,7 +26,7 @@ export default function BackgroundAudio() {
     
     // Try to play immediately (will fail due to autoplay policy)
     console.log("BackgroundAudio: Attempting to play audio");
-    c.play().catch((error) => {
+    c.play().catch(() => {
       console.log("BackgroundAudio: Autoplay blocked, waiting for user interaction");
     });
 

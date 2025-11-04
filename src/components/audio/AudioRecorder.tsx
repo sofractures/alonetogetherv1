@@ -18,7 +18,6 @@ export interface AudioRecorderProps {
 export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete }) => {
   const {
     isRecording,
-    isPermissionGranted,
     timeLeftMs,
     audioBlob,
     audioUrl,

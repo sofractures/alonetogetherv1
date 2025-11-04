@@ -15,6 +15,11 @@ export interface UseRecorderReturn {
 
 const MAX_DURATION_MS = 30_000; // 30 seconds cap
 
+type ExtendedWindow = Window & {
+  MediaRecorder?: typeof MediaRecorder;
+  webkitAudioContext?: typeof AudioContext;
+};
+
 function getSupportedMimeType(): string | undefined {
   const candidates = [
     'audio/webm;codecs=opus',
@@ -23,7 +28,7 @@ function getSupportedMimeType(): string | undefined {
     'audio/ogg',
   ];
   for (const type of candidates) {
-    if ((window as any).MediaRecorder && MediaRecorder.isTypeSupported?.(type)) {
+    if (typeof window !== 'undefined' && (window as ExtendedWindow).MediaRecorder && MediaRecorder.isTypeSupported?.(type)) {
       return type;
     }
   }
@@ -112,7 +117,9 @@ export function useRecorder(): UseRecorderReturn {
       setIsPermissionGranted(true);
 
       // Setup Web Audio analyser for level meter
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const win = window as ExtendedWindow;
+      const AudioCtx: typeof AudioContext = win.AudioContext ?? (win.webkitAudioContext as unknown as typeof AudioContext);
+      const audioContext = new AudioCtx();
       audioContextRef.current = audioContext;
       const source = audioContext.createMediaStreamSource(stream);
       sourceRef.current = source;
@@ -154,8 +161,9 @@ export function useRecorder(): UseRecorderReturn {
           stop();
         }
       }, 100);
-    } catch (err: any) {
-      setError(err?.message ?? 'Microphone access failed');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Microphone access failed';
+      setError(message);
       setIsPermissionGranted(false);
       cleanupStream();
     }
