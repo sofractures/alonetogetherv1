@@ -128,7 +128,8 @@ export function useRecorder(): UseRecorderReturn {
       analyser.fftSize = 2048;
       analyserRef.current = analyser;
       source.connect(analyser);
-      timeDomainBufferRef.current = new Uint8Array(analyser.frequencyBinCount);
+      // Allocate a time-domain buffer compatible with Web Audio typing
+      timeDomainBufferRef.current = new Uint8Array(analyser.fftSize) as unknown as Uint8Array;
 
       const mimeType = getSupportedMimeType();
       const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
@@ -175,7 +176,7 @@ export function useRecorder(): UseRecorderReturn {
     const analyser = analyserRef.current;
     const buffer = timeDomainBufferRef.current;
     if (!analyser || !buffer) return 0;
-    analyser.getByteTimeDomainData(buffer);
+    analyser.getByteTimeDomainData(buffer as unknown as Uint8Array);
     // Compute RMS
     let sumSquares = 0;
     for (let i = 0; i < buffer.length; i++) {
