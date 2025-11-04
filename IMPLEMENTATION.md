@@ -116,16 +116,21 @@
 - [x] Confirm next step: Recording Component
 
 ### Recording Component
-- [ ] Create `components/audio/AudioRecorder.tsx`:
-  - [ ] Implement RecordRTC for browser recording
-  - [ ] Add microphone permission request flow
-  - [ ] Create visual recording indicator (pulsing red button)
-  - [ ] Add countdown timer (60 seconds max)
-  - [ ] Implement waveform visualization during recording
-  - [ ] Add re-record option before submission
-- [ ] Create `hooks/useRecorder.ts` for recording logic
+- [x] Create `components/audio/AudioRecorder.tsx`:
+  - [x] Use native MediaRecorder for browser recording (WebM/Opus)
+  - [x] Add microphone permission request flow
+  - [x] Create visual recording indicator (pulsing button)
+  - [x] Add countdown timer (30 seconds max)
+  - [ ] Implement waveform visualization during recording (currently level meter only)
+  - [x] Add re-record option before submission
+- [x] Create `hooks/useRecorder.ts` for recording logic
 - [ ] Add error handling for browser compatibility
 - [ ] Test across different browsers and devices
+
+**Implementation Notes (Recording):**
+- Chose native `MediaRecorder` + Web Audio `AnalyserNode` for a lightweight setup (no extra deps).
+- Capturing as WebM/Opus; final processed output will be MP3 in Phase 3.
+- Implemented a real-time level meter; full waveform visualization can be added later if needed.
 
 ### Audio Upload Pipeline
 - [ ] Create `/api/memory/record/route.ts`:

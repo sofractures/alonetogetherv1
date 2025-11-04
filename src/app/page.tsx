@@ -1,3 +1,5 @@
+import AudioRecorder from "@/components/audio/AudioRecorder";
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
@@ -19,6 +21,17 @@ export default function Home() {
               Learn More
             </button>
           </div>
+        </div>
+
+        {/* Memory prompt + recorder */}
+        <div className="mt-16 max-w-2xl mx-auto bg-white/70 dark:bg-gray-800/70 backdrop-blur rounded-lg p-6 shadow-lg">
+          <div className="mb-4">
+            <div className="text-sm text-gray-600 dark:text-gray-300">Prompt</div>
+            <div className="text-lg font-semibold text-gray-900 dark:text-white">
+              What does home mean to you?
+            </div>
+          </div>
+          <AudioRecorder />
         </div>
 
         <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
