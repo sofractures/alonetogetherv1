@@ -161,20 +161,25 @@ ffmpeg -i user_voice.wav -i assets/instrumental.mp3 \
 
 ### Backend Stack
 - **Server:** Vercel Edge Functions / Serverless Functions
-- **Audio Processing:** FFmpeg (via WASM, external service, or Supabase Edge Functions)
+- **Audio Processing:** AWS Lambda with FFmpeg layer (exact filter chain support)
+  - Lambda function (Python) processes audio with full FFmpeg capabilities
+  - Processes voice + instrumental with high-pass, reverb, compression, normalization
+  - Outputs 320kbps MP3 with exact specifications
 - **Database:** Supabase (PostgreSQL)
 - **Storage:** Supabase Storage for all audio files
 - **CDN:** Supabase's built-in CDN + Vercel's edge network
-- **Queue System:** Supabase Edge Functions or external service for async processing
+- **Queue System:** Direct Lambda invocation (can add async queue later if needed)
 
 ### Infrastructure
 - **Hosting:** Vercel (frontend + API routes)
 - **Storage:** Supabase Storage for audio files (raw recordings + processed songs)
 - **Database:** Supabase PostgreSQL for metadata
-- **Processing:** Options:
-  - FFmpeg WASM in Vercel Edge Functions
-  - External processing service (Cloudinary, AWS Lambda)
-  - Supabase Edge Functions with FFmpeg
+- **Processing:** AWS Lambda with FFmpeg layer
+  - **Status:** Implemented, pending deployment
+  - **Function:** Python-based Lambda with FFmpeg binary
+  - **Layer:** Pre-built FFmpeg layer for Lambda (us-east-1)
+  - **Configuration:** Serverless Framework for deployment
+  - **Integration:** Next.js API route invokes Lambda Function URL
 - **Analytics:** Vercel Analytics + Google Analytics + custom event tracking
 
 ## 5. Design Requirements
@@ -355,13 +360,17 @@ ffmpeg -i user_voice.wav -i assets/instrumental.mp3 \
   - 100GB storage (≈30,000 songs)
   - 200GB bandwidth (≈65,000 downloads)
   - Unlimited API requests
-- **Audio Processing:** 
-  - FFmpeg WASM: Included in Vercel
-  - External service: $100-500 depending on volume
+- **Audio Processing:** AWS Lambda
+  - **Free tier:** 1M requests/month, 400,000 GB-seconds
+  - **After free tier:** ~$0.20 per 1M requests
+  - **Processing cost:** ~$0.0000166667 per GB-second
+  - **Estimated for 10,000 processes/month:** $0-5 (mostly free tier)
+  - **Memory:** 3008MB allocated (max for Lambda)
+  - **Timeout:** 300 seconds (5 minutes) per process
 - **Additional CDN (if needed):** $50-200
 - **Domain & SSL:** $15-30
 
-**Estimated Total Monthly:** $125-500 (scaling with usage)
+**Estimated Total Monthly:** $45-260 (scaling with usage, mostly free tier for processing)
 
 ### Marketing Costs
 - Social media ads: $2,000-5,000

@@ -204,19 +204,16 @@
 ## 🔧 Phase 3: Audio Processing
 
 ### FFmpeg Integration Choice
-- [ ] **Option A: FFmpeg WASM** (if staying in-browser):
-  - [ ] Install `@ffmpeg/ffmpeg`
-  - [ ] Create worker for processing
-  - [ ] Handle memory limitations
-  - [ ] Test with `instrumental.mp3`
-  
-- [ ] **Option B: External Processing** (recommended):
-  - [ ] Set up processing service:
-    - [ ] Cloudinary audio API, OR
-    - [ ] AWS Lambda with FFmpeg layer, OR
-    - [ ] Dedicated Node.js server on Railway/Render
-  - [ ] Create processing endpoint
-  - [ ] Implement queue system
+- [x] **Selected: AWS Lambda with FFmpeg Layer** (final solution):
+  - [x] Analyzed FFmpeg WASM (doesn't work in serverless Node.js)
+  - [x] Evaluated Cloudinary (limited audio processing capabilities)
+  - [x] Chose AWS Lambda for exact FFmpeg filter chain support
+  - [x] Created Lambda function with Python + FFmpeg
+  - [x] Configured Serverless Framework for deployment
+  - [x] Set up Lambda Function URL for API access
+  - [ ] Deploy Lambda function (requires AWS CLI setup)
+  - [ ] Configure environment variables (Supabase credentials)
+  - [ ] Test end-to-end processing flow
 
 ### Processing Pipeline Implementation
 - [x] Create `/api/process-audio/route.ts`:
@@ -224,25 +221,36 @@
   // Processing steps:
   1. Download user recording from Supabase
   2. Download instrumental.mp3
-  3. Apply FFmpeg filters:
+  3. Invoke AWS Lambda function with paths
+  4. Lambda processes with FFmpeg:
      - High-pass filter (80Hz)
      - Reverb (25% wet)
      - Compression (3:1 ratio)
      - Normalize to -6dB
-  4. Mix with instrumental
+     - Mix with instrumental
   5. Export as 320kbps MP3
   6. Upload to 'processed-songs' bucket
   7. Update database with final URL
   ```
-- [ ] Test FFmpeg command locally:
-  ```bash
-  ffmpeg -i voice.wav -i assets/instrumental.mp3 \
-    -filter_complex "[0:a]highpass=f=80,acompressor=ratio=3,reverb=50:50:60:0.5:0.5:2,volume=-6dB[voice];[voice][1:a]amix=inputs=2:duration=longest[out]" \
-    -map "[out]" -b:a 320k output.mp3
-  ```
-- [ ] Implement processing status updates
-- [ ] Add error handling and retry logic
-- [ ] Create processing progress UI
+- [x] Create Lambda function (`lambda/process_audio.py`):
+  - [x] Downloads from Supabase Storage
+  - [x] Applies exact FFmpeg filter chain from spec
+  - [x] Mixes voice + instrumental with effects
+  - [x] Uploads processed MP3 to Supabase
+  - [x] Updates database record
+- [x] Configure Serverless Framework:
+  - [x] `serverless.yml` with FFmpeg layer
+  - [x] Lambda Function URL configuration
+  - [x] Environment variables structure
+  - [x] Timeout and memory settings (300s, 3008MB)
+- [x] Install Serverless Framework globally
+- [x] Install serverless-offline locally
+- [x] Create setup documentation (`lambda/SETUP.md`)
+- [x] Implement processing status UI (modal with "Processing…" message)
+- [x] Add error handling in API route
+- [ ] Deploy Lambda function (pending AWS CLI setup)
+- [ ] Test FFmpeg processing with real audio files
+- [ ] Add retry logic for failed processing
 
 ### Playback System
 - [ ] Create `components/audio/MemoryPlayer.tsx`:
@@ -294,10 +302,14 @@
   - [ ] `/api/memories/map` - Get all for visualization
   - [ ] `/api/memory/[id]/download` - Generate download URL
   - [ ] `/api/prompts/current` - Get active prompt
-  - [x] `/api/process-audio` - Trigger processing (implemented with FFmpeg WASM)
-- [ ] Add rate limiting
-- [ ] Implement error handling
-- [ ] Add request validation
+  - [x] `/api/process-audio` - Trigger processing (invokes AWS Lambda with FFmpeg)
+    - [x] Invokes Lambda function URL
+    - [x] Handles Lambda responses
+    - [x] Creates signed URLs for playback
+    - [x] Error handling with diagnostics
+  - [ ] Add rate limiting
+  - [x] Implement error handling
+  - [ ] Add request validation
 
 ### Supabase Integration Notes
 - [ ] Use `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` on the client
