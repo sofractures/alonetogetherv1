@@ -22,17 +22,15 @@ functions:
     handler: process_audio.lambda_handler
     description: Process audio with FFmpeg (mix voice + instrumental with effects)
     layers:
-      - arn:aws:lambda:us-east-1:${self:custom.ffmpegLayerArn}
-    events:
-      - http:
-          path: process-audio
-          method: post
-          cors: true
+      # Pre-built FFmpeg layer for us-east-1 (update region/ARN if needed)
+      - arn:aws:lambda:us-east-1:153977547602:layer:ffmpeg:1
+    url:
+      cors: true
 
 custom:
-  # FFmpeg layer ARN - update this after creating the layer
-  # You can find pre-built FFmpeg layers or build your own
-  # Example: arn:aws:lambda:us-east-1:123456789012:layer:ffmpeg:1
+  # FFmpeg layer ARN - using pre-built layer
+  # To use a different layer, update the ARN above
+  # Find more layers at: https://github.com/serverlessland/ffmpeg-lambda-layer
   ffmpegLayerArn: arn:aws:lambda:us-east-1:153977547602:layer:ffmpeg:1
 
 plugins:
