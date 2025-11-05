@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
-import path from 'path';
-import fs from 'fs/promises';
 
 export const runtime = 'nodejs';
 
@@ -24,132 +22,15 @@ export async function POST(req: NextRequest) {
     }
     const inputBytes = new Uint8Array(await downloadBlob.arrayBuffer());
 
-    // 2) Load instrumental with robust fallbacks: Supabase Storage -> HTTP -> filesystem
-    let instrumentalBytes: Uint8Array;
-    const origin = req.nextUrl.origin;
-    const instrumentalUrl = new URL('/assets/instrumental.mp3', origin).toString();
-    let storageTried = false;
-    let storageErr: string | null = null;
-    let httpTried = false;
-    let httpStatus: number | null = null;
-    let httpErr: string | null = null;
-    // Try Supabase Storage 'assets' bucket first (path: instrumental.mp3)
-    try {
-      storageTried = true;
-      const { data: instDl, error: instErr } = await supabaseServer
-        .storage
-        .from('assets')
-        .download('instrumental.mp3');
-      if (instErr || !instDl) {
-        throw new Error(instErr?.message || 'download returned null');
-      }
-      instrumentalBytes = new Uint8Array(await instDl.arrayBuffer());
-    } catch (se) {
-      storageErr = se instanceof Error ? se.message : 'unknown';
-      // Fallback to HTTP fetch from public assets
-      try {
-        httpTried = true;
-        const resp = await fetch(instrumentalUrl);
-        httpStatus = resp.status;
-        if (!resp.ok) {
-          throw new Error(`HTTP ${resp.status}`);
-        }
-        const ab = await resp.arrayBuffer();
-        instrumentalBytes = new Uint8Array(ab);
-      } catch (e) {
-        httpErr = e instanceof Error ? e.message : 'unknown';
-        // Final fallback: filesystem (local/dev)
-        try {
-          const instrumentalFsPath = path.join(process.cwd(), 'public', 'assets', 'instrumental.mp3');
-          const buf = await fs.readFile(instrumentalFsPath);
-          instrumentalBytes = new Uint8Array(buf);
-        } catch (fsErr) {
-          const fsPath = path.join(process.cwd(), 'public', 'assets', 'instrumental.mp3');
-          return NextResponse.json({
-            error: 'instrumental.mp3 not accessible',
-            diagnostics: {
-              storage: { tried: storageTried, bucket: 'assets', path: 'instrumental.mp3', error: storageErr },
-              http: { tried: httpTried, url: instrumentalUrl, status: httpStatus, error: httpErr },
-              fs: { tried: true, path: fsPath, error: fsErr instanceof Error ? fsErr.message : 'unknown' },
-            },
-          }, { status: 500 });
-        }
-      }
-    }
-
-    // 3) Initialize FFmpeg (WASM) - dynamically import for Turbopack compatibility
-    let ffmpegModule: unknown;
-    let importError: string | null = null;
-    try {
-      ffmpegModule = await import('@ffmpeg/ffmpeg');
-    } catch (e) {
-      importError = e instanceof Error ? e.message : 'unknown';
-      return NextResponse.json({
-        error: 'Failed to import @ffmpeg/ffmpeg',
-        diagnostics: { importError, moduleKeys: null },
-      }, { status: 500 });
-    }
-    type FFmpegFS = {
-      (op: 'writeFile', filePath: string, data: Uint8Array): void;
-      (op: 'readFile', filePath: string): Uint8Array;
-    };
-    type FFmpegFactory = (opts?: { log?: boolean; corePath?: string }) => {
-      load: () => Promise<void>;
-      FS: FFmpegFS;
-      run: (...args: string[]) => Promise<void>;
-    };
-    type FFmpegDynamicModule = { createFFmpeg?: FFmpegFactory; default?: { createFFmpeg?: FFmpegFactory } };
-    const resolved = ffmpegModule as unknown as FFmpegDynamicModule;
-    const createFFmpegFn: FFmpegFactory | undefined = resolved.createFFmpeg ?? resolved.default?.createFFmpeg;
-    if (!createFFmpegFn) {
-      const moduleAsObj = ffmpegModule as Record<string, unknown>;
-      return NextResponse.json({
-        error: 'FFmpeg WASM factory not found',
-        diagnostics: {
-          moduleKeys: Object.keys(moduleAsObj || {}),
-          hasCreateFFmpeg: 'createFFmpeg' in (moduleAsObj || {}),
-          hasDefault: 'default' in (moduleAsObj || {}),
-        },
-      }, { status: 500 });
-    }
-    const corePath = process.env.FFMPEG_CORE_URL || 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js';
-    let ffmpeg: ReturnType<FFmpegFactory>;
-    let loadError: string | null = null;
-    try {
-      ffmpeg = createFFmpegFn({ log: true, corePath });
-      await ffmpeg.load();
-    } catch (e) {
-      loadError = e instanceof Error ? e.message : 'unknown';
-      return NextResponse.json({
-        error: 'FFmpeg WASM failed to load',
-        diagnostics: { loadError, corePath, nodeEnv: process.env.NODE_ENV },
-      }, { status: 500 });
-    }
-
-    // 4) Write inputs to the in-memory FS
-    ffmpeg.FS('writeFile', 'input.webm', inputBytes);
-    ffmpeg.FS('writeFile', 'instrumental.mp3', instrumentalBytes);
-
-    // 5) Run processing pipeline (HPF, compression, mix with instrumental, normalize out level)
-    // Output: MP3 320kbps
-    await ffmpeg.run(
-      '-i', 'input.webm',
-      '-i', 'instrumental.mp3',
-      '-filter_complex',
-      '[0:a]highpass=f=80,acompressor=ratio=3,volume=-6dB[voice];[voice][1:a]amix=inputs=2:duration=longest[out]',
-      '-map', '[out]',
-      '-b:a', '320k',
-      'output.mp3'
-    );
-
-    // 6) Read output and upload to Supabase Storage (processed-songs)
-    const outData = ffmpeg.FS('readFile', 'output.mp3');
+    // 2) TEMPORARY: Stub processing since FFmpeg WASM doesn't work in serverless Node.js
+    // TODO: Implement real processing via external service (Cloudinary, AWS Lambda, or dedicated server)
+    // For now, upload the raw recording as "processed" to test the UI flow
     const processedPath = `final/${crypto.randomUUID()}.mp3`;
     const { error: uploadError } = await supabaseServer
       .storage
       .from('processed-songs')
-      .upload(processedPath, Buffer.from(outData), {
-        contentType: 'audio/mpeg',
+      .upload(processedPath, Buffer.from(inputBytes), {
+        contentType: 'audio/webm', // Using webm for now since we're not processing
         upsert: false,
       });
     if (uploadError) {
