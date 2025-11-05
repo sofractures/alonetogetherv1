@@ -72,7 +72,6 @@ export default function Home() {
           // Surface error clearly in UI for production debugging
           const msg = pdata?.error || 'Processing failed';
           setUploadError(msg);
-          // eslint-disable-next-line no-alert
           alert(`Processing error: ${msg}`);
           throw new Error(msg);
         }

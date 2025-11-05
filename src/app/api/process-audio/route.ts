@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 3) Initialize FFmpeg (WASM) - dynamically import for Turbopack compatibility
-    let ffmpegModule: any;
+    let ffmpegModule: unknown;
     let importError: string | null = null;
     try {
       ffmpegModule = await import('@ffmpeg/ffmpeg');
