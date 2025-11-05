@@ -112,20 +112,28 @@
 - Audio starts on first click/tap/keypress anywhere on page
 - Fade functions ready for recording and memory playback integration
 
+**Status:**
+- [x] Confirm next step: Recording Component
+
 ### Recording Component
-- [ ] Create `components/audio/AudioRecorder.tsx`:
-  - [ ] Implement RecordRTC for browser recording
-  - [ ] Add microphone permission request flow
-  - [ ] Create visual recording indicator (pulsing red button)
-  - [ ] Add countdown timer (60 seconds max)
-  - [ ] Implement waveform visualization during recording
-  - [ ] Add re-record option before submission
-- [ ] Create `hooks/useRecorder.ts` for recording logic
-- [ ] Add error handling for browser compatibility
+- [x] Create `components/audio/AudioRecorder.tsx`:
+  - [x] Use native MediaRecorder for browser recording (WebM/Opus)
+  - [x] Add microphone permission request flow
+  - [x] Create visual recording indicator (pulsing button)
+  - [x] Add countdown timer (30 seconds max)
+  - [ ] Implement waveform visualization during recording (currently level meter only)
+  - [x] Add re-record option before submission
+- [x] Create `hooks/useRecorder.ts` for recording logic
+- [x] Add error handling for browser compatibility (basic)
 - [ ] Test across different browsers and devices
 
+**Implementation Notes (Recording):**
+- Chose native `MediaRecorder` + Web Audio `AnalyserNode` for a lightweight setup (no extra deps).
+- Capturing as WebM/Opus; final processed output will be MP3 in Phase 3.
+- Implemented a real-time level meter; full waveform visualization can be added later if needed.
+
 ### Audio Upload Pipeline
-- [ ] Create `/api/memory/record/route.ts`:
+- [x] Create `/api/memory/record/route.ts`:
   ```typescript
   // Key tasks:
   - Validate audio file (format, size, duration)
@@ -281,7 +289,7 @@
 
 ### API Integration
 - [ ] Create all API routes:
-  - [ ] `/api/memory/record` - Upload recording
+  - [x] `/api/memory/record` - Upload recording
   - [ ] `/api/memory/[id]` - Get single memory
   - [ ] `/api/memories/map` - Get all for visualization
   - [ ] `/api/memory/[id]/download` - Generate download URL
@@ -291,26 +299,36 @@
 - [ ] Implement error handling
 - [ ] Add request validation
 
+### Supabase Integration Notes
+- [ ] Use `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` on the client
+- [x] Use `SUPABASE_SERVICE_ROLE_KEY` ONLY in server-side routes (never in browser)
+- [x] Rotate any exposed service role keys in Supabase settings immediately
+
+### Autoplay Policy Note
+- [x] Ensure background audio only starts after explicit user interaction (Start button)
+
 ---
 
 ## 🎯 Phase 5: User Experience
 
 ### Complete User Flow
-- [ ] Create landing page with:
-  - [ ] 3D building scene as hero
-  - [ ] Brief explanation text
-  - [ ] "Add Your Window" CTA button
-  - [ ] Background audio controls
-- [ ] Implement recording flow:
-  - [ ] Prompt display screen
-  - [ ] Recording interface
-  - [ ] Processing feedback
-  - [ ] Preview playback
-  - [ ] Location permission
-  - [ ] Success animation (window appearing)
-- [ ] Add smooth transitions between states
-- [ ] Create error/retry screens
-- [ ] Implement abandoned session recovery
+- [ ] Home overlays on top of always-on 3D scene
+  - [x] Title + Start button (keep 3D explore visible in background)
+  - [x] Start button begins background song
+- [ ] Recording overlay (full-screen mobile, centered desktop)
+  - [x] Static instruction and prompt:
+        "Share a time when you felt a part of something bigger than you"
+  - [x] Pause/mute background audio on open; resume on close/finish
+  - [x] Recording interface (30s cap, level meter)
+  - [x] Preview with Accept / Re-record
+  - [x] Finish triggers upload (processing next)
+- [ ] Processing feedback view
+- [ ] Playback overlay after processing completes
+- [ ] Pin memory automatically on globe
+- [ ] Location permission
+- [ ] Smooth transitions between states
+- [ ] Error/retry screens
+- [ ] Abandoned session recovery
 
 ### Mobile Optimization
 - [ ] Test touch controls for 3D scene
