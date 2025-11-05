@@ -94,7 +94,8 @@ export async function POST(req: NextRequest) {
     if (!createFFmpegFn) {
       return NextResponse.json({ error: 'FFmpeg WASM not available in this environment' }, { status: 500 });
     }
-    const ffmpeg = createFFmpegFn({ log: false });
+    const corePath = process.env.FFMPEG_CORE_URL || 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js';
+    const ffmpeg = createFFmpegFn({ log: false, corePath });
     await ffmpeg.load();
 
     // 4) Write inputs to the in-memory FS
