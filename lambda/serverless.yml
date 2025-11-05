@@ -1,0 +1,40 @@
+service: alone-together-audio-processor
+
+provider:
+  name: aws
+  runtime: python3.11
+  region: us-east-1
+  timeout: 300  # 5 minutes
+  memorySize: 3008  # Maximum for Lambda (FFmpeg needs memory)
+  environment:
+    SUPABASE_URL: ${env:SUPABASE_URL}
+    SUPABASE_SERVICE_ROLE_KEY: ${env:SUPABASE_SERVICE_ROLE_KEY}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - logs:CreateLogGroup
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+      Resource: '*'
+
+functions:
+  processAudio:
+    handler: process_audio.lambda_handler
+    description: Process audio with FFmpeg (mix voice + instrumental with effects)
+    layers:
+      - arn:aws:lambda:us-east-1:${self:custom.ffmpegLayerArn}
+    events:
+      - http:
+          path: process-audio
+          method: post
+          cors: true
+
+custom:
+  # FFmpeg layer ARN - update this after creating the layer
+  # You can find pre-built FFmpeg layers or build your own
+  # Example: arn:aws:lambda:us-east-1:123456789012:layer:ffmpeg:1
+  ffmpegLayerArn: arn:aws:lambda:us-east-1:153977547602:layer:ffmpeg:1
+
+plugins:
+  - serverless-offline
+
