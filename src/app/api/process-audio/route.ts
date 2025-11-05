@@ -24,38 +24,56 @@ export async function POST(req: NextRequest) {
     }
     const inputBytes = new Uint8Array(await downloadBlob.arrayBuffer());
 
-    // 2) Load instrumental (prefer HTTP to avoid bundling/FS issues in serverless)
+    // 2) Load instrumental with robust fallbacks: Supabase Storage -> HTTP -> filesystem
     let instrumentalBytes: Uint8Array;
     const origin = req.nextUrl.origin;
     const instrumentalUrl = new URL('/assets/instrumental.mp3', origin).toString();
+    let storageTried = false;
+    let storageErr: string | null = null;
     let httpTried = false;
     let httpStatus: number | null = null;
     let httpErr: string | null = null;
+    // Try Supabase Storage 'assets' bucket first (path: instrumental.mp3)
     try {
-      httpTried = true;
-      const resp = await fetch(instrumentalUrl);
-      httpStatus = resp.status;
-      if (!resp.ok) {
-        throw new Error(`HTTP ${resp.status}`);
+      storageTried = true;
+      const { data: instDl, error: instErr } = await supabaseServer
+        .storage
+        .from('assets')
+        .download('instrumental.mp3');
+      if (instErr || !instDl) {
+        throw new Error(instErr?.message || 'download returned null');
       }
-      const ab = await resp.arrayBuffer();
-      instrumentalBytes = new Uint8Array(ab);
-    } catch (e) {
-      httpErr = e instanceof Error ? e.message : 'unknown';
-      // Fallback to filesystem read in local/dev environments
+      instrumentalBytes = new Uint8Array(await instDl.arrayBuffer());
+    } catch (se) {
+      storageErr = se instanceof Error ? se.message : 'unknown';
+      // Fallback to HTTP fetch from public assets
       try {
-        const instrumentalFsPath = path.join(process.cwd(), 'public', 'assets', 'instrumental.mp3');
-        const buf = await fs.readFile(instrumentalFsPath);
-        instrumentalBytes = new Uint8Array(buf);
-      } catch (fsErr) {
-        const fsPath = path.join(process.cwd(), 'public', 'assets', 'instrumental.mp3');
-        return NextResponse.json({
-          error: 'instrumental.mp3 not accessible',
-          diagnostics: {
-            http: { tried: httpTried, url: instrumentalUrl, status: httpStatus, error: httpErr },
-            fs: { tried: true, path: fsPath, error: fsErr instanceof Error ? fsErr.message : 'unknown' },
-          },
-        }, { status: 500 });
+        httpTried = true;
+        const resp = await fetch(instrumentalUrl);
+        httpStatus = resp.status;
+        if (!resp.ok) {
+          throw new Error(`HTTP ${resp.status}`);
+        }
+        const ab = await resp.arrayBuffer();
+        instrumentalBytes = new Uint8Array(ab);
+      } catch (e) {
+        httpErr = e instanceof Error ? e.message : 'unknown';
+        // Final fallback: filesystem (local/dev)
+        try {
+          const instrumentalFsPath = path.join(process.cwd(), 'public', 'assets', 'instrumental.mp3');
+          const buf = await fs.readFile(instrumentalFsPath);
+          instrumentalBytes = new Uint8Array(buf);
+        } catch (fsErr) {
+          const fsPath = path.join(process.cwd(), 'public', 'assets', 'instrumental.mp3');
+          return NextResponse.json({
+            error: 'instrumental.mp3 not accessible',
+            diagnostics: {
+              storage: { tried: storageTried, bucket: 'assets', path: 'instrumental.mp3', error: storageErr },
+              http: { tried: httpTried, url: instrumentalUrl, status: httpStatus, error: httpErr },
+              fs: { tried: true, path: fsPath, error: fsErr instanceof Error ? fsErr.message : 'unknown' },
+            },
+          }, { status: 500 });
+        }
       }
     }
 
