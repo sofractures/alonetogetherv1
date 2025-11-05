@@ -232,8 +232,8 @@ export default function Home() {
                 <button
                   onClick={() => {
                     // Placeholder for pinning to map; to be wired when 3D map is implemented
-                    // eslint-disable-next-line no-alert
                     alert('Pinned to map (placeholder).');
+                    
                   }}
                   className="px-4 py-2 rounded border border-purple-400/40 text-purple-200"
                 >

@@ -36,9 +36,13 @@ export async function POST(req: NextRequest) {
 
     // 3) Initialize FFmpeg (WASM) - dynamically import for Turbopack compatibility
     const ffmpegModule = await import('@ffmpeg/ffmpeg');
+    type FFmpegFS = {
+      (op: 'writeFile', filePath: string, data: Uint8Array): void;
+      (op: 'readFile', filePath: string): Uint8Array;
+    };
     type FFmpegFactory = (opts?: { log?: boolean }) => {
       load: () => Promise<void>;
-      FS: (op: 'writeFile' | 'readFile', path: string, data?: Uint8Array) => any;
+      FS: FFmpegFS;
       run: (...args: string[]) => Promise<void>;
     };
     type FFmpegDynamicModule = { createFFmpeg?: FFmpegFactory; default?: { createFFmpeg?: FFmpegFactory } };
