@@ -299,26 +299,33 @@
 - [ ] Implement error handling
 - [ ] Add request validation
 
+### Supabase Integration Notes
+- [ ] Use `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` on the client
+- [ ] Use `SUPABASE_SERVICE_ROLE_KEY` ONLY in server-side routes (never in browser)
+- [ ] Rotate any exposed service role keys in Supabase settings immediately
+
 ---
 
 ## 🎯 Phase 5: User Experience
 
 ### Complete User Flow
-- [ ] Create landing page with:
-  - [ ] 3D building scene as hero
-  - [ ] Brief explanation text
-  - [ ] "Add Your Window" CTA button
-  - [ ] Background audio controls
-- [ ] Implement recording flow:
-  - [ ] Prompt display screen
-  - [ ] Recording interface
-  - [ ] Processing feedback
-  - [ ] Preview playback
-  - [ ] Location permission
-  - [ ] Success animation (window appearing)
-- [ ] Add smooth transitions between states
-- [ ] Create error/retry screens
-- [ ] Implement abandoned session recovery
+- [ ] Home overlays on top of always-on 3D scene
+  - [ ] Title + Start button (keep 3D explore visible in background)
+  - [ ] Start button begins background song
+- [ ] Recording overlay (full-screen mobile, centered desktop)
+  - [ ] Static instruction and prompt:
+        "Share a time when you felt a part of something bigger than you"
+  - [ ] Pause/mute background audio on open; resume on close/finish
+  - [ ] Recording interface (30s cap, level meter)
+  - [ ] Preview with Accept / Re-record
+  - [ ] Finish triggers upload + processing
+- [ ] Processing feedback view
+- [ ] Playback overlay after processing completes
+- [ ] Pin memory automatically on globe
+- [ ] Location permission
+- [ ] Smooth transitions between states
+- [ ] Error/retry screens
+- [ ] Abandoned session recovery
 
 ### Mobile Optimization
 - [ ] Test touch controls for 3D scene
