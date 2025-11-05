@@ -13,9 +13,10 @@ function formatMs(ms: number): string {
 
 export interface AudioRecorderProps {
   onComplete?: (blob: Blob, url: string) => void;
+  onStartRecording?: () => void;
 }
 
-export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete }) => {
+export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStartRecording }) => {
   const {
     isRecording,
     timeLeftMs,
@@ -57,6 +58,14 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete }) => {
 
   const canStart = useMemo(() => !isRecording && !audioBlob, [isRecording, audioBlob]);
 
+  const handleStartClick = async () => {
+    try {
+      onStartRecording?.();
+    } finally {
+      await start();
+    }
+  };
+
   return (
     <div
       style={{
@@ -93,7 +102,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete }) => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 16 }}>
         {canStart && (
           <button
-            onClick={start}
+            onClick={handleStartClick}
             aria-label="Start recording"
             style={{
               background: '#a78bfa',

@@ -124,7 +124,7 @@
   - [ ] Implement waveform visualization during recording (currently level meter only)
   - [x] Add re-record option before submission
 - [x] Create `hooks/useRecorder.ts` for recording logic
-- [ ] Add error handling for browser compatibility
+- [x] Add error handling for browser compatibility (basic)
 - [ ] Test across different browsers and devices
 
 **Implementation Notes (Recording):**
@@ -133,7 +133,7 @@
 - Implemented a real-time level meter; full waveform visualization can be added later if needed.
 
 ### Audio Upload Pipeline
-- [ ] Create `/api/memory/record/route.ts`:
+- [x] Create `/api/memory/record/route.ts`:
   ```typescript
   // Key tasks:
   - Validate audio file (format, size, duration)
@@ -289,7 +289,7 @@
 
 ### API Integration
 - [ ] Create all API routes:
-  - [ ] `/api/memory/record` - Upload recording
+  - [x] `/api/memory/record` - Upload recording
   - [ ] `/api/memory/[id]` - Get single memory
   - [ ] `/api/memories/map` - Get all for visualization
   - [ ] `/api/memory/[id]/download` - Generate download URL
@@ -301,8 +301,11 @@
 
 ### Supabase Integration Notes
 - [ ] Use `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` on the client
-- [ ] Use `SUPABASE_SERVICE_ROLE_KEY` ONLY in server-side routes (never in browser)
-- [ ] Rotate any exposed service role keys in Supabase settings immediately
+- [x] Use `SUPABASE_SERVICE_ROLE_KEY` ONLY in server-side routes (never in browser)
+- [x] Rotate any exposed service role keys in Supabase settings immediately
+
+### Autoplay Policy Note
+- [x] Ensure background audio only starts after explicit user interaction (Start button)
 
 ---
 
@@ -310,15 +313,15 @@
 
 ### Complete User Flow
 - [ ] Home overlays on top of always-on 3D scene
-  - [ ] Title + Start button (keep 3D explore visible in background)
-  - [ ] Start button begins background song
+  - [x] Title + Start button (keep 3D explore visible in background)
+  - [x] Start button begins background song
 - [ ] Recording overlay (full-screen mobile, centered desktop)
-  - [ ] Static instruction and prompt:
+  - [x] Static instruction and prompt:
         "Share a time when you felt a part of something bigger than you"
-  - [ ] Pause/mute background audio on open; resume on close/finish
-  - [ ] Recording interface (30s cap, level meter)
-  - [ ] Preview with Accept / Re-record
-  - [ ] Finish triggers upload + processing
+  - [x] Pause/mute background audio on open; resume on close/finish
+  - [x] Recording interface (30s cap, level meter)
+  - [x] Preview with Accept / Re-record
+  - [x] Finish triggers upload (processing next)
 - [ ] Processing feedback view
 - [ ] Playback overlay after processing completes
 - [ ] Pin memory automatically on globe
