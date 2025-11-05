@@ -30,13 +30,20 @@ export async function POST(req: NextRequest) {
     try {
       const buf = await fs.readFile(instrumentalFsPath);
       instrumentalBytes = new Uint8Array(buf);
-    } catch (err) {
+    } catch {
       return NextResponse.json({ error: 'instrumental.mp3 not found in /public/assets' }, { status: 500 });
     }
 
     // 3) Initialize FFmpeg (WASM) - dynamically import for Turbopack compatibility
     const ffmpegModule = await import('@ffmpeg/ffmpeg');
-    const createFFmpegFn = (ffmpegModule as any).createFFmpeg ?? (ffmpegModule as any).default?.createFFmpeg;
+    type FFmpegFactory = (opts?: { log?: boolean }) => {
+      load: () => Promise<void>;
+      FS: (op: 'writeFile' | 'readFile', path: string, data?: Uint8Array) => any;
+      run: (...args: string[]) => Promise<void>;
+    };
+    type FFmpegDynamicModule = { createFFmpeg?: FFmpegFactory; default?: { createFFmpeg?: FFmpegFactory } };
+    const resolved = ffmpegModule as unknown as FFmpegDynamicModule;
+    const createFFmpegFn: FFmpegFactory | undefined = resolved.createFFmpeg ?? resolved.default?.createFFmpeg;
     if (!createFFmpegFn) {
       return NextResponse.json({ error: 'FFmpeg WASM not available in this environment' }, { status: 500 });
     }

@@ -10,7 +10,7 @@ export default function Home() {
   const [pendingUrl, setPendingUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [uploadedPath, setUploadedPath] = useState<string | null>(null);
+  // Removed uploadedPath (unused)
   const [isProcessing, setIsProcessing] = useState(false);
   const [processedPath, setProcessedPath] = useState<string | null>(null);
   const [processedSignedUrl, setProcessedSignedUrl] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export default function Home() {
     setPendingBlob(null);
     setPendingUrl(null);
     setUploadError(null);
-    setUploadedPath(null);
+    
     await onRecordingStopResumeBackground();
   };
 
@@ -52,14 +52,11 @@ export default function Home() {
       const res = await fetch("/api/memory/record", { method: "POST", body: form });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Upload failed");
-      setUploadedPath(data.path);
       // TEMP: surface upload diagnostics
-      // eslint-disable-next-line no-console
       console.log('upload response', data);
       if (typeof window !== 'undefined') {
         const diag = data?.diagnostics;
         const msg = `Uploaded to: ${data?.path || 'unknown'}\nListCount: ${diag?.listCount ?? 'n/a'}\nHas Signed URL: ${diag?.signedUrl ? 'yes' : 'no'}`;
-        // eslint-disable-next-line no-alert
         alert(msg);
       }
       // Begin processing step
