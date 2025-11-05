@@ -78,12 +78,22 @@ export async function POST(req: NextRequest) {
     }
 
     // 3) Initialize FFmpeg (WASM) - dynamically import for Turbopack compatibility
-    const ffmpegModule = await import('@ffmpeg/ffmpeg');
+    let ffmpegModule: any;
+    let importError: string | null = null;
+    try {
+      ffmpegModule = await import('@ffmpeg/ffmpeg');
+    } catch (e) {
+      importError = e instanceof Error ? e.message : 'unknown';
+      return NextResponse.json({
+        error: 'Failed to import @ffmpeg/ffmpeg',
+        diagnostics: { importError, moduleKeys: null },
+      }, { status: 500 });
+    }
     type FFmpegFS = {
       (op: 'writeFile', filePath: string, data: Uint8Array): void;
       (op: 'readFile', filePath: string): Uint8Array;
     };
-    type FFmpegFactory = (opts?: { log?: boolean }) => {
+    type FFmpegFactory = (opts?: { log?: boolean; corePath?: string }) => {
       load: () => Promise<void>;
       FS: FFmpegFS;
       run: (...args: string[]) => Promise<void>;
@@ -92,11 +102,28 @@ export async function POST(req: NextRequest) {
     const resolved = ffmpegModule as unknown as FFmpegDynamicModule;
     const createFFmpegFn: FFmpegFactory | undefined = resolved.createFFmpeg ?? resolved.default?.createFFmpeg;
     if (!createFFmpegFn) {
-      return NextResponse.json({ error: 'FFmpeg WASM not available in this environment' }, { status: 500 });
+      return NextResponse.json({
+        error: 'FFmpeg WASM factory not found',
+        diagnostics: {
+          moduleKeys: Object.keys(ffmpegModule),
+          hasCreateFFmpeg: 'createFFmpeg' in (ffmpegModule || {}),
+          hasDefault: 'default' in (ffmpegModule || {}),
+        },
+      }, { status: 500 });
     }
     const corePath = process.env.FFMPEG_CORE_URL || 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js';
-    const ffmpeg = createFFmpegFn({ log: false, corePath });
-    await ffmpeg.load();
+    let ffmpeg: ReturnType<FFmpegFactory>;
+    let loadError: string | null = null;
+    try {
+      ffmpeg = createFFmpegFn({ log: true, corePath });
+      await ffmpeg.load();
+    } catch (e) {
+      loadError = e instanceof Error ? e.message : 'unknown';
+      return NextResponse.json({
+        error: 'FFmpeg WASM failed to load',
+        diagnostics: { loadError, corePath, nodeEnv: process.env.NODE_ENV },
+      }, { status: 500 });
+    }
 
     // 4) Write inputs to the in-memory FS
     ffmpeg.FS('writeFile', 'input.webm', inputBytes);
