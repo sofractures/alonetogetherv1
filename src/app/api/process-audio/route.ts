@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
-import { createFFmpeg } from '@ffmpeg/ffmpeg';
 import path from 'path';
 import fs from 'fs/promises';
 
@@ -35,7 +34,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'instrumental.mp3 not found in /public/assets' }, { status: 500 });
     }
 
-    // 3) Initialize FFmpeg (WASM)
+    // 3) Initialize FFmpeg (WASM) - dynamically import for Turbopack compatibility
+    const { createFFmpeg } = await import('@ffmpeg/ffmpeg');
     const ffmpeg = createFFmpeg({ log: false });
     await ffmpeg.load();
 
