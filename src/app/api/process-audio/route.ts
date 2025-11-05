@@ -35,8 +35,12 @@ export async function POST(req: NextRequest) {
     }
 
     // 3) Initialize FFmpeg (WASM) - dynamically import for Turbopack compatibility
-    const { createFFmpeg } = await import('@ffmpeg/ffmpeg');
-    const ffmpeg = createFFmpeg({ log: false });
+    const ffmpegModule = await import('@ffmpeg/ffmpeg');
+    const createFFmpegFn = (ffmpegModule as any).createFFmpeg ?? (ffmpegModule as any).default?.createFFmpeg;
+    if (!createFFmpegFn) {
+      return NextResponse.json({ error: 'FFmpeg WASM not available in this environment' }, { status: 500 });
+    }
+    const ffmpeg = createFFmpegFn({ log: false });
     await ffmpeg.load();
 
     // 4) Write inputs to the in-memory FS
