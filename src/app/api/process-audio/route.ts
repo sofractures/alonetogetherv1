@@ -102,12 +102,13 @@ export async function POST(req: NextRequest) {
     const resolved = ffmpegModule as unknown as FFmpegDynamicModule;
     const createFFmpegFn: FFmpegFactory | undefined = resolved.createFFmpeg ?? resolved.default?.createFFmpeg;
     if (!createFFmpegFn) {
+      const moduleAsObj = ffmpegModule as Record<string, unknown>;
       return NextResponse.json({
         error: 'FFmpeg WASM factory not found',
         diagnostics: {
-          moduleKeys: Object.keys(ffmpegModule),
-          hasCreateFFmpeg: 'createFFmpeg' in (ffmpegModule || {}),
-          hasDefault: 'default' in (ffmpegModule || {}),
+          moduleKeys: Object.keys(moduleAsObj || {}),
+          hasCreateFFmpeg: 'createFFmpeg' in (moduleAsObj || {}),
+          hasDefault: 'default' in (moduleAsObj || {}),
         },
       }, { status: 500 });
     }
