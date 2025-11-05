@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
-import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
+import { createFFmpeg } from '@ffmpeg/ffmpeg';
 import path from 'path';
 import fs from 'fs/promises';
 
@@ -40,8 +40,8 @@ export async function POST(req: NextRequest) {
     await ffmpeg.load();
 
     // 4) Write inputs to the in-memory FS
-    ffmpeg.FS('writeFile', 'input.webm', await fetchFile(inputBytes));
-    ffmpeg.FS('writeFile', 'instrumental.mp3', await fetchFile(instrumentalBytes));
+    ffmpeg.FS('writeFile', 'input.webm', inputBytes);
+    ffmpeg.FS('writeFile', 'instrumental.mp3', instrumentalBytes);
 
     // 5) Run processing pipeline (HPF, compression, mix with instrumental, normalize out level)
     // Output: MP3 320kbps
