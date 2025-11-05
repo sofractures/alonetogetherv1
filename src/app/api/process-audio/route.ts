@@ -12,27 +12,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing path' }, { status: 400 });
     }
 
-    // Check if Lambda function URL is configured
-    const lambdaFunctionUrl = process.env.AWS_LAMBDA_FUNCTION_URL;
-    if (!lambdaFunctionUrl) {
+    // Check if audio processor service URL is configured
+    const processorUrl = process.env.AUDIO_PROCESSOR_URL;
+    if (!processorUrl) {
       return NextResponse.json({
-        error: 'AWS Lambda function URL not configured. Please set AWS_LAMBDA_FUNCTION_URL environment variable.',
+        error: 'Audio processor service URL not configured. Please set AUDIO_PROCESSOR_URL environment variable.',
       }, { status: 500 });
     }
 
-    // Get Supabase credentials for Lambda
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      return NextResponse.json({
-        error: 'Supabase credentials not configured',
-      }, { status: 500 });
-    }
-
-    // Invoke AWS Lambda function
+    // Invoke audio processor service
     try {
-      const lambdaResponse = await fetch(lambdaFunctionUrl, {
+      const processorResponse = await fetch(`${processorUrl}/process-audio`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -41,29 +31,23 @@ export async function POST(req: NextRequest) {
           inputPath,
           instrumentalPath: 'instrumental.mp3',
           memoryId,
-          supabaseUrl,
-          supabaseKey,
         }),
       });
 
-      const lambdaData = await lambdaResponse.json();
+      const processorData = await processorResponse.json();
 
-      if (!lambdaResponse.ok || lambdaData.statusCode !== 200) {
-        const errorMsg = lambdaData.body ? (typeof lambdaData.body === 'string' ? JSON.parse(lambdaData.body) : lambdaData.body) : lambdaData;
+      if (!processorResponse.ok) {
         return NextResponse.json({
-          error: errorMsg.error || 'Lambda processing failed',
-          details: errorMsg.details,
-        }, { status: lambdaResponse.status || 500 });
+          error: processorData.error || 'Audio processing failed',
+          details: processorData.details,
+        }, { status: processorResponse.status || 500 });
       }
 
-      // Parse Lambda response
-      const result = typeof lambdaData.body === 'string' ? JSON.parse(lambdaData.body) : lambdaData.body;
-
-      // Create signed URL from Supabase (Lambda returns path, we create signed URL)
+      // Create signed URL from Supabase (processor returns path, we create signed URL)
       const { data: signedData } = await supabaseServer
         .storage
         .from('processed-songs')
-        .createSignedUrl(result.processedPath, 300);
+        .createSignedUrl(processorData.processedPath, 300);
       const signedUrl = signedData?.signedUrl ?? null;
 
       // Diagnostics: verify object exists
@@ -73,14 +57,14 @@ export async function POST(req: NextRequest) {
         .list('final', { limit: 1, sortBy: { column: 'created_at', order: 'desc' } });
 
       return NextResponse.json({
-        processedPath: result.processedPath,
-        signedUrl: signedUrl || result.signedUrl,
+        processedPath: processorData.processedPath,
+        signedUrl: signedUrl || processorData.signedUrl,
         diagnostics: { listCount: (listRes.data?.length ?? 0) },
       }, { status: 200 });
-    } catch (lambdaError) {
-      const errorMsg = lambdaError instanceof Error ? lambdaError.message : 'Lambda invocation failed';
+    } catch (processorError) {
+      const errorMsg = processorError instanceof Error ? processorError.message : 'Processor invocation failed';
       return NextResponse.json({
-        error: 'Failed to invoke Lambda function',
+        error: 'Failed to invoke audio processor service',
         details: errorMsg,
       }, { status: 500 });
     }

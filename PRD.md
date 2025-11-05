@@ -161,25 +161,26 @@ ffmpeg -i user_voice.wav -i assets/instrumental.mp3 \
 
 ### Backend Stack
 - **Server:** Vercel Edge Functions / Serverless Functions
-- **Audio Processing:** AWS Lambda with FFmpeg layer (exact filter chain support)
-  - Lambda function (Python) processes audio with full FFmpeg capabilities
+- **Audio Processing:** Railway Node.js service with FFmpeg (exact filter chain support)
+  - Node.js Express server processes audio with full FFmpeg capabilities
   - Processes voice + instrumental with high-pass, reverb, compression, normalization
   - Outputs 320kbps MP3 with exact specifications
+  - Simple deployment and debugging
 - **Database:** Supabase (PostgreSQL)
 - **Storage:** Supabase Storage for all audio files
 - **CDN:** Supabase's built-in CDN + Vercel's edge network
-- **Queue System:** Direct Lambda invocation (can add async queue later if needed)
+- **Queue System:** Direct service invocation (can add async queue later if needed)
 
 ### Infrastructure
 - **Hosting:** Vercel (frontend + API routes)
 - **Storage:** Supabase Storage for audio files (raw recordings + processed songs)
 - **Database:** Supabase PostgreSQL for metadata
-- **Processing:** AWS Lambda with FFmpeg layer
+- **Processing:** Railway Node.js service with FFmpeg
   - **Status:** Implemented, pending deployment
-  - **Function:** Python-based Lambda with FFmpeg binary
-  - **Layer:** Pre-built FFmpeg layer for Lambda (us-east-1)
-  - **Configuration:** Serverless Framework for deployment
-  - **Integration:** Next.js API route invokes Lambda Function URL
+  - **Service:** Node.js Express server with FFmpeg installed
+  - **Deployment:** Railway platform (simple git push)
+  - **Configuration:** Environment variables in Railway dashboard
+  - **Integration:** Next.js API route invokes Railway service URL
 - **Analytics:** Vercel Analytics + Google Analytics + custom event tracking
 
 ## 5. Design Requirements
@@ -360,17 +361,17 @@ ffmpeg -i user_voice.wav -i assets/instrumental.mp3 \
   - 100GB storage (≈30,000 songs)
   - 200GB bandwidth (≈65,000 downloads)
   - Unlimited API requests
-- **Audio Processing:** AWS Lambda
-  - **Free tier:** 1M requests/month, 400,000 GB-seconds
-  - **After free tier:** ~$0.20 per 1M requests
-  - **Processing cost:** ~$0.0000166667 per GB-second
-  - **Estimated for 10,000 processes/month:** $0-5 (mostly free tier)
-  - **Memory:** 3008MB allocated (max for Lambda)
-  - **Timeout:** 300 seconds (5 minutes) per process
+- **Audio Processing:** Railway
+  - **Pricing:** Pay-as-you-go, ~$5-10/month for typical usage
+  - **No timeout limits:** Can process long audio files
+  - **Easy scaling:** Automatic resource allocation
+  - **Estimated for 10,000 processes/month:** ~$5-10
+  - **Memory:** Flexible (configurable in Railway)
+  - **No timeout:** No artificial limits on processing time
 - **Additional CDN (if needed):** $50-200
 - **Domain & SSL:** $15-30
 
-**Estimated Total Monthly:** $45-260 (scaling with usage, mostly free tier for processing)
+**Estimated Total Monthly:** $50-265 (scaling with usage)
 
 ### Marketing Costs
 - Social media ads: $2,000-5,000

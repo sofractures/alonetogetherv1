@@ -204,14 +204,14 @@
 ## 🔧 Phase 3: Audio Processing
 
 ### FFmpeg Integration Choice
-- [x] **Selected: AWS Lambda with FFmpeg Layer** (final solution):
+- [x] **Selected: Railway with Node.js + FFmpeg** (final solution):
   - [x] Analyzed FFmpeg WASM (doesn't work in serverless Node.js)
   - [x] Evaluated Cloudinary (limited audio processing capabilities)
-  - [x] Chose AWS Lambda for exact FFmpeg filter chain support
-  - [x] Created Lambda function with Python + FFmpeg
-  - [x] Configured Serverless Framework for deployment
-  - [x] Set up Lambda Function URL for API access
-  - [ ] Deploy Lambda function (requires AWS CLI setup)
+  - [x] Evaluated AWS Lambda (too complex for setup)
+  - [x] Chose Railway for simplicity and reliability
+  - [x] Created Node.js Express service with FFmpeg
+  - [x] Configured for Railway deployment
+  - [ ] Deploy to Railway
   - [ ] Configure environment variables (Supabase credentials)
   - [ ] Test end-to-end processing flow
 
@@ -221,8 +221,8 @@
   // Processing steps:
   1. Download user recording from Supabase
   2. Download instrumental.mp3
-  3. Invoke AWS Lambda function with paths
-  4. Lambda processes with FFmpeg:
+  3. Invoke Railway audio processor service
+  4. Service processes with FFmpeg:
      - High-pass filter (80Hz)
      - Reverb (25% wet)
      - Compression (3:1 ratio)
@@ -232,23 +232,21 @@
   6. Upload to 'processed-songs' bucket
   7. Update database with final URL
   ```
-- [x] Create Lambda function (`lambda/process_audio.py`):
+- [x] Create Railway audio processor service (`audio-processor/index.js`):
+  - [x] Node.js Express server
   - [x] Downloads from Supabase Storage
   - [x] Applies exact FFmpeg filter chain from spec
   - [x] Mixes voice + instrumental with effects
   - [x] Uploads processed MP3 to Supabase
   - [x] Updates database record
-- [x] Configure Serverless Framework:
-  - [x] `serverless.yml` with FFmpeg layer
-  - [x] Lambda Function URL configuration
+- [x] Configure Railway deployment:
+  - [x] `package.json` with dependencies
+  - [x] `railway.json` configuration
   - [x] Environment variables structure
-  - [x] Timeout and memory settings (300s, 3008MB)
-- [x] Install Serverless Framework globally
-- [x] Install serverless-offline locally
-- [x] Create setup documentation (`lambda/SETUP.md`)
+  - [x] No timeout limits (Railway handles long-running processes)
 - [x] Implement processing status UI (modal with "Processing…" message)
 - [x] Add error handling in API route
-- [ ] Deploy Lambda function (pending AWS CLI setup)
+- [ ] Deploy to Railway
 - [ ] Test FFmpeg processing with real audio files
 - [ ] Add retry logic for failed processing
 
@@ -302,9 +300,9 @@
   - [ ] `/api/memories/map` - Get all for visualization
   - [ ] `/api/memory/[id]/download` - Generate download URL
   - [ ] `/api/prompts/current` - Get active prompt
-  - [x] `/api/process-audio` - Trigger processing (invokes AWS Lambda with FFmpeg)
-    - [x] Invokes Lambda function URL
-    - [x] Handles Lambda responses
+  - [x] `/api/process-audio` - Trigger processing (invokes Railway service with FFmpeg)
+    - [x] Invokes Railway audio processor service
+    - [x] Handles processor responses
     - [x] Creates signed URLs for playback
     - [x] Error handling with diagnostics
   - [ ] Add rate limiting
