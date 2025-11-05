@@ -219,7 +219,7 @@
   - [ ] Implement queue system
 
 ### Processing Pipeline Implementation
-- [ ] Create `/api/process-audio/route.ts`:
+- [x] Create `/api/process-audio/route.ts`:
   ```typescript
   // Processing steps:
   1. Download user recording from Supabase
@@ -294,7 +294,7 @@
   - [ ] `/api/memories/map` - Get all for visualization
   - [ ] `/api/memory/[id]/download` - Generate download URL
   - [ ] `/api/prompts/current` - Get active prompt
-  - [ ] `/api/process-audio` - Trigger processing
+  - [x] `/api/process-audio` - Trigger processing (implemented with FFmpeg WASM)
 - [ ] Add rate limiting
 - [ ] Implement error handling
 - [ ] Add request validation
@@ -322,6 +322,12 @@
   - [x] Recording interface (30s cap, level meter)
   - [x] Preview with Accept / Re-record
   - [x] Finish triggers upload (processing next)
+- [x] Temporary processing + playback modal (for testing before 3D map)
+  - [x] Show in-overlay processing status: "Processing… we are creating your song."
+  - [x] After processing, show playback modal with audio player and Download
+  - [x] Include "Pin to Map" button (temporary; will hook to 3D map later)
+  - [x] Prevent closing overlay while uploading/processing
+  - [ ] Remove/replace with 3D map pinning once map is implemented
 - [ ] Processing feedback view
 - [ ] Playback overlay after processing completes
 - [ ] Pin memory automatically on globe
