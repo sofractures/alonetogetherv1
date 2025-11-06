@@ -1,13 +1,13 @@
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
-const { exec } = require('child_process');
+const { execFile } = require('child_process');
 const { promisify } = require('util');
 const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
 const { v4: uuidv4 } = require('uuid');
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 const app = express();
 app.use(express.json());
@@ -201,23 +201,23 @@ app.post('/process-audio', async (req, res) => {
     // 3) Process with FFmpeg (validated parameters)
     // High-pass 80Hz, compression 3:1 (attack/release in ms), echo/reverb effect, normalize -6dB, mix with instrumental
     // aecho syntax: aecho=in_gain:out_gain:delays:decays (delays/decays are pipe-separated for multiple echoes)
-    const ffmpegCmd = [
-      'ffmpeg',
+    const filterComplex = '[0:a]highpass=f=80,acompressor=ratio=3:attack=10:release=50:threshold=-10dB,aecho=0.8:0.9:1000|1800:0.3|0.25,volume=-6dB[voice];' +
+      '[voice][1:a]amix=inputs=2:duration=longest[out]';
+    
+    const ffmpegArgs = [
       '-i', voicePath,
       '-i', instrumentalPathLocal,
-      '-filter_complex',
-      '[0:a]highpass=f=80,acompressor=ratio=3:attack=10:release=50:threshold=-10dB,aecho=0.8:0.9:1000|1800:0.3|0.25,volume=-6dB[voice];' +
-      '[voice][1:a]amix=inputs=2:duration=longest[out]',
+      '-filter_complex', filterComplex,
       '-map', '[out]',
       '-b:a', '320k',
       '-ac', '2',
       '-ar', '44100',
       '-y',
       outputPath
-    ].join(' ');
+    ];
 
     try {
-      await execAsync(ffmpegCmd, { timeout: 300000 }); // 5 minute timeout
+      await execFileAsync('ffmpeg', ffmpegArgs, { timeout: 300000 }); // 5 minute timeout
     } catch (error) {
       console.error('FFmpeg error:', error.stderr);
       return res.status(500).json({ 
