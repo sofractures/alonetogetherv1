@@ -199,14 +199,14 @@ app.post('/process-audio', async (req, res) => {
     }
 
     // 3) Process with FFmpeg (validated parameters)
-    // High-pass 80Hz, compression 3:1 (attack/release in ms), gentle reverb, normalize -6dB, mix with instrumental
-    // areverb syntax: areverb=level_in:level_out:reverberance:hf_damping:room_scale:stereo_depth:pre_delay:wet_gain
+    // High-pass 80Hz, compression 3:1 (attack/release in ms), echo/reverb effect, normalize -6dB, mix with instrumental
+    // aecho syntax: aecho=in_gain:out_gain:delays:decays (delays/decays are pipe-separated for multiple echoes)
     const ffmpegCmd = [
       'ffmpeg',
       '-i', voicePath,
       '-i', instrumentalPathLocal,
       '-filter_complex',
-      '[0:a]highpass=f=80,acompressor=ratio=3:attack=10:release=50:threshold=-10dB,areverb=1.0:1.0:25:50:100:100:20:0.25,volume=-6dB[voice];' +
+      '[0:a]highpass=f=80,acompressor=ratio=3:attack=10:release=50:threshold=-10dB,aecho=0.8:0.9:1000|1800:0.3|0.25,volume=-6dB[voice];' +
       '[voice][1:a]amix=inputs=2:duration=longest[out]',
       '-map', '[out]',
       '-b:a', '320k',
