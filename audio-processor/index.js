@@ -39,13 +39,37 @@ function getSupabaseClient() {
   return supabase;
 }
 
+async function toBuffer(data) {
+  // Browser Blob-like
+  if (data && typeof data.arrayBuffer === 'function') {
+    const ab = await data.arrayBuffer();
+    return Buffer.from(ab);
+  }
+  // Node Buffer
+  if (Buffer.isBuffer(data)) {
+    return data;
+  }
+  // Node Readable stream
+  if (data && typeof data.pipe === 'function') {
+    const chunks = [];
+    return await new Promise((resolve, reject) => {
+      data.on('data', (c) => chunks.push(c));
+      data.on('end', () => resolve(Buffer.concat(chunks)));
+      data.on('error', reject);
+    });
+  }
+  throw new Error('Unsupported download data type');
+}
+
 app.post('/process-audio', async (req, res) => {
   let tmpdir;
   
   try {
     const { inputPath, instrumentalPath = 'instrumental.mp3', memoryId } = req.body;
+    const normalizedInputPath = String(inputPath || '').trim().replace(/^\/+/, '');
+    const normalizedInstPath = String(instrumentalPath || 'instrumental.mp3').trim().replace(/^\/+/, '');
 
-    if (!inputPath) {
+    if (!normalizedInputPath) {
       return res.status(400).json({ error: 'Missing inputPath' });
     }
 
@@ -59,25 +83,42 @@ app.post('/process-audio', async (req, res) => {
     const outputPath = path.join(tmpdir, 'output.mp3');
 
     // 1) Download voice recording from Supabase Storage
+    console.log('Processing request', { inputPath: normalizedInputPath, instrumentalPath: normalizedInstPath });
     try {
       const { data: voiceData, error: voiceError } = await supabase.storage
         .from('memory-songs')
-        .download(inputPath);
+        .download(normalizedInputPath);
 
-      if (voiceError || !voiceData) {
-        return res.status(500).json({ 
-          error: 'Failed to download voice recording',
-          details: voiceError?.message 
-        });
+      if (!voiceError && voiceData) {
+        const voiceBuf = await toBuffer(voiceData);
+        await fs.writeFile(voicePath, voiceBuf);
+      } else {
+        console.error('Primary download failed for voice:', voiceError, 'path=', normalizedInputPath);
+        // Fallback: create signed URL and fetch via HTTP
+        const { data: signed, error: signErr } = await supabase.storage
+          .from('memory-songs')
+          .createSignedUrl(normalizedInputPath, 300);
+        if (signErr || !signed?.signedUrl) {
+          return res.status(500).json({
+            error: 'Failed to download voice recording',
+            details: signErr?.message || voiceError?.message || 'no signed url'
+          });
+        }
+        const resp = await fetch(signed.signedUrl);
+        if (!resp.ok) {
+          return res.status(500).json({
+            error: 'Failed to download voice recording',
+            details: `http ${resp.status}`
+          });
+        }
+        const voiceBuf = Buffer.from(await resp.arrayBuffer());
+        await fs.writeFile(voicePath, voiceBuf);
       }
-
-      // Convert blob to buffer and save
-      const arrayBuffer = await voiceData.arrayBuffer();
-      await fs.writeFile(voicePath, Buffer.from(arrayBuffer));
     } catch (error) {
+      console.error('Voice download exception:', error);
       return res.status(500).json({ 
         error: 'Failed to download voice recording',
-        details: error.message 
+        details: error.message || String(error) 
       });
     }
 
@@ -85,34 +126,43 @@ app.post('/process-audio', async (req, res) => {
     try {
       const { data: instData, error: instError } = await supabase.storage
         .from('assets')
-        .download(instrumentalPath);
+        .download(normalizedInstPath);
 
-      if (instError || !instData) {
-        return res.status(500).json({ 
-          error: 'Failed to download instrumental',
-          details: instError?.message 
-        });
+      if (!instError && instData) {
+        const instBuf = await toBuffer(instData);
+        await fs.writeFile(instrumentalPathLocal, instBuf);
+      } else {
+        console.error('Primary download failed for instrumental:', instError, 'path=', normalizedInstPath);
+        // Fallback to public URL (if assets bucket is public)
+        const publicUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/assets/${encodeURIComponent(normalizedInstPath)}`;
+        const resp = await fetch(publicUrl);
+        if (!resp.ok) {
+          return res.status(500).json({
+            error: 'Failed to load instrumental',
+            details: instError?.message || `http ${resp.status}`
+          });
+        }
+        const instBuf = Buffer.from(await resp.arrayBuffer());
+        await fs.writeFile(instrumentalPathLocal, instBuf);
       }
-
-      const arrayBuffer = await instData.arrayBuffer();
-      await fs.writeFile(instrumentalPathLocal, Buffer.from(arrayBuffer));
     } catch (error) {
+      console.error('Instrumental download exception:', error);
       return res.status(500).json({ 
         error: 'Failed to load instrumental',
-        details: error.message 
+        details: error.message || String(error) 
       });
     }
 
-    // 3) Process with FFmpeg (exact spec from IMPLEMENTATION.md)
-    // High-pass 80Hz, reverb 25%, compression 3:1, normalize -6dB, mix with instrumental
+    // 3) Process with FFmpeg (validated parameters)
+    // High-pass 80Hz, compression 3:1 (attack/release in ms), gentle reverb, normalize -6dB, mix with instrumental
+    // areverb syntax: areverb=level_in:level_out:reverberance:hf_damping:room_scale:stereo_depth:pre_delay:wet_gain
     const ffmpegCmd = [
       'ffmpeg',
       '-i', voicePath,
       '-i', instrumentalPathLocal,
       '-filter_complex',
-      '[0:a]highpass=f=80,acompressor=ratio=3:attack=0.005:release=0.05:threshold=-10dB,volume=-6dB[voice];' +
-      '[voice]areverb=reverbance=25:room_scale=100:stereo_width=100:predelay=20:decay_time=2.5:wet_gain=0.25[reverb_voice];' +
-      '[reverb_voice][1:a]amix=inputs=2:duration=longest[out]',
+      '[0:a]highpass=f=80,acompressor=ratio=3:attack=10:release=50:threshold=-10dB,areverb=1.0:1.0:25:50:100:100:20:0.25,volume=-6dB[voice];' +
+      '[voice][1:a]amix=inputs=2:duration=longest[out]',
       '-map', '[out]',
       '-b:a', '320k',
       '-ac', '2',
