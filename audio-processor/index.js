@@ -84,36 +84,51 @@ app.post('/process-audio', async (req, res) => {
 
     // 1) Download voice recording from Supabase Storage
     console.log('Processing request', { inputPath: normalizedInputPath, instrumentalPath: normalizedInstPath });
+    
+    // Try signed URL method first (more reliable with new Supabase API)
+    let voiceBuf = null;
     try {
-      const { data: voiceData, error: voiceError } = await supabase.storage
+      console.log('Creating signed URL for voice recording...');
+      const { data: signed, error: signErr } = await supabase.storage
         .from('memory-songs')
-        .download(normalizedInputPath);
-
-      if (!voiceError && voiceData) {
-        const voiceBuf = await toBuffer(voiceData);
-        await fs.writeFile(voicePath, voiceBuf);
-      } else {
-        console.error('Primary download failed for voice:', voiceError, 'path=', normalizedInputPath);
-        // Fallback: create signed URL and fetch via HTTP
-        const { data: signed, error: signErr } = await supabase.storage
+        .createSignedUrl(normalizedInputPath, 300);
+      
+      if (signErr || !signed?.signedUrl) {
+        console.error('Signed URL creation failed:', signErr);
+        // Fallback to direct download
+        const { data: voiceData, error: voiceError } = await supabase.storage
           .from('memory-songs')
-          .createSignedUrl(normalizedInputPath, 300);
-        if (signErr || !signed?.signedUrl) {
+          .download(normalizedInputPath);
+        
+        if (voiceError || !voiceData) {
+          // Try to read error body if available
+          let errorDetails = voiceError?.message || signErr?.message || 'Unknown error';
+          if (voiceError?.originalError?.body) {
+            try {
+              const errorBody = await voiceError.originalError.body.text();
+              errorDetails = errorBody || errorDetails;
+            } catch {}
+          }
           return res.status(500).json({
             error: 'Failed to download voice recording',
-            details: signErr?.message || voiceError?.message || 'no signed url'
+            details: errorDetails
           });
         }
+        voiceBuf = await toBuffer(voiceData);
+      } else {
+        console.log('Fetching from signed URL:', signed.signedUrl.substring(0, 100) + '...');
         const resp = await fetch(signed.signedUrl);
         if (!resp.ok) {
+          const errorText = await resp.text().catch(() => '');
           return res.status(500).json({
             error: 'Failed to download voice recording',
-            details: `http ${resp.status}`
+            details: `HTTP ${resp.status}: ${errorText || resp.statusText}`
           });
         }
-        const voiceBuf = Buffer.from(await resp.arrayBuffer());
-        await fs.writeFile(voicePath, voiceBuf);
+        voiceBuf = Buffer.from(await resp.arrayBuffer());
       }
+      await fs.writeFile(voicePath, voiceBuf);
+      console.log('Voice recording downloaded successfully');
     } catch (error) {
       console.error('Voice download exception:', error);
       return res.status(500).json({ 
@@ -123,28 +138,48 @@ app.post('/process-audio', async (req, res) => {
     }
 
     // 2) Download instrumental from Supabase Storage (assets bucket)
+    let instBuf = null;
     try {
-      const { data: instData, error: instError } = await supabase.storage
+      console.log('Downloading instrumental...');
+      // Try signed URL first
+      const { data: instSigned, error: instSignErr } = await supabase.storage
         .from('assets')
-        .download(normalizedInstPath);
-
-      if (!instError && instData) {
-        const instBuf = await toBuffer(instData);
-        await fs.writeFile(instrumentalPathLocal, instBuf);
+        .createSignedUrl(normalizedInstPath, 300);
+      
+      if (instSignErr || !instSigned?.signedUrl) {
+        console.log('Signed URL failed, trying direct download...');
+        const { data: instData, error: instError } = await supabase.storage
+          .from('assets')
+          .download(normalizedInstPath);
+        
+        if (instError || !instData) {
+          // Fallback to public URL (if assets bucket is public)
+          console.log('Trying public URL fallback...');
+          const publicUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/assets/${encodeURIComponent(normalizedInstPath)}`;
+          const resp = await fetch(publicUrl);
+          if (!resp.ok) {
+            return res.status(500).json({
+              error: 'Failed to load instrumental',
+              details: instError?.message || instSignErr?.message || `HTTP ${resp.status}`
+            });
+          }
+          instBuf = Buffer.from(await resp.arrayBuffer());
+        } else {
+          instBuf = await toBuffer(instData);
+        }
       } else {
-        console.error('Primary download failed for instrumental:', instError, 'path=', normalizedInstPath);
-        // Fallback to public URL (if assets bucket is public)
-        const publicUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/assets/${encodeURIComponent(normalizedInstPath)}`;
-        const resp = await fetch(publicUrl);
+        console.log('Fetching instrumental from signed URL...');
+        const resp = await fetch(instSigned.signedUrl);
         if (!resp.ok) {
           return res.status(500).json({
             error: 'Failed to load instrumental',
-            details: instError?.message || `http ${resp.status}`
+            details: `HTTP ${resp.status}: ${resp.statusText}`
           });
         }
-        const instBuf = Buffer.from(await resp.arrayBuffer());
-        await fs.writeFile(instrumentalPathLocal, instBuf);
+        instBuf = Buffer.from(await resp.arrayBuffer());
       }
+      await fs.writeFile(instrumentalPathLocal, instBuf);
+      console.log('Instrumental downloaded successfully');
     } catch (error) {
       console.error('Instrumental download exception:', error);
       return res.status(500).json({ 
