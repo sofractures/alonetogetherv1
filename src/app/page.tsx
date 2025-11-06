@@ -10,7 +10,11 @@ export default function Home() {
   const [pendingUrl, setPendingUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [uploadedPath, setUploadedPath] = useState<string | null>(null);
+  // Removed uploadedPath (unused)
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processedPath, setProcessedPath] = useState<string | null>(null);
+  const [processedSignedUrl, setProcessedSignedUrl] = useState<string | null>(null);
+  const [showPlayback, setShowPlayback] = useState(false);
 
   const handleStart = async () => {
     const c = getAudioController();
@@ -26,7 +30,7 @@ export default function Home() {
     setPendingBlob(null);
     setPendingUrl(null);
     setUploadError(null);
-    setUploadedPath(null);
+    
     await onRecordingStopResumeBackground();
   };
 
@@ -38,6 +42,9 @@ export default function Home() {
   const acceptRecording = async () => {
     if (!pendingBlob) return;
     try {
+      // Ensure the recording overlay stays open for processing flow
+      setIsOverlayOpen(true);
+      setIsWelcomeOpen(false);
       setIsUploading(true);
       setUploadError(null);
       const form = new FormData();
@@ -45,9 +52,36 @@ export default function Home() {
       const res = await fetch("/api/memory/record", { method: "POST", body: form });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Upload failed");
-      setUploadedPath(data.path);
-      // For now, simply close overlay after successful upload
-      await closeOverlay();
+      // TEMP: surface upload diagnostics
+      console.log('upload response', data);
+      if (typeof window !== 'undefined') {
+        const diag = data?.diagnostics;
+        const msg = `Uploaded to: ${data?.path || 'unknown'}\nListCount: ${diag?.listCount ?? 'n/a'}\nHas Signed URL: ${diag?.signedUrl ? 'yes' : 'no'}`;
+        alert(msg);
+      }
+      // Begin processing step
+      setIsProcessing(true);
+      try {
+        const pres = await fetch('/api/process-audio', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: data.path, memoryId: data.memoryId ?? null }),
+        });
+        const pdata = await pres.json();
+        if (!pres.ok) {
+          // Surface error clearly in UI for production debugging
+          const msg = pdata?.error || 'Processing failed';
+          setUploadError(msg);
+          alert(`Processing error: ${msg}`);
+          throw new Error(msg);
+        }
+        setProcessedPath(pdata.processedPath);
+        if (pdata.signedUrl) setProcessedSignedUrl(pdata.signedUrl);
+        setShowPlayback(true);
+      } finally {
+        setIsProcessing(false);
+      }
+      // Keep overlay to show playback modal
     } catch (e) {
       const message = e instanceof Error ? e.message : "Upload failed";
       setUploadError(message);
@@ -137,7 +171,13 @@ export default function Home() {
 
         {isOverlayOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/60" onClick={closeOverlay} />
+            <div
+              className="absolute inset-0 bg-black/60"
+              onClick={() => {
+                if (isUploading || isProcessing) return;
+                closeOverlay();
+              }}
+            />
             <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl border border-purple-400/30 bg-gray-900/80 backdrop-blur p-5">
               <div className="text-sm text-gray-300 mb-1">Record your memory</div>
               <div className="text-lg font-semibold text-white mb-4">Share a time when you felt a part of something bigger than you</div>
@@ -151,21 +191,58 @@ export default function Home() {
                   <div className="text-gray-300 text-sm mb-2">Preview your recording</div>
                   {pendingUrl && <audio src={pendingUrl} controls className="w-full" />}
                   {uploadError && <div className="text-red-300 text-sm mt-2">{uploadError}</div>}
-                  <div className="flex gap-2 mt-4">
+                  <div className="flex gap-2 mt-4 items-center">
                     <button onClick={() => { setPendingBlob(null); setPendingUrl(null); }} className="px-4 py-2 rounded border border-purple-400/40 text-purple-200">
                       Re-record
                     </button>
-                    <button onClick={acceptRecording} disabled={isUploading} className="px-4 py-2 rounded bg-purple-600 text-white disabled:opacity-60">
-                      {isUploading ? 'Uploading…' : 'Accept & Upload'}
+                    <button onClick={acceptRecording} disabled={isUploading || isProcessing} className="px-4 py-2 rounded bg-purple-600 text-white disabled:opacity-60">
+                      {isUploading ? 'Uploading…' : isProcessing ? 'Processing…' : 'Accept & Upload'}
                     </button>
-                    <button onClick={closeOverlay} className="ml-auto px-4 py-2 rounded border border-gray-500/40 text-gray-200">Close</button>
+                    <button onClick={closeOverlay} disabled={isUploading || isProcessing} className="ml-auto px-4 py-2 rounded border border-gray-500/40 text-gray-200 disabled:opacity-60">Close</button>
                   </div>
+                </div>
+              )}
+
+              {isProcessing && (
+                <div className="mt-4 p-4 rounded bg-purple-900/30 border border-purple-400/30 text-purple-100">
+                  Processing… we are creating your song.
                 </div>
               )}
             </div>
           </div>
         )}
 
+        {showPlayback && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/60" onClick={() => setShowPlayback(false)} />
+            <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl border border-purple-400/30 bg-gray-900/80 backdrop-blur p-5">
+              <div className="text-lg font-semibold text-white mb-3">Your song is ready</div>
+              {processedSignedUrl ? (
+                <audio src={processedSignedUrl} controls className="w-full" />
+              ) : processedPath ? (
+                <div className="text-gray-300 text-sm">Processed path: {processedPath}</div>
+              ) : (
+                <div className="text-gray-300 text-sm">No processed file available.</div>
+              )}
+              <div className="flex gap-2 mt-4 items-center">
+                {processedSignedUrl && (
+                  <a href={processedSignedUrl} download className="px-4 py-2 rounded bg-purple-600 text-white">Download</a>
+                )}
+                <button
+                  onClick={() => {
+                    // Placeholder for pinning to map; to be wired when 3D map is implemented
+                    alert('Pinned to map (placeholder).');
+                    
+                  }}
+                  className="px-4 py-2 rounded border border-purple-400/40 text-purple-200"
+                >
+                  Pin to Map
+                </button>
+                <button onClick={() => { setShowPlayback(false); setIsOverlayOpen(false); setPendingBlob(null); setPendingUrl(null); }} className="ml-auto px-4 py-2 rounded border border-gray-500/40 text-gray-200">Close</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

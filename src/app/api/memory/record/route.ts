@@ -28,10 +28,34 @@ export async function POST(req: NextRequest) {
       });
 
     if (uploadError) {
-      return NextResponse.json({ error: uploadError.message }, { status: 500 });
+      return NextResponse.json({ error: uploadError.message, attemptedPath: path }, { status: 500 });
     }
 
-    return NextResponse.json({ path }, { status: 200 });
+    // Try creating a DB entry (optional if table exists)
+    let memoryId: string | null = null;
+    try {
+      const { data, error } = await supabaseServer
+        .from('memories')
+        .insert({ raw_recording_url: path })
+        .select('id')
+        .single();
+      if (!error && data?.id) memoryId = data.id;
+    } catch {}
+
+    // Diagnostics: verify object exists by listing and creating a signed URL
+    const listRes = await supabaseServer
+      .storage
+      .from('memory-songs')
+      .list('recordings', { limit: 1, sortBy: { column: 'created_at', order: 'desc' } });
+
+    let signedUrl: string | null = null;
+    const { data: signedData } = await supabaseServer
+      .storage
+      .from('memory-songs')
+      .createSignedUrl(path, 60);
+    if (signedData?.signedUrl) signedUrl = signedData.signedUrl;
+
+    return NextResponse.json({ path, memoryId, diagnostics: { listCount: (listRes.data?.length ?? 0), signedUrl } }, { status: 200 });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Upload failed';
     return NextResponse.json({ error: message }, { status: 500 });

@@ -160,21 +160,27 @@ ffmpeg -i user_voice.wav -i assets/instrumental.mp3 \
 - **State Management:** Zustand or React Context API
 
 ### Backend Stack
-- **Server:** Vercel Edge Functions / Serverless Functions
-- **Audio Processing:** FFmpeg (via WASM, external service, or Supabase Edge Functions)
+- **Server:** Vercel Serverless Functions (Next.js API routes)
+- **Audio Processing:** DigitalOcean Droplet + Dockerized Node.js service with FFmpeg
+  - Node.js Express server processes audio with full FFmpeg capabilities
+  - Applies high-pass, reverb, compression, normalization, and mixes with instrumental
+  - Outputs 320kbps MP3 with exact specifications
+  - Deploys as a Docker container on a Droplet for easier debugging and control
 - **Database:** Supabase (PostgreSQL)
 - **Storage:** Supabase Storage for all audio files
 - **CDN:** Supabase's built-in CDN + Vercel's edge network
-- **Queue System:** Supabase Edge Functions or external service for async processing
+- **Queue System:** Direct service invocation (can add async queue later if needed)
 
 ### Infrastructure
 - **Hosting:** Vercel (frontend + API routes)
 - **Storage:** Supabase Storage for audio files (raw recordings + processed songs)
 - **Database:** Supabase PostgreSQL for metadata
-- **Processing:** Options:
-  - FFmpeg WASM in Vercel Edge Functions
-  - External processing service (Cloudinary, AWS Lambda)
-  - Supabase Edge Functions with FFmpeg
+- **Processing:** DigitalOcean Droplet + Docker (Node.js + FFmpeg)
+  - **Status:** Deployed and healthy (health endpoint configured)
+  - **Service:** Node.js Express server with FFmpeg installed
+  - **Deployment:** Docker container on Droplet, port 80 → app port
+  - **Configuration:** Environment variables set at container run (SUPABASE_URL, sb_secret)
+  - **Integration:** Next.js API route invokes processor via `AUDIO_PROCESSOR_URL`
 - **Analytics:** Vercel Analytics + Google Analytics + custom event tracking
 
 ## 5. Design Requirements
@@ -355,13 +361,14 @@ ffmpeg -i user_voice.wav -i assets/instrumental.mp3 \
   - 100GB storage (≈30,000 songs)
   - 200GB bandwidth (≈65,000 downloads)
   - Unlimited API requests
-- **Audio Processing:** 
-  - FFmpeg WASM: Included in Vercel
-  - External service: $100-500 depending on volume
+- **Audio Processing:** DigitalOcean Droplet
+  - **Pricing:** Basic Droplet (e.g., $6–$12/mo) depending on CPU/RAM
+  - **FFmpeg capacity:** CPU-bound; can scale Droplet size if needed
+  - **No serverless timeouts:** Suited for long-running FFmpeg tasks
 - **Additional CDN (if needed):** $50-200
 - **Domain & SSL:** $15-30
 
-**Estimated Total Monthly:** $125-500 (scaling with usage)
+**Estimated Total Monthly:** $50-265 (scaling with usage)
 
 ### Marketing Costs
 - Social media ads: $2,000-5,000

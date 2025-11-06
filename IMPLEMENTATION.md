@@ -204,45 +204,58 @@
 ## 🔧 Phase 3: Audio Processing
 
 ### FFmpeg Integration Choice
-- [ ] **Option A: FFmpeg WASM** (if staying in-browser):
-  - [ ] Install `@ffmpeg/ffmpeg`
-  - [ ] Create worker for processing
-  - [ ] Handle memory limitations
-  - [ ] Test with `instrumental.mp3`
-  
-- [ ] **Option B: External Processing** (recommended):
-  - [ ] Set up processing service:
-    - [ ] Cloudinary audio API, OR
-    - [ ] AWS Lambda with FFmpeg layer, OR
-    - [ ] Dedicated Node.js server on Railway/Render
-  - [ ] Create processing endpoint
-  - [ ] Implement queue system
+- [x] **Selected: DigitalOcean Droplet + Dockerized Node.js + FFmpeg** (current approach)
+  - [x] Analyzed FFmpeg WASM (doesn't work in serverless Node.js)
+  - [x] Evaluated Cloudinary (limited audio processing capabilities)
+  - [x] Evaluated AWS Lambda (too complex for setup)
+  - [x] Implemented Node.js Express service with FFmpeg
+  - [x] Containerized service with Docker
+  - [x] Deployed to DigitalOcean Droplet
+  - [x] Configured environment variables on container (SUPABASE_URL, legacy JWT service_role key)
+  - [x] Health endpoint returns configured:true
+  - [x] Test end-to-end processing flow from app - **WORKING** ✅
 
 ### Processing Pipeline Implementation
-- [ ] Create `/api/process-audio/route.ts`:
+- [x] Create `/api/process-audio/route.ts`:
   ```typescript
   // Processing steps:
   1. Download user recording from Supabase
   2. Download instrumental.mp3
-  3. Apply FFmpeg filters:
+  3. Invoke external audio processor service (Droplet) via `AUDIO_PROCESSOR_URL`
+  4. Service processes with FFmpeg:
      - High-pass filter (80Hz)
      - Reverb (25% wet)
      - Compression (3:1 ratio)
      - Normalize to -6dB
-  4. Mix with instrumental
+     - Mix with instrumental
   5. Export as 320kbps MP3
   6. Upload to 'processed-songs' bucket
   7. Update database with final URL
   ```
-- [ ] Test FFmpeg command locally:
-  ```bash
-  ffmpeg -i voice.wav -i assets/instrumental.mp3 \
-    -filter_complex "[0:a]highpass=f=80,acompressor=ratio=3,reverb=50:50:60:0.5:0.5:2,volume=-6dB[voice];[voice][1:a]amix=inputs=2:duration=longest[out]" \
-    -map "[out]" -b:a 320k output.mp3
-  ```
-- [ ] Implement processing status updates
-- [ ] Add error handling and retry logic
-- [ ] Create processing progress UI
+- [x] Create DigitalOcean audio processor service (`audio-processor/index.js`):
+  - [x] Node.js Express server
+  - [x] Downloads from Supabase Storage (with signed URL fallback)
+  - [x] Applies exact FFmpeg filter chain from spec:
+    - High-pass filter (80Hz)
+    - Compression (3:1 ratio, attack=10ms, release=50ms)
+    - Echo/reverb effect (aecho filter)
+    - Volume normalization (-6dB)
+    - Mix with instrumental (amix)
+  - [x] Mixes voice + instrumental with effects
+  - [x] Uploads processed MP3 to Supabase
+  - [x] Creates signed URLs for playback
+  - [x] Updates database record (if memoryId provided)
+- [x] Configure DigitalOcean deployment:
+  - [x] `package.json` with dependencies
+  - [x] `Dockerfile` with FFmpeg installation
+  - [x] Environment variables structure
+  - [x] Port mapping (80:8080)
+  - [x] Container restart policy (always)
+- [x] Implement processing status UI (modal with "Processing…" message)
+- [x] Add error handling in API route
+- [x] Deploy to DigitalOcean Droplet - **COMPLETE** ✅
+- [x] Test FFmpeg processing with real audio files - **WORKING** ✅
+- [ ] Add retry logic for failed processing (optional enhancement)
 
 ### Playback System
 - [ ] Create `components/audio/MemoryPlayer.tsx`:
@@ -294,15 +307,34 @@
   - [ ] `/api/memories/map` - Get all for visualization
   - [ ] `/api/memory/[id]/download` - Generate download URL
   - [ ] `/api/prompts/current` - Get active prompt
-  - [ ] `/api/process-audio` - Trigger processing
-- [ ] Add rate limiting
-- [ ] Implement error handling
-- [ ] Add request validation
+  - [x] `/api/process-audio` - Trigger processing (invokes Droplet service with FFmpeg)
+    - [x] Invokes external audio processor via `AUDIO_PROCESSOR_URL`
+    - [x] Handles processor responses
+    - [x] Creates signed URLs for playback
+    - [x] Error handling with diagnostics
+  - [ ] Add rate limiting
+  - [x] Implement error handling
+  - [ ] Add request validation
 
 ### Supabase Integration Notes
-- [ ] Use `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` on the client
-- [x] Use `SUPABASE_SERVICE_ROLE_KEY` ONLY in server-side routes (never in browser)
-- [x] Rotate any exposed service role keys in Supabase settings immediately
+- [x] Use `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (publishable) on the client
+- [x] Use `SUPABASE_SERVICE_ROLE_KEY` (legacy JWT format `eyJ...`) ONLY on server (Droplet + API routes)
+- [x] Note: New `sb_secret_...` format keys don't work with signed URL creation; must use legacy JWT format
+- [x] Rotate/revoke any previously exposed keys; use legacy JWT service_role key for server-side operations
+
+### Deployment Notes
+- [x] Vercel env vars set: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AUDIO_PROCESSOR_URL`
+- [x] Droplet container run with: `-e SUPABASE_URL` and `-e SUPABASE_SERVICE_ROLE_KEY` (legacy JWT format) and correct port mapping
+- [x] Health check OK at `http://165.22.122.171/health`
+- [x] End-to-end processing tested and verified working ✅
+- [x] Processed audio successfully uploaded to `processed-songs` bucket
+- [x] Signed URLs generated for playback
+
+### Reference Docs (DigitalOcean path)
+- `CREDENTIALS_REFERENCE.md` — central place for env keys and rotation steps
+- `DIGITALOCEAN_AUDIO_SETUP.md` — deploy, firewall, health, diagnostics, troubleshooting
+- `CURSOR_SETUP_GUIDE.md` — how to reset context and drive Cursor with this approach
+- `AUDIO_PROCESSING_ARCHITECTURE.md` — current high-level design
 
 ### Autoplay Policy Note
 - [x] Ensure background audio only starts after explicit user interaction (Start button)
@@ -322,6 +354,12 @@
   - [x] Recording interface (30s cap, level meter)
   - [x] Preview with Accept / Re-record
   - [x] Finish triggers upload (processing next)
+- [x] Temporary processing + playback modal (for testing before 3D map)
+  - [x] Show in-overlay processing status: "Processing… we are creating your song."
+  - [x] After processing, show playback modal with audio player and Download
+  - [x] Include "Pin to Map" button (temporary; will hook to 3D map later)
+  - [x] Prevent closing overlay while uploading/processing
+  - [ ] Remove/replace with 3D map pinning once map is implemented
 - [ ] Processing feedback view
 - [ ] Playback overlay after processing completes
 - [ ] Pin memory automatically on globe
