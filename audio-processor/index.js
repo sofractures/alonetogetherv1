@@ -213,6 +213,29 @@ app.get('/health', (req, res) => {
   });
 });
 
+app.get('/diag', (req, res) => {
+  // Diagnostic endpoint to check environment variables (without exposing secrets)
+  const envVars = Object.keys(process.env).filter(key => 
+    key.includes('SUPABASE') || key.includes('RAILWAY')
+  );
+  const envInfo = {};
+  envVars.forEach(key => {
+    envInfo[key] = process.env[key] ? 
+      (key.includes('KEY') ? '***SET***' : process.env[key]) : 
+      'NOT SET';
+  });
+  
+  res.json({
+    hasSupabaseUrl: !!process.env.SUPABASE_URL,
+    hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    supabaseUrlValue: process.env.SUPABASE_URL ? 'SET' : 'NOT SET',
+    supabaseKeyValue: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'NOT SET',
+    allEnvVars: envInfo,
+    port: process.env.PORT,
+    nodeEnv: process.env.NODE_ENV
+  });
+});
+
 app.listen(PORT, HOST, () => {
   console.log(`Audio processor server running on ${HOST}:${PORT}`);
   console.log(`Health check available at http://${HOST}:${PORT}/health`);
