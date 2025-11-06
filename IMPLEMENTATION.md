@@ -255,6 +255,7 @@
 - [x] Add error handling in API route
 - [x] Deploy to DigitalOcean Droplet - **COMPLETE** ✅
 - [x] Test FFmpeg processing with real audio files - **WORKING** ✅
+- [x] Remove testing popup and playback modal (replaced with direct return to home after processing)
 - [ ] Add retry logic for failed processing (optional enhancement)
 
 ### Playback System
@@ -354,12 +355,11 @@
   - [x] Recording interface (30s cap, level meter)
   - [x] Preview with Accept / Re-record
   - [x] Finish triggers upload (processing next)
-- [x] Temporary processing + playback modal (for testing before 3D map)
+- [x] Processing status UI (in recording overlay)
   - [x] Show in-overlay processing status: "Processing… we are creating your song."
-  - [x] After processing, show playback modal with audio player and Download
-  - [x] Include "Pin to Map" button (temporary; will hook to 3D map later)
   - [x] Prevent closing overlay while uploading/processing
-  - [ ] Remove/replace with 3D map pinning once map is implemented
+  - [x] After processing completes, close overlay and return to home
+  - [ ] 3D map will display new memory automatically when implemented
 - [ ] Processing feedback view
 - [ ] Playback overlay after processing completes
 - [ ] Pin memory automatically on globe

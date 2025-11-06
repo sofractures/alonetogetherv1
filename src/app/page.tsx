@@ -12,9 +12,6 @@ export default function Home() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   // Removed uploadedPath (unused)
   const [isProcessing, setIsProcessing] = useState(false);
-  const [processedPath, setProcessedPath] = useState<string | null>(null);
-  const [processedSignedUrl, setProcessedSignedUrl] = useState<string | null>(null);
-  const [showPlayback, setShowPlayback] = useState(false);
 
   const handleStart = async () => {
     const c = getAudioController();
@@ -52,13 +49,7 @@ export default function Home() {
       const res = await fetch("/api/memory/record", { method: "POST", body: form });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Upload failed");
-      // TEMP: surface upload diagnostics
-      console.log('upload response', data);
-      if (typeof window !== 'undefined') {
-        const diag = data?.diagnostics;
-        const msg = `Uploaded to: ${data?.path || 'unknown'}\nListCount: ${diag?.listCount ?? 'n/a'}\nHas Signed URL: ${diag?.signedUrl ? 'yes' : 'no'}`;
-        alert(msg);
-      }
+      
       // Begin processing step
       setIsProcessing(true);
       try {
@@ -69,19 +60,16 @@ export default function Home() {
         });
         const pdata = await pres.json();
         if (!pres.ok) {
-          // Surface error clearly in UI for production debugging
           const msg = pdata?.error || 'Processing failed';
           setUploadError(msg);
-          alert(`Processing error: ${msg}`);
           throw new Error(msg);
         }
-        setProcessedPath(pdata.processedPath);
-        if (pdata.signedUrl) setProcessedSignedUrl(pdata.signedUrl);
-        setShowPlayback(true);
+        // Processing complete - close overlay and return to home
+        // The 3D map will handle displaying the new memory when implemented
+        await closeOverlay();
       } finally {
         setIsProcessing(false);
       }
-      // Keep overlay to show playback modal
     } catch (e) {
       const message = e instanceof Error ? e.message : "Upload failed";
       setUploadError(message);
@@ -208,38 +196,6 @@ export default function Home() {
                   Processing… we are creating your song.
                 </div>
               )}
-            </div>
-          </div>
-        )}
-
-        {showPlayback && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/60" onClick={() => setShowPlayback(false)} />
-            <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl border border-purple-400/30 bg-gray-900/80 backdrop-blur p-5">
-              <div className="text-lg font-semibold text-white mb-3">Your song is ready</div>
-              {processedSignedUrl ? (
-                <audio src={processedSignedUrl} controls className="w-full" />
-              ) : processedPath ? (
-                <div className="text-gray-300 text-sm">Processed path: {processedPath}</div>
-              ) : (
-                <div className="text-gray-300 text-sm">No processed file available.</div>
-              )}
-              <div className="flex gap-2 mt-4 items-center">
-                {processedSignedUrl && (
-                  <a href={processedSignedUrl} download className="px-4 py-2 rounded bg-purple-600 text-white">Download</a>
-                )}
-                <button
-                  onClick={() => {
-                    // Placeholder for pinning to map; to be wired when 3D map is implemented
-                    alert('Pinned to map (placeholder).');
-                    
-                  }}
-                  className="px-4 py-2 rounded border border-purple-400/40 text-purple-200"
-                >
-                  Pin to Map
-                </button>
-                <button onClick={() => { setShowPlayback(false); setIsOverlayOpen(false); setPendingBlob(null); setPendingUrl(null); }} className="ml-auto px-4 py-2 rounded border border-gray-500/40 text-gray-200">Close</button>
-              </div>
             </div>
           </div>
         )}
