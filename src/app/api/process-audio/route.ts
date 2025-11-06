@@ -20,9 +20,12 @@ export async function POST(req: NextRequest) {
       }, { status: 500 });
     }
 
+    const fullUrl = `${processorUrl}/process-audio`;
+    console.log('[process-audio] Calling processor:', fullUrl, 'with path:', inputPath);
+
     // Invoke audio processor service
     try {
-      const processorResponse = await fetch(`${processorUrl}/process-audio`, {
+      const processorResponse = await fetch(fullUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -63,6 +66,7 @@ export async function POST(req: NextRequest) {
       }, { status: 200 });
     } catch (processorError) {
       const errorMsg = processorError instanceof Error ? processorError.message : 'Processor invocation failed';
+      console.error('[process-audio] Processor fetch failed:', errorMsg, 'URL was:', fullUrl);
       return NextResponse.json({
         error: 'Failed to invoke audio processor service',
         details: errorMsg,
