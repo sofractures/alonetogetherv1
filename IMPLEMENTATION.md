@@ -319,6 +319,12 @@
 - [x] Droplet container run with: `-e SUPABASE_URL` and `-e SUPABASE_SERVICE_ROLE_KEY` and correct port mapping
 - [x] Health check OK at `http://<droplet-ip>/health`
 
+### Reference Docs (DigitalOcean path)
+- `CREDENTIALS_REFERENCE.md` — central place for env keys and rotation steps
+- `DIGITALOCEAN_AUDIO_SETUP.md` — deploy, firewall, health, diagnostics, troubleshooting
+- `CURSOR_SETUP_GUIDE.md` — how to reset context and drive Cursor with this approach
+- `AUDIO_PROCESSING_ARCHITECTURE.md` — current high-level design
+
 ### Autoplay Policy Note
 - [x] Ensure background audio only starts after explicit user interaction (Start button)
 
