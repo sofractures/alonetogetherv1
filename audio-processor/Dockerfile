@@ -1,4 +1,4 @@
-FROM node:18-slim
+FROM node:20-slim
 
 # Install FFmpeg
 RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
@@ -14,8 +14,8 @@ RUN npm install
 # Copy application files
 COPY . .
 
-# Expose port
-EXPOSE 3001
+# Expose port (Railway will set PORT env var)
+EXPOSE 8080
 
 # Start the application
 CMD ["npm", "start"]

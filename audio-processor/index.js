@@ -17,6 +17,11 @@ const PORT = process.env.PORT || 3001;
 // Make sure we listen on 0.0.0.0 (Railway requirement)
 const HOST = '0.0.0.0';
 
+// Log env presence (no secrets)
+const hasSupabaseUrl = !!process.env.SUPABASE_URL;
+const hasSupabaseKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+console.log('Env check: SUPABASE_URL:', hasSupabaseUrl, ' SUPABASE_SERVICE_ROLE_KEY:', hasSupabaseKey);
+
 // Initialize Supabase client (will be set when processing requests)
 let supabase = null;
 
