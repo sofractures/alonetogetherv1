@@ -211,9 +211,9 @@
   - [x] Implemented Node.js Express service with FFmpeg
   - [x] Containerized service with Docker
   - [x] Deployed to DigitalOcean Droplet
-  - [x] Configured environment variables on container (SUPABASE_URL, sb_secret)
+  - [x] Configured environment variables on container (SUPABASE_URL, legacy JWT service_role key)
   - [x] Health endpoint returns configured:true
-  - [ ] Test end-to-end processing flow from app (in progress)
+  - [x] Test end-to-end processing flow from app - **WORKING** ✅
 
 ### Processing Pipeline Implementation
 - [x] Create `/api/process-audio/route.ts`:
@@ -232,23 +232,30 @@
   6. Upload to 'processed-songs' bucket
   7. Update database with final URL
   ```
-- [x] Create Railway audio processor service (`audio-processor/index.js`):
+- [x] Create DigitalOcean audio processor service (`audio-processor/index.js`):
   - [x] Node.js Express server
-  - [x] Downloads from Supabase Storage
-  - [x] Applies exact FFmpeg filter chain from spec
+  - [x] Downloads from Supabase Storage (with signed URL fallback)
+  - [x] Applies exact FFmpeg filter chain from spec:
+    - High-pass filter (80Hz)
+    - Compression (3:1 ratio, attack=10ms, release=50ms)
+    - Echo/reverb effect (aecho filter)
+    - Volume normalization (-6dB)
+    - Mix with instrumental (amix)
   - [x] Mixes voice + instrumental with effects
   - [x] Uploads processed MP3 to Supabase
-  - [x] Updates database record
-- [x] Configure Railway deployment:
+  - [x] Creates signed URLs for playback
+  - [x] Updates database record (if memoryId provided)
+- [x] Configure DigitalOcean deployment:
   - [x] `package.json` with dependencies
-  - [x] `railway.json` configuration
+  - [x] `Dockerfile` with FFmpeg installation
   - [x] Environment variables structure
-  - [x] No timeout limits (Railway handles long-running processes)
+  - [x] Port mapping (80:8080)
+  - [x] Container restart policy (always)
 - [x] Implement processing status UI (modal with "Processing…" message)
 - [x] Add error handling in API route
-- [ ] Deploy to Railway
-- [ ] Test FFmpeg processing with real audio files
-- [ ] Add retry logic for failed processing
+- [x] Deploy to DigitalOcean Droplet - **COMPLETE** ✅
+- [x] Test FFmpeg processing with real audio files - **WORKING** ✅
+- [ ] Add retry logic for failed processing (optional enhancement)
 
 ### Playback System
 - [ ] Create `components/audio/MemoryPlayer.tsx`:
@@ -311,13 +318,17 @@
 
 ### Supabase Integration Notes
 - [x] Use `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (publishable) on the client
-- [x] Use `SUPABASE_SERVICE_ROLE_KEY` (new secret `sb_secret_...`) ONLY on server (Droplet + API routes)
-- [x] Rotate/revoke any previously exposed keys; adopt new key model (publishable/secret)
+- [x] Use `SUPABASE_SERVICE_ROLE_KEY` (legacy JWT format `eyJ...`) ONLY on server (Droplet + API routes)
+- [x] Note: New `sb_secret_...` format keys don't work with signed URL creation; must use legacy JWT format
+- [x] Rotate/revoke any previously exposed keys; use legacy JWT service_role key for server-side operations
 
 ### Deployment Notes
 - [x] Vercel env vars set: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AUDIO_PROCESSOR_URL`
-- [x] Droplet container run with: `-e SUPABASE_URL` and `-e SUPABASE_SERVICE_ROLE_KEY` and correct port mapping
-- [x] Health check OK at `http://<droplet-ip>/health`
+- [x] Droplet container run with: `-e SUPABASE_URL` and `-e SUPABASE_SERVICE_ROLE_KEY` (legacy JWT format) and correct port mapping
+- [x] Health check OK at `http://165.22.122.171/health`
+- [x] End-to-end processing tested and verified working ✅
+- [x] Processed audio successfully uploaded to `processed-songs` bucket
+- [x] Signed URLs generated for playback
 
 ### Reference Docs (DigitalOcean path)
 - `CREDENTIALS_REFERENCE.md` — central place for env keys and rotation steps
