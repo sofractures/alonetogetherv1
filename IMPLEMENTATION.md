@@ -204,16 +204,16 @@
 ## 🔧 Phase 3: Audio Processing
 
 ### FFmpeg Integration Choice
-- [x] **Selected: Railway with Node.js + FFmpeg** (final solution):
+- [x] **Selected: DigitalOcean Droplet + Dockerized Node.js + FFmpeg** (current approach)
   - [x] Analyzed FFmpeg WASM (doesn't work in serverless Node.js)
   - [x] Evaluated Cloudinary (limited audio processing capabilities)
   - [x] Evaluated AWS Lambda (too complex for setup)
-  - [x] Chose Railway for simplicity and reliability
-  - [x] Created Node.js Express service with FFmpeg
-  - [x] Configured for Railway deployment
-  - [ ] Deploy to Railway
-  - [ ] Configure environment variables (Supabase credentials)
-  - [ ] Test end-to-end processing flow
+  - [x] Implemented Node.js Express service with FFmpeg
+  - [x] Containerized service with Docker
+  - [x] Deployed to DigitalOcean Droplet
+  - [x] Configured environment variables on container (SUPABASE_URL, sb_secret)
+  - [x] Health endpoint returns configured:true
+  - [ ] Test end-to-end processing flow from app (in progress)
 
 ### Processing Pipeline Implementation
 - [x] Create `/api/process-audio/route.ts`:
@@ -221,7 +221,7 @@
   // Processing steps:
   1. Download user recording from Supabase
   2. Download instrumental.mp3
-  3. Invoke Railway audio processor service
+  3. Invoke external audio processor service (Droplet) via `AUDIO_PROCESSOR_URL`
   4. Service processes with FFmpeg:
      - High-pass filter (80Hz)
      - Reverb (25% wet)
@@ -300,8 +300,8 @@
   - [ ] `/api/memories/map` - Get all for visualization
   - [ ] `/api/memory/[id]/download` - Generate download URL
   - [ ] `/api/prompts/current` - Get active prompt
-  - [x] `/api/process-audio` - Trigger processing (invokes Railway service with FFmpeg)
-    - [x] Invokes Railway audio processor service
+  - [x] `/api/process-audio` - Trigger processing (invokes Droplet service with FFmpeg)
+    - [x] Invokes external audio processor via `AUDIO_PROCESSOR_URL`
     - [x] Handles processor responses
     - [x] Creates signed URLs for playback
     - [x] Error handling with diagnostics
@@ -310,9 +310,14 @@
   - [ ] Add request validation
 
 ### Supabase Integration Notes
-- [ ] Use `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` on the client
-- [x] Use `SUPABASE_SERVICE_ROLE_KEY` ONLY in server-side routes (never in browser)
-- [x] Rotate any exposed service role keys in Supabase settings immediately
+- [x] Use `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (publishable) on the client
+- [x] Use `SUPABASE_SERVICE_ROLE_KEY` (new secret `sb_secret_...`) ONLY on server (Droplet + API routes)
+- [x] Rotate/revoke any previously exposed keys; adopt new key model (publishable/secret)
+
+### Deployment Notes
+- [x] Vercel env vars set: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AUDIO_PROCESSOR_URL`
+- [x] Droplet container run with: `-e SUPABASE_URL` and `-e SUPABASE_SERVICE_ROLE_KEY` and correct port mapping
+- [x] Health check OK at `http://<droplet-ip>/health`
 
 ### Autoplay Policy Note
 - [x] Ensure background audio only starts after explicit user interaction (Start button)
