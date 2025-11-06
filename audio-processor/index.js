@@ -14,16 +14,25 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3001;
 
-// Initialize Supabase client
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Make sure we listen on 0.0.0.0 (Railway requirement)
+const HOST = '0.0.0.0';
 
-if (!supabaseUrl || !supabaseKey) {
-  console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
-  process.exit(1);
+// Initialize Supabase client (will be set when processing requests)
+let supabase = null;
+
+function getSupabaseClient() {
+  if (!supabase) {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+    }
+    
+    supabase = createClient(supabaseUrl, supabaseKey);
+  }
+  return supabase;
 }
-
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 app.post('/process-audio', async (req, res) => {
   let tmpdir;
@@ -34,6 +43,9 @@ app.post('/process-audio', async (req, res) => {
     if (!inputPath) {
       return res.status(400).json({ error: 'Missing inputPath' });
     }
+
+    // Get Supabase client (validates env vars)
+    const supabase = getSupabaseClient();
 
     // Create temporary directory
     tmpdir = await fs.mkdtemp(path.join(os.tmpdir(), 'audio-processor-'));
@@ -187,10 +199,17 @@ app.post('/process-audio', async (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', service: 'audio-processor' });
+  // Check if environment variables are set (but don't fail if not - just warn)
+  const hasConfig = !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+  res.json({ 
+    status: 'ok', 
+    service: 'audio-processor',
+    configured: hasConfig
+  });
 });
 
-app.listen(PORT, () => {
-  console.log(`Audio processor server running on port ${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`Audio processor server running on ${HOST}:${PORT}`);
+  console.log(`Health check available at http://${HOST}:${PORT}/health`);
 });
 
