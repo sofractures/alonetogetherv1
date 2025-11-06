@@ -27,11 +27,21 @@ let supabase = null;
 
 function getSupabaseClient() {
   if (!supabase) {
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = (process.env.SUPABASE_URL || '').trim();
+    const supabaseKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
     
     if (!supabaseUrl || !supabaseKey) {
       throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+    }
+    
+    // Diagnostic: log key format (first 20 chars only for security)
+    const keyPrefix = supabaseKey.substring(0, 20);
+    const isJWT = supabaseKey.startsWith('eyJ');
+    const isNewFormat = supabaseKey.startsWith('sb_secret_');
+    console.log(`[DIAG] Key format check: prefix="${keyPrefix}...", isJWT=${isJWT}, isNewFormat=${isNewFormat}, length=${supabaseKey.length}`);
+    
+    if (!isJWT && !isNewFormat) {
+      console.error(`[ERROR] Key format unrecognized! Expected JWT (eyJ...) or new format (sb_secret_...), got: ${keyPrefix}...`);
     }
     
     supabase = createClient(supabaseUrl, supabaseKey);
@@ -310,11 +320,22 @@ app.get('/diag', (req, res) => {
       'NOT SET';
   });
   
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  const keyPrefix = key.substring(0, 20);
+  const isJWT = key.startsWith('eyJ');
+  const isNewFormat = key.startsWith('sb_secret_');
+  
   res.json({
     hasSupabaseUrl: !!process.env.SUPABASE_URL,
     hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
     supabaseUrlValue: process.env.SUPABASE_URL ? 'SET' : 'NOT SET',
     supabaseKeyValue: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'NOT SET',
+    keyFormat: {
+      prefix: keyPrefix + '...',
+      isJWT: isJWT,
+      isNewFormat: isNewFormat,
+      length: key.length
+    },
     allEnvVars: envInfo,
     port: process.env.PORT,
     nodeEnv: process.env.NODE_ENV
