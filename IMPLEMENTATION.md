@@ -223,10 +223,11 @@
   2. Download instrumental.mp3
   3. Invoke external audio processor service (Droplet) via `AUDIO_PROCESSOR_URL`
   4. Service processes with FFmpeg:
+     - Two-pass loudnorm normalization (-16 LUFS)
      - High-pass filter (80Hz)
-     - Reverb (25% wet)
      - Compression (3:1 ratio)
-     - Normalize to -6dB
+     - Echo/reverb effect
+     - Volume boost (+6dB for mix balance)
      - Mix with instrumental
   5. Export as 320kbps MP3
   6. Upload to 'processed-songs' bucket
@@ -236,10 +237,11 @@
   - [x] Node.js Express server
   - [x] Downloads from Supabase Storage (with signed URL fallback)
   - [x] Applies exact FFmpeg filter chain from spec:
+    - Two-pass loudnorm normalization (-16 LUFS integrated loudness)
     - High-pass filter (80Hz)
     - Compression (3:1 ratio, attack=10ms, release=50ms)
     - Echo/reverb effect (aecho filter)
-    - Volume normalization (-6dB)
+    - Volume boost (+6dB for mix balance)
     - Mix with instrumental (amix)
   - [x] Mixes voice + instrumental with effects
   - [x] Uploads processed MP3 to Supabase
@@ -255,17 +257,21 @@
 - [x] Add error handling in API route
 - [x] Deploy to DigitalOcean Droplet - **COMPLETE** ✅
 - [x] Test FFmpeg processing with real audio files - **WORKING** ✅
-- [x] Remove testing popup and playback modal (replaced with direct return to home after processing)
+- [x] Add two-pass loudnorm normalization for consistent voice levels
+- [x] Adjust voice volume boost from -6dB to +6dB for better mix balance
+- [x] Add enhanced error logging for troubleshooting
 - [ ] Add retry logic for failed processing (optional enhancement)
 
 ### Playback System
-- [ ] Create `components/audio/MemoryPlayer.tsx`:
-  - [ ] Load processed audio from Supabase
-  - [ ] Custom audio player UI
-  - [ ] Progress bar with scrubbing
+- [x] Basic playback UI after processing (integrated in recording overlay):
+  - [x] Load processed audio from Supabase signed URL
+  - [x] Native HTML5 audio player with controls
+  - [x] Download button for processed MP3
+- [ ] Create `components/audio/MemoryPlayer.tsx` (for 3D window playback):
+  - [ ] Custom audio player UI with progress bar and scrubbing
   - [ ] Volume control
   - [ ] Share functionality
-  - [ ] Download button (for creator only)
+  - [ ] Full memory details display
 - [ ] Integrate with 3D window click events
 - [ ] Add keyboard controls for playback
 
@@ -358,10 +364,10 @@
 - [x] Processing status UI (in recording overlay)
   - [x] Show in-overlay processing status: "Processing… we are creating your song."
   - [x] Prevent closing overlay while uploading/processing
-  - [x] After processing completes, close overlay and return to home
+  - [x] After processing completes, show playback UI with processed audio
+  - [x] Display audio player with controls and download button
   - [ ] 3D map will display new memory automatically when implemented
-- [ ] Processing feedback view
-- [ ] Playback overlay after processing completes
+- [x] Playback overlay after processing completes (integrated into recording overlay)
 - [ ] Pin memory automatically on globe
 - [ ] Location permission
 - [ ] Smooth transitions between states
