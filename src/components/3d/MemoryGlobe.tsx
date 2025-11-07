@@ -35,9 +35,19 @@ export default function MemoryGlobe({
   autoRotate = false,
   onMemoryClick 
 }: MemoryGlobeProps) {
-  // Debug: Log memories count
+  // Debug: Log memories count and details
   console.log('[v0] MemoryGlobe: Rendering with', memories.length, 'memories');
-  console.log('[v0] Memory data:', memories);
+  if (memories.length > 0) {
+    console.log('[v0] MemoryGlobe: Memory details:', memories.map(m => ({
+      id: m.id,
+      location: m.location,
+      lat: m.latitude,
+      lng: m.longitude,
+      hasAudio: !!m.audioUrl
+    })));
+  } else {
+    console.warn('[v0] MemoryGlobe: NO MEMORIES TO RENDER!');
+  }
   
   return (
     <div 
