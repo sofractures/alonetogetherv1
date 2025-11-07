@@ -151,11 +151,7 @@ export default function MemoryGlobe({
               ONE: 0, // Rotate
               TWO: 2, // Zoom
             }}
-            onChange={(e) => {
-              if (e?.target) {
-                console.log('[v0] Camera moved:', e.target.object.position);
-              }
-            }}
+            // onChange removed - was causing excessive logging
           />
         </Suspense>
       </Canvas>

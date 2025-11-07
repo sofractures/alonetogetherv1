@@ -20,7 +20,8 @@ export default function Home() {
   const [isMemoryPlayerOpen, setIsMemoryPlayerOpen] = useState(false);
   
   // Memory store
-  const { memories, fetchMemories, selectMemory, selectedMemory } = useMemoryStore();
+  const { memories, fetchMemories, selectMemory, selectedMemory, isLoading, error } = useMemoryStore();
+  const [showDebug, setShowDebug] = useState(false);
 
   // Fetch memories on mount
   useEffect(() => {
@@ -31,6 +32,17 @@ export default function Home() {
   useEffect(() => {
     console.log('Page: Current memories count:', memories.length, memories);
   }, [memories]);
+  
+  // Toggle debug panel with 'D' key
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'd' || e.key === 'D') {
+        setShowDebug(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
 
   const handleStart = async () => {
     const c = getAudioController();
@@ -105,6 +117,11 @@ export default function Home() {
         hasLocation: !!location,
         location: location
       });
+      
+      if (!data.memoryId) {
+        console.error('[v0] WARNING: Memory record was not created! memoryId is null');
+        console.error('[v0] This means the memory cannot be updated with audio_url after processing');
+      }
       
       // Begin processing step
       setIsProcessing(true);
@@ -181,6 +198,38 @@ export default function Home() {
           }}
         />
       </div>
+      
+      {/* Debug Panel - Toggle with 'D' key */}
+      {showDebug && (
+        <div className="fixed top-4 right-4 z-50 bg-black/90 text-white p-4 rounded-lg text-xs font-mono max-w-md max-h-96 overflow-auto">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="font-bold">Debug Info</h3>
+            <button onClick={() => setShowDebug(false)} className="text-gray-400 hover:text-white">✕</button>
+          </div>
+          <div className="space-y-1">
+            <div>Memories: {memories.length}</div>
+            <div>Loading: {isLoading ? 'Yes' : 'No'}</div>
+            <div>Error: {error || 'None'}</div>
+            <div>Has Started Exploring: {hasStartedExploring ? 'Yes' : 'No'}</div>
+            <div>Processing: {isProcessing ? 'Yes' : 'No'}</div>
+            <div>Processed Audio: {processedAudioUrl ? 'Yes' : 'No'}</div>
+            <div className="mt-2 pt-2 border-t border-gray-600">
+              <div className="font-bold mb-1">Memory Details:</div>
+              {memories.length > 0 ? (
+                memories.map((m) => (
+                  <div key={m.id} className="ml-2 text-xs">
+                    • {m.location || 'No location'} (ID: {m.id.substring(0, 8)}...)
+                    <br />
+                    &nbsp;&nbsp;Lat: {m.latitude}, Lng: {m.longitude}, Audio: {m.audioUrl ? 'Yes' : 'No'}
+                  </div>
+                ))
+              ) : (
+                <div className="text-yellow-400">No memories found</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Content overlays */}
       <div 

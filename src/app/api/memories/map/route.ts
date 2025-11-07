@@ -14,6 +14,14 @@ export async function GET() {
       .not('longitude', 'is', null)
       .not('audio_url', 'is', null)
       .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('[v0] API: Error fetching memories:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch memories', details: error.message },
+        { status: 500 }
+      );
+    }
     
     console.log('[v0] API: Fetched', memories?.length || 0, 'memories from database');
     if (memories && memories.length > 0) {
@@ -24,14 +32,6 @@ export async function GET() {
         longitude: m.longitude,
         location_city: m.location_city
       })));
-    }
-
-    if (error) {
-      console.error('Error fetching memories:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch memories', details: error.message },
-        { status: 500 }
-      );
     }
 
     // Transform to format needed for 3D map

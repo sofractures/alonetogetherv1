@@ -65,9 +65,18 @@ export async function POST(req: NextRequest) {
         .insert(insertData)
         .select('id')
         .single();
-      if (!error && data?.id) memoryId = data.id;
+      
+      if (error) {
+        console.error('[v0] API: Error creating memory record:', error);
+        console.error('[v0] API: Insert data was:', insertData);
+      } else if (data?.id) {
+        memoryId = data.id;
+        console.log('[v0] API: Memory record created successfully, ID:', memoryId);
+      } else {
+        console.warn('[v0] API: Memory record insert succeeded but no ID returned');
+      }
     } catch (error) {
-      console.error('Error creating memory record:', error);
+      console.error('[v0] API: Exception creating memory record:', error);
     }
 
     // Diagnostics: verify object exists by listing and creating a signed URL
