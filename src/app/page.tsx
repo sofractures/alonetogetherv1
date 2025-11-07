@@ -47,17 +47,15 @@ export default function Home() {
     setPendingUrl(null);
     setUploadError(null);
     
-    // If we just finished processing, mark as exploring and refresh memories
+    // If we just finished processing, mark as exploring (window should already be visible from earlier refresh)
     if (processedAudioUrl) {
       setHasStartedExploring(true); // Hide title/Start button overlay
-      console.log('[v0] Closing overlay after processing, refreshing memories...');
-      // Refresh memories one more time when closing overlay
-      fetchMemories();
-      // Also refresh after a delay to ensure DB update is complete
+      console.log('[v0] Closing overlay after processing - window should already be visible');
+      // Final refresh to ensure everything is up to date
       setTimeout(() => {
-        console.log('[v0] Final delayed refresh after closing overlay...');
+        console.log('[v0] Final refresh after closing overlay...');
         fetchMemories();
-      }, 1500);
+      }, 500);
     }
     
     setProcessedAudioUrl(null);
@@ -127,8 +125,9 @@ export default function Home() {
           setProcessedAudioUrl(pdata.signedUrl);
           
           console.log('[v0] Processing complete for memoryId:', data.memoryId);
-          console.log('[v0] Starting memory refresh sequence...');
+          console.log('[v0] Your song is ready! Starting memory refresh to show new window...');
           
+          // Immediately start refreshing memories so the new window appears while user sees "Your song is ready"
           // Refresh memories multiple times with increasing delays to catch DB updates
           fetchMemories();
           
