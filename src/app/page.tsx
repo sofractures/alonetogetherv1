@@ -50,10 +50,14 @@ export default function Home() {
     // If we just finished processing, mark as exploring and refresh memories
     if (processedAudioUrl) {
       setHasStartedExploring(true); // Hide title/Start button overlay
-      // Small delay to ensure database update has completed
+      console.log('[v0] Closing overlay after processing, refreshing memories...');
+      // Refresh memories one more time when closing overlay
+      fetchMemories();
+      // Also refresh after a delay to ensure DB update is complete
       setTimeout(() => {
+        console.log('[v0] Final delayed refresh after closing overlay...');
         fetchMemories();
-      }, 1000);
+      }, 1500);
     }
     
     setProcessedAudioUrl(null);
@@ -97,6 +101,13 @@ export default function Home() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Upload failed");
       
+      console.log('[v0] Memory record created:', {
+        memoryId: data.memoryId,
+        path: data.path,
+        hasLocation: !!location,
+        location: location
+      });
+      
       // Begin processing step
       setIsProcessing(true);
       try {
@@ -114,6 +125,16 @@ export default function Home() {
         // Processing complete - store the processed audio URL for playback
         if (pdata.signedUrl) {
           setProcessedAudioUrl(pdata.signedUrl);
+          
+          // Refresh memories immediately and again after a delay to ensure DB update is complete
+          console.log('[v0] Processing complete, refreshing memories...');
+          fetchMemories();
+          
+          // Also refresh after delay to catch any async DB updates
+          setTimeout(() => {
+            console.log('[v0] Delayed refresh of memories...');
+            fetchMemories();
+          }, 2000);
         }
       } finally {
         setIsProcessing(false);

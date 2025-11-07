@@ -28,7 +28,14 @@ export const useMemoryStore = create<MemoryStore>((set, get) => ({
       }
 
       const fetchedMemories = data.memories || [];
-      console.log('MemoryStore: Fetched', fetchedMemories.length, 'memories:', fetchedMemories);
+      console.log('[v0] MemoryStore: Fetched', fetchedMemories.length, 'memories');
+      console.log('[v0] MemoryStore: Memory details:', fetchedMemories.map(m => ({
+        id: m.id,
+        location: m.location,
+        hasAudio: !!m.audioUrl,
+        lat: m.latitude,
+        lng: m.longitude
+      })));
       set({ 
         memories: fetchedMemories,
         isLoading: false,
