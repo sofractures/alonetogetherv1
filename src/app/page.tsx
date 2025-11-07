@@ -199,11 +199,20 @@ export default function Home() {
         />
       </div>
       
-      {/* Debug Panel - Toggle with 'D' key */}
+      {/* Debug Panel Toggle Button */}
+      <button
+        onClick={() => setShowDebug(!showDebug)}
+        className="fixed top-4 right-4 z-50 bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-xs font-mono shadow-lg"
+        title="Press 'D' or click to toggle debug panel"
+      >
+        {showDebug ? 'Hide Debug' : 'Show Debug (D)'}
+      </button>
+      
+      {/* Debug Panel - Toggle with 'D' key or button */}
       {showDebug && (
-        <div className="fixed top-4 right-4 z-50 bg-black/90 text-white p-4 rounded-lg text-xs font-mono max-w-md max-h-96 overflow-auto">
+        <div className="fixed top-16 right-4 z-50 bg-black/90 text-white p-4 rounded-lg text-xs font-mono max-w-md max-h-96 overflow-auto shadow-xl border border-purple-400/30">
           <div className="flex justify-between items-center mb-2">
-            <h3 className="font-bold">Debug Info</h3>
+            <h3 className="font-bold text-purple-300">Debug Info</h3>
             <button onClick={() => setShowDebug(false)} className="text-gray-400 hover:text-white">✕</button>
           </div>
           <div className="space-y-1">
