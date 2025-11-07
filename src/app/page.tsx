@@ -9,6 +9,7 @@ import { getBrowserLocation, getIPLocation, LocationData } from "@/lib/location"
 export default function Home() {
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
+  const [hasStartedExploring, setHasStartedExploring] = useState(false);
   const [pendingBlob, setPendingBlob] = useState<Blob | null>(null);
   const [pendingUrl, setPendingUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -39,8 +40,9 @@ export default function Home() {
     setPendingUrl(null);
     setUploadError(null);
     
-    // If we just finished processing, refresh memories to show the new window
+    // If we just finished processing, mark as exploring and refresh memories
     if (processedAudioUrl) {
+      setHasStartedExploring(true); // Hide title/Start button overlay
       // Small delay to ensure database update has completed
       setTimeout(() => {
         fetchMemories();
@@ -133,8 +135,8 @@ export default function Home() {
       
       {/* Content overlays */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen">
-        {/* Title and Start button - only show when no overlays are open */}
-        {!isWelcomeOpen && !isOverlayOpen && (
+        {/* Title and Start button - only show on initial landing, before user starts exploring */}
+        {!hasStartedExploring && !isWelcomeOpen && !isOverlayOpen && (
           <div className="text-center">
             <h1 className="text-6xl font-bold text-white mb-4 drop-shadow-lg">
               Alone Together
@@ -158,7 +160,7 @@ export default function Home() {
               <p className="text-gray-300 mb-6">Record your memory to create your own personal song, or explore others on the map.</p>
               <div className="flex gap-3 justify-center">
                 <button onClick={() => { setIsWelcomeOpen(false); setIsOverlayOpen(true); }} className="px-5 py-2 rounded bg-purple-600 text-white">Create</button>
-                <button onClick={() => setIsWelcomeOpen(false)} className="px-5 py-2 rounded border border-gray-500/40 text-gray-200">Explore</button>
+                <button onClick={() => { setIsWelcomeOpen(false); setHasStartedExploring(true); }} className="px-5 py-2 rounded border border-gray-500/40 text-gray-200">Explore</button>
               </div>
             </div>
           </div>
