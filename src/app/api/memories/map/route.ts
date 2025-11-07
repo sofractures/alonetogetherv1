@@ -6,6 +6,17 @@ export const runtime = 'nodejs';
 
 export async function GET() {
   try {
+    console.log('[v0] API: Starting memory fetch...');
+    
+    // Check if Supabase client is initialized
+    if (!supabaseServer) {
+      console.error('[v0] API: Supabase client not initialized');
+      return NextResponse.json(
+        { error: 'Database connection not available' },
+        { status: 500 }
+      );
+    }
+
     // Fetch all memories with location data and processed audio
     const { data: memories, error } = await supabaseServer
       .from('memories')
@@ -16,9 +27,13 @@ export async function GET() {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('[v0] API: Error fetching memories:', error);
+      console.error('[v0] API: Supabase query error:', error);
+      console.error('[v0] API: Error code:', error.code);
+      console.error('[v0] API: Error message:', error.message);
+      console.error('[v0] API: Error details:', error.details);
+      console.error('[v0] API: Error hint:', error.hint);
       return NextResponse.json(
-        { error: 'Failed to fetch memories', details: error.message },
+        { error: 'Failed to fetch memories', details: error.message, code: error.code },
         { status: 500 }
       );
     }

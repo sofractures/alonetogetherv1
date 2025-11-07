@@ -26,7 +26,7 @@ function latLngToPosition(lat: number, lng: number, radius: number = 4.5): [numb
   const y = radius * Math.cos(phi);
   const z = radius * Math.sin(phi) * Math.sin(theta);
 
-  console.log('[v0] Position for', lat, lng, ':', [x, y, z], 'radius:', radius);
+  // Position calculated for memory window
   return [x, y, z];
 }
 
@@ -62,8 +62,6 @@ export default function MemoryGlobe({
         right: 0,
         bottom: 0
       }}
-      onMouseDown={() => console.log('[v0] Canvas container mouse down')}
-      onWheel={() => console.log('[v0] Canvas container wheel')}
     >
       <Canvas
         style={{ 
@@ -76,10 +74,6 @@ export default function MemoryGlobe({
         }}
         gl={{ antialias: true, alpha: true }}
         dpr={[1, 2]}
-        onCreated={(state) => {
-          console.log('[v0] Canvas created, gl:', state.gl);
-          console.log('[v0] Canvas size:', state.size);
-        }}
       >
         <Suspense fallback={null}>
           {/* Lighting */}
@@ -97,14 +91,6 @@ export default function MemoryGlobe({
           {memories.length > 0 ? (
             memories.map((memory) => {
               const position = latLngToPosition(memory.latitude, memory.longitude, 4.5);
-              console.log('[v0] Rendering memory window:', {
-                id: memory.id,
-                location: memory.location,
-                position: position,
-                lat: memory.latitude,
-                lng: memory.longitude,
-                hasAudio: !!memory.audioUrl
-              });
               return (
                 <MemoryPoint
                   key={memory.id}
