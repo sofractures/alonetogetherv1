@@ -36,7 +36,17 @@ export async function GET() {
 
     // Transform to format needed for 3D map
     const memoriesForMap: MemoryForMap[] = (memories || [])
-      .filter((m: Memory) => m.latitude && m.longitude)
+      .filter((m: Memory) => {
+        const hasLocation = m.latitude && m.longitude;
+        const hasAudio = m.audio_url;
+        if (!hasLocation) {
+          console.log('[v0] API: Filtered out memory (no location):', m.id);
+        }
+        if (!hasAudio) {
+          console.log('[v0] API: Filtered out memory (no audio_url):', m.id);
+        }
+        return hasLocation && hasAudio;
+      })
       .map((m: Memory) => ({
         id: m.id,
         latitude: m.latitude!,
@@ -47,6 +57,8 @@ export async function GET() {
           : undefined,
         audioUrl: m.audio_url,
       }));
+    
+    console.log('[v0] API: Returning', memoriesForMap.length, 'memories for map');
 
     return NextResponse.json(
       { 

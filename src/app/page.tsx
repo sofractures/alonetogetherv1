@@ -126,15 +126,26 @@ export default function Home() {
         if (pdata.signedUrl) {
           setProcessedAudioUrl(pdata.signedUrl);
           
-          // Refresh memories immediately and again after a delay to ensure DB update is complete
-          console.log('[v0] Processing complete, refreshing memories...');
+          console.log('[v0] Processing complete for memoryId:', data.memoryId);
+          console.log('[v0] Starting memory refresh sequence...');
+          
+          // Refresh memories multiple times with increasing delays to catch DB updates
           fetchMemories();
           
-          // Also refresh after delay to catch any async DB updates
           setTimeout(() => {
-            console.log('[v0] Delayed refresh of memories...');
+            console.log('[v0] Refresh 1: 1 second delay');
             fetchMemories();
-          }, 2000);
+          }, 1000);
+          
+          setTimeout(() => {
+            console.log('[v0] Refresh 2: 3 second delay');
+            fetchMemories();
+          }, 3000);
+          
+          setTimeout(() => {
+            console.log('[v0] Refresh 3: 5 second delay');
+            fetchMemories();
+          }, 5000);
         }
       } finally {
         setIsProcessing(false);

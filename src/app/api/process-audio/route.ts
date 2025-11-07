@@ -59,6 +59,32 @@ export async function POST(req: NextRequest) {
         .from('processed-songs')
         .list('final', { limit: 1, sortBy: { column: 'created_at', order: 'desc' } });
 
+      // Verify database update if memoryId was provided
+      if (memoryId) {
+        try {
+          const { data: updatedMemory, error: checkError } = await supabaseServer
+            .from('memories')
+            .select('id, audio_url, latitude, longitude')
+            .eq('id', memoryId)
+            .single();
+          
+          console.log('[v0] API: Verified memory after processing:', {
+            id: updatedMemory?.id,
+            hasAudioUrl: !!updatedMemory?.audio_url,
+            audioUrl: updatedMemory?.audio_url,
+            hasLocation: !!(updatedMemory?.latitude && updatedMemory?.longitude),
+            lat: updatedMemory?.latitude,
+            lng: updatedMemory?.longitude
+          });
+          
+          if (checkError) {
+            console.error('[v0] API: Error verifying memory:', checkError);
+          }
+        } catch (verifyError) {
+          console.error('[v0] API: Exception verifying memory:', verifyError);
+        }
+      }
+
       return NextResponse.json({
         processedPath: processorData.processedPath,
         signedUrl: signedUrl || processorData.signedUrl,
