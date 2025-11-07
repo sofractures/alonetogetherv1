@@ -21,10 +21,12 @@ function latLngToPosition(lat: number, lng: number, radius: number = 4.5): [numb
   const theta = (lng + 180) * (Math.PI / 180); // Longitude: -180° to 180° -> 0° to 360°
 
   // Spherical to Cartesian conversion
+  // Using standard physics convention: phi from z-axis, theta in xy-plane
   const x = radius * Math.sin(phi) * Math.cos(theta);
   const y = radius * Math.cos(phi);
   const z = radius * Math.sin(phi) * Math.sin(theta);
 
+  console.log('[v0] Position for', lat, lng, ':', [x, y, z], 'radius:', radius);
   return [x, y, z];
 }
 
@@ -34,10 +36,11 @@ export default function MemoryGlobe({
   onMemoryClick 
 }: MemoryGlobeProps) {
   // Debug: Log memories count
-  console.log('MemoryGlobe: Rendering with', memories.length, 'memories');
+  console.log('[v0] MemoryGlobe: Rendering with', memories.length, 'memories');
+  console.log('[v0] Memory data:', memories);
   
   return (
-    <div className="absolute inset-0 w-full h-full">
+    <div className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'auto' }}>
       <Canvas>
         <Suspense fallback={null}>
           {/* Lighting */}
@@ -54,14 +57,17 @@ export default function MemoryGlobe({
           {/* Memory Windows */}
           {memories.length > 0 && memories.map((memory) => {
             const position = latLngToPosition(memory.latitude, memory.longitude, 4.5);
-            console.log('Rendering memory:', memory.id, 'at position:', position);
+            console.log('[v0] Rendering memory:', memory.id, memory.location, 'at position:', position);
             return (
               <MemoryPoint
                 key={memory.id}
                 position={position}
                 windowVariant={memory.windowVariant}
                 location={memory.location}
-                onClick={() => onMemoryClick?.(memory.id)}
+                onClick={() => {
+                  console.log('[v0] Memory clicked:', memory.id);
+                  onMemoryClick?.(memory.id);
+                }}
               />
             );
           })}
@@ -72,7 +78,7 @@ export default function MemoryGlobe({
               position={[3, 2, 0]}
               windowVariant={1}
               location="Test Memory"
-              onClick={() => console.log('Test memory clicked')}
+              onClick={() => console.log('[v0] Test memory clicked')}
             />
           )}
           
@@ -81,13 +87,24 @@ export default function MemoryGlobe({
           
           {/* Orbit Controls */}
           <OrbitControls
+            makeDefault
+            enabled={true}
+            enableRotate={true}
+            enableZoom={true}
+            enablePan={false}
             minDistance={6}
             maxDistance={20}
-            enablePan={false}
             dampingFactor={0.05}
             enableDamping
             autoRotate={autoRotate}
             autoRotateSpeed={0.5}
+            rotateSpeed={0.5}
+            zoomSpeed={0.8}
+            onChange={(e) => {
+              if (e?.target) {
+                console.log('[v0] Camera moved:', e.target.object.position);
+              }
+            }}
           />
         </Suspense>
       </Canvas>

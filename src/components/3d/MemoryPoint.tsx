@@ -21,6 +21,7 @@ export default function MemoryPoint({
 }: MemoryPointProps) {
   const meshRef = useRef<Mesh>(null);
   const [hovered, setHovered] = useState(false);
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Load the appropriate window texture
   const texture = useTexture(
@@ -40,15 +41,55 @@ export default function MemoryPoint({
   const scale = hovered ? 1.3 : 1;
   const opacity = hovered ? 1 : 0.85;
 
+  const handleClick = (e: any) => {
+    e.stopPropagation();
+    e.nativeEvent?.stopImmediatePropagation?.();
+    console.log('[v0] Single click on memory:', location);
+    
+    // Clear any pending double-click timeout
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+      clickTimeoutRef.current = null;
+    }
+  };
+
+  const handleDoubleClick = (e: any) => {
+    e.stopPropagation();
+    e.nativeEvent?.stopImmediatePropagation?.();
+    console.log('[v0] Double click on memory:', location);
+    
+    // Clear single-click timeout
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+      clickTimeoutRef.current = null;
+    }
+    
+    // Trigger the onClick handler (which opens modal)
+    onClick?.();
+  };
+
+  const handlePointerOver = (e: any) => {
+    e.stopPropagation();
+    console.log('[v0] Hover start:', location);
+    setHovered(true);
+  };
+
+  const handlePointerOut = (e: any) => {
+    e.stopPropagation();
+    console.log('[v0] Hover end:', location);
+    setHovered(false);
+  };
+
   return (
     <Billboard position={position} follow={true} lockX={false} lockY={false} lockZ={false}>
       <group>
         <mesh
           ref={meshRef}
           scale={scale}
-          onClick={onClick}
-          onPointerOver={() => setHovered(true)}
-          onPointerOut={() => setHovered(false)}
+          onClick={handleClick}
+          onDoubleClick={handleDoubleClick}
+          onPointerOver={handlePointerOver}
+          onPointerOut={handlePointerOut}
         >
           <planeGeometry args={[1.5, 1.5]} />
           <meshStandardMaterial

@@ -1,6 +1,7 @@
 "use client";
 import AudioRecorder from "@/components/audio/AudioRecorder";
 import MemoryGlobe from "@/components/3d/MemoryGlobe";
+import MemoryPlayer from "@/components/audio/MemoryPlayer";
 import { useState, useEffect } from "react";
 import { getAudioController, onRecordingStartFadeOutBackground, onRecordingStopResumeBackground } from "@/lib/audio-context";
 import { useMemoryStore } from "@/store/memoryStore";
@@ -16,6 +17,7 @@ export default function Home() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [processedAudioUrl, setProcessedAudioUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isMemoryPlayerOpen, setIsMemoryPlayerOpen] = useState(false);
   
   // Memory store
   const { memories, fetchMemories, selectMemory, selectedMemory, addMemory, isLoading, error } = useMemoryStore();
@@ -129,11 +131,11 @@ export default function Home() {
       <div className="absolute inset-0 z-0">
         <MemoryGlobe 
           memories={memories} 
-          autoRotate={true}
+          autoRotate={!hasStartedExploring}
           onMemoryClick={(id) => {
+            console.log('[v0] Opening modal for memory:', id);
             selectMemory(id);
-            // TODO: Open memory player modal
-            console.log('Memory clicked:', id, selectedMemory);
+            setIsMemoryPlayerOpen(true);
           }}
         />
       </div>
@@ -236,6 +238,17 @@ export default function Home() {
           </div>
         )}
       </div>
+      
+      {/* Memory Player Modal */}
+      <MemoryPlayer
+        memory={selectedMemory}
+        isOpen={isMemoryPlayerOpen}
+        onClose={() => {
+          console.log('[v0] Closing memory player modal');
+          setIsMemoryPlayerOpen(false);
+          selectMemory(null);
+        }}
+      />
     </div>
   );
 }
