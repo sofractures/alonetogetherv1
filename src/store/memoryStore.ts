@@ -29,7 +29,7 @@ export const useMemoryStore = create<MemoryStore>((set, get) => ({
 
       const fetchedMemories = data.memories || [];
       console.log('[v0] MemoryStore: Fetched', fetchedMemories.length, 'memories');
-      console.log('[v0] MemoryStore: Memory details:', fetchedMemories.map(m => ({
+      console.log('[v0] MemoryStore: Memory details:', fetchedMemories.map((m: MemoryForMap) => ({
         id: m.id,
         location: m.location,
         hasAudio: !!m.audioUrl,
