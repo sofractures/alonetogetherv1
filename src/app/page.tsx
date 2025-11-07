@@ -1,8 +1,10 @@
 "use client";
 import AudioRecorder from "@/components/audio/AudioRecorder";
 import MemoryGlobe from "@/components/3d/MemoryGlobe";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getAudioController, onRecordingStartFadeOutBackground, onRecordingStopResumeBackground } from "@/lib/audio-context";
+import { useMemoryStore } from "@/store/memoryStore";
+import { getBrowserLocation, getIPLocation, LocationData } from "@/lib/location";
 
 export default function Home() {
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
@@ -13,6 +15,14 @@ export default function Home() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [processedAudioUrl, setProcessedAudioUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Memory store
+  const { memories, fetchMemories, selectMemory, selectedMemory, addMemory } = useMemoryStore();
+
+  // Fetch memories on mount
+  useEffect(() => {
+    fetchMemories();
+  }, [fetchMemories]);
 
   const handleStart = async () => {
     const c = getAudioController();
@@ -46,8 +56,25 @@ export default function Home() {
       setIsWelcomeOpen(false);
       setIsUploading(true);
       setUploadError(null);
+      
+      // Get user location
+      let location: LocationData | null = null;
+      try {
+        location = await getBrowserLocation();
+        // Fallback to IP-based location if browser geolocation fails
+        if (!location) {
+          location = await getIPLocation();
+        }
+      } catch (error) {
+        console.warn('Location fetch error:', error);
+      }
+      
       const form = new FormData();
       form.append("file", pendingBlob, "recording.webm");
+      if (location) {
+        form.append("location", JSON.stringify(location));
+      }
+      
       const res = await fetch("/api/memory/record", { method: "POST", body: form });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Upload failed");
@@ -69,6 +96,25 @@ export default function Home() {
         // Processing complete - store the processed audio URL for playback
         if (pdata.signedUrl) {
           setProcessedAudioUrl(pdata.signedUrl);
+          
+          // Refresh memories list to include the new memory
+          // Also add it optimistically if we have location data
+          if (data.memoryId && location) {
+            // Optimistically add to store (will be refreshed from server)
+            addMemory({
+              id: data.memoryId,
+              latitude: location.latitude,
+              longitude: location.longitude,
+              windowVariant: Math.random() > 0.5 ? 2 : 1,
+              location: location.city 
+                ? `${location.city}${location.country ? `, ${location.country}` : ''}`
+                : undefined,
+              audioUrl: pdata.processedPath,
+            });
+          }
+          
+          // Refresh full list from server
+          fetchMemories();
         }
       } finally {
         setIsProcessing(false);
@@ -85,11 +131,12 @@ export default function Home() {
       {/* 3D Scene - Always visible in background */}
       <div className="absolute inset-0 z-0">
         <MemoryGlobe 
-          memories={[]} 
+          memories={memories} 
           autoRotate={true}
           onMemoryClick={(id) => {
+            selectMemory(id);
             // TODO: Open memory player modal
-            console.log('Memory clicked:', id);
+            console.log('Memory clicked:', id, selectedMemory);
           }}
         />
       </div>

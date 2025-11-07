@@ -5,17 +5,10 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, PerspectiveCamera } from '@react-three/drei';
 import BuildingCube from './BuildingCube';
 import MemoryPoint from './MemoryPoint';
-
-interface Memory {
-  id: string;
-  latitude: number;
-  longitude: number;
-  windowVariant: 1 | 2;
-  location?: string;
-}
+import { MemoryForMap } from '@/types/memory';
 
 interface MemoryGlobeProps {
-  memories?: Memory[];
+  memories?: MemoryForMap[];
   autoRotate?: boolean;
   onMemoryClick?: (memoryId: string) => void;
 }

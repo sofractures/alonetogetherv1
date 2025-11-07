@@ -1,0 +1,61 @@
+import { create } from 'zustand';
+import { MemoryForMap } from '@/types/memory';
+
+interface MemoryStore {
+  memories: MemoryForMap[];
+  isLoading: boolean;
+  error: string | null;
+  selectedMemory: MemoryForMap | null;
+  fetchMemories: () => Promise<void>;
+  selectMemory: (id: string | null) => void;
+  addMemory: (memory: MemoryForMap) => void;
+}
+
+export const useMemoryStore = create<MemoryStore>((set, get) => ({
+  memories: [],
+  isLoading: false,
+  error: null,
+  selectedMemory: null,
+
+  fetchMemories: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await fetch('/api/memories/map');
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch memories');
+      }
+
+      set({ 
+        memories: data.memories || [],
+        isLoading: false,
+        error: null
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to fetch memories';
+      set({ 
+        error: message,
+        isLoading: false
+      });
+      console.error('Error fetching memories:', error);
+    }
+  },
+
+  selectMemory: (id: string | null) => {
+    if (!id) {
+      set({ selectedMemory: null });
+      return;
+    }
+    
+    const memory = get().memories.find(m => m.id === id);
+    set({ selectedMemory: memory || null });
+  },
+
+  addMemory: (memory: MemoryForMap) => {
+    set((state) => ({
+      memories: [memory, ...state.memories]
+    }));
+  },
+}));
+

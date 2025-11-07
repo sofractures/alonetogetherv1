@@ -31,16 +31,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: uploadError.message, attemptedPath: path }, { status: 500 });
     }
 
+    // Get location data from request body if provided
+    const body = Object.fromEntries(form.entries());
+    const locationData = body.location ? JSON.parse(body.location as string) : null;
+
     // Try creating a DB entry (optional if table exists)
     let memoryId: string | null = null;
     try {
+      const insertData: any = { raw_recording_url: path };
+      
+      // Add location data if provided
+      if (locationData) {
+        if (locationData.latitude && locationData.longitude) {
+          insertData.latitude = parseFloat(locationData.latitude);
+          insertData.longitude = parseFloat(locationData.longitude);
+        }
+        if (locationData.city) insertData.location_city = locationData.city;
+        if (locationData.country) insertData.location_country = locationData.country;
+      }
+
       const { data, error } = await supabaseServer
         .from('memories')
-        .insert({ raw_recording_url: path })
+        .insert(insertData)
         .select('id')
         .single();
       if (!error && data?.id) memoryId = data.id;
-    } catch {}
+    } catch (error) {
+      console.error('Error creating memory record:', error);
+    }
 
     // Diagnostics: verify object exists by listing and creating a signed URL
     const listRes = await supabaseServer
