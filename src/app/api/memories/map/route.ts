@@ -47,18 +47,6 @@ export async function GET() {
     }) as Memory[];
     
     console.log('[v0] API: After filtering,', memories.length, 'memories have both location and audio');
-
-    if (queryError) {
-      console.error('[v0] API: Supabase query error:', queryError);
-      console.error('[v0] API: Error code:', queryError.code);
-      console.error('[v0] API: Error message:', queryError.message);
-      console.error('[v0] API: Error details:', queryError.details);
-      console.error('[v0] API: Error hint:', queryError.hint);
-      return NextResponse.json(
-        { error: 'Failed to fetch memories', details: queryError.message, code: queryError.code },
-        { status: 500 }
-      );
-    }
     
     console.log('[v0] API: Fetched', memories?.length || 0, 'memories from database');
     if (memories && memories.length > 0) {
