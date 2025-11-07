@@ -21,7 +21,6 @@ export default function MemoryPoint({
 }: MemoryPointProps) {
   const meshRef = useRef<Mesh>(null);
   const [hovered, setHovered] = useState(false);
-  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Load the appropriate window texture
   const texture = useTexture(
@@ -41,7 +40,7 @@ export default function MemoryPoint({
   const scale = hovered ? 1.3 : 1;
   const opacity = hovered ? 1 : 0.85;
 
-  const handleClick = (e: ThreeEvent<MouseEvent>) => {
+  const handleClick = () => {
     // Don't stop propagation on single click - let OrbitControls handle it
     // Only handle double-click for opening modal
     console.log('[v0] Single click on memory:', location);

@@ -131,8 +131,6 @@ export default function MemoryGlobe({
             zoomSpeed={0.8}
             mouseButtons={{
               LEFT: 0, // Rotate
-              MIDDLE: -1, // Disable
-              RIGHT: -1, // Disable
             }}
             touches={{
               ONE: 0, // Rotate
