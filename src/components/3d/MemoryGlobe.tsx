@@ -52,8 +52,8 @@ export default function MemoryGlobe({
         right: 0,
         bottom: 0
       }}
-      onMouseDown={(e) => console.log('[v0] Canvas container mouse down')}
-      onWheel={(e) => console.log('[v0] Canvas container wheel')}
+      onMouseDown={() => console.log('[v0] Canvas container mouse down')}
+      onWheel={() => console.log('[v0] Canvas container wheel')}
     >
       <Canvas
         style={{ 

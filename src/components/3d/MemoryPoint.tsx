@@ -48,7 +48,6 @@ export default function MemoryPoint({
 
   const handleDoubleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
-    e.stopImmediatePropagation?.();
     console.log('[v0] Double click on memory:', location);
     
     // Trigger the onClick handler (which opens modal)
