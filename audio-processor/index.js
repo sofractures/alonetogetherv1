@@ -98,14 +98,15 @@ app.post('/process-audio', async (req, res) => {
     // Try signed URL method first (more reliable with new Supabase API)
     let voiceBuf = null;
     try {
-      console.log('Creating signed URL for voice recording...');
+      console.log('Creating signed URL for voice recording...', { path: normalizedInputPath, bucket: 'memory-songs' });
       const { data: signed, error: signErr } = await supabase.storage
         .from('memory-songs')
         .createSignedUrl(normalizedInputPath, 300);
       
       if (signErr || !signed?.signedUrl) {
-        console.error('Signed URL creation failed:', signErr);
+        console.error('Signed URL creation failed:', { error: signErr, path: normalizedInputPath });
         // Fallback to direct download
+        console.log('Attempting direct download fallback...');
         const { data: voiceData, error: voiceError } = await supabase.storage
           .from('memory-songs')
           .download(normalizedInputPath);
@@ -113,6 +114,11 @@ app.post('/process-audio', async (req, res) => {
         if (voiceError || !voiceData) {
           // Try to read error body if available
           let errorDetails = voiceError?.message || signErr?.message || 'Unknown error';
+          console.error('Direct download also failed:', { 
+            voiceError: voiceError?.message, 
+            signErr: signErr?.message,
+            path: normalizedInputPath 
+          });
           if (voiceError?.originalError?.body) {
             try {
               const errorBody = await voiceError.originalError.body.text();
@@ -121,29 +127,35 @@ app.post('/process-audio', async (req, res) => {
           }
           return res.status(500).json({
             error: 'Failed to download voice recording',
-            details: errorDetails
+            details: errorDetails,
+            path: normalizedInputPath
           });
         }
         voiceBuf = await toBuffer(voiceData);
+        console.log('Direct download succeeded, buffer size:', voiceBuf.length);
       } else {
         console.log('Fetching from signed URL:', signed.signedUrl.substring(0, 100) + '...');
         const resp = await fetch(signed.signedUrl);
         if (!resp.ok) {
           const errorText = await resp.text().catch(() => '');
+          console.error('Signed URL fetch failed:', { status: resp.status, statusText: resp.statusText, errorText });
           return res.status(500).json({
             error: 'Failed to download voice recording',
-            details: `HTTP ${resp.status}: ${errorText || resp.statusText}`
+            details: `HTTP ${resp.status}: ${errorText || resp.statusText}`,
+            path: normalizedInputPath
           });
         }
         voiceBuf = Buffer.from(await resp.arrayBuffer());
+        console.log('Signed URL download succeeded, buffer size:', voiceBuf.length);
       }
       await fs.writeFile(voicePath, voiceBuf);
-      console.log('Voice recording downloaded successfully');
+      console.log('Voice recording downloaded successfully, file size:', voiceBuf.length, 'bytes');
     } catch (error) {
-      console.error('Voice download exception:', error);
+      console.error('Voice download exception:', { error: error.message, stack: error.stack, path: normalizedInputPath });
       return res.status(500).json({ 
         error: 'Failed to download voice recording',
-        details: error.message || String(error) 
+        details: error.message || String(error),
+        path: normalizedInputPath
       });
     }
 
