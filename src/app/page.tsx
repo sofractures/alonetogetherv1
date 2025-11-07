@@ -129,8 +129,16 @@ export default function Home() {
     <div className="relative w-full h-screen overflow-hidden">
       {/* 3D Scene - Always visible in background */}
       <div 
-        className="absolute inset-0 z-0"
-        style={{ pointerEvents: hasStartedExploring ? 'auto' : 'none' }}
+        className="absolute inset-0"
+        style={{ 
+          pointerEvents: hasStartedExploring ? 'auto' : 'none',
+          zIndex: 0,
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0
+        }}
       >
         <MemoryGlobe 
           memories={memories} 
