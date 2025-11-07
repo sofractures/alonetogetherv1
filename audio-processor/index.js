@@ -262,10 +262,11 @@ app.post('/process-audio', async (req, res) => {
       console.log('Using single-pass loudnorm normalization (fallback)');
     }
 
-    // Processing chain: Normalize → High-pass → Compression → Echo/Reverb → Volume → Mix
-    // High-pass 80Hz, compression 3:1 (attack/release in ms), echo/reverb effect, normalize -6dB, mix with instrumental
+    // Processing chain: Normalize → High-pass → Compression → Echo/Reverb → Volume Boost → Mix
+    // Normalization makes all voices uniform, then we boost voice volume after effects for better mix balance
+    // High-pass 80Hz, compression 3:1 (attack/release in ms), echo/reverb effect, boost +6dB for mix balance
     // aecho syntax: aecho=in_gain:out_gain:delays:decays (delays/decays are pipe-separated for multiple echoes)
-    const filterComplex = `[0:a]${normalizationFilter},highpass=f=80,acompressor=ratio=3:attack=10:release=50:threshold=-10dB,aecho=0.8:0.9:1000|1800:0.3|0.25,volume=-6dB[voice];` +
+    const filterComplex = `[0:a]${normalizationFilter},highpass=f=80,acompressor=ratio=3:attack=10:release=50:threshold=-10dB,aecho=0.8:0.9:1000|1800:0.3|0.25,volume=+6dB[voice];` +
       `[voice][1:a]amix=inputs=2:duration=longest[out]`;
     
     const ffmpegArgs = [
