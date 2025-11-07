@@ -84,9 +84,11 @@ export async function GET() {
     );
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Failed to fetch memories';
-    console.error('Exception fetching memories:', message);
+    const stack = e instanceof Error ? e.stack : undefined;
+    console.error('[v0] API: Exception fetching memories:', message);
+    console.error('[v0] API: Stack trace:', stack);
     return NextResponse.json(
-      { error: message },
+      { error: message, details: stack ? 'See server logs for details' : undefined },
       { status: 500 }
     );
   }
