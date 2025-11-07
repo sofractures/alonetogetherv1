@@ -17,7 +17,7 @@ export async function GET() {
     
     console.log('[v0] API: Fetched', memories?.length || 0, 'memories from database');
     if (memories && memories.length > 0) {
-      console.log('[v0] API: Memory details:', memories.map((m: any) => ({
+      console.log('[v0] API: Memory details:', memories.map((m: Memory) => ({
         id: m.id,
         audio_url: m.audio_url,
         latitude: m.latitude,
