@@ -17,23 +17,45 @@ export async function GET() {
       );
     }
 
-    // Fetch all memories with location data and processed audio
-    const { data: memories, error } = await supabaseServer
+    // Fetch all memories - we know audio_url exists because playback works
+    // Filter in JavaScript to avoid PostgREST syntax issues
+    const { data: allMemories, error: queryError } = await supabaseServer
       .from('memories')
       .select('*')
-      .not('latitude', 'is', null)
-      .not('longitude', 'is', null)
-      .not('audio_url', 'is', null)
       .order('created_at', { ascending: false });
+    
+    if (queryError) {
+      console.error('[v0] API: Query failed:', queryError);
+      throw queryError;
+    }
+    
+    console.log('[v0] API: Fetched', allMemories?.length || 0, 'total memories from database');
+    
+    // Filter for memories with location and audio_url (we know these exist since playback works)
+    const memories = (allMemories || []).filter((m: Memory) => {
+      const hasLocation = m.latitude != null && m.longitude != null;
+      const hasAudio = m.audio_url != null && m.audio_url.trim() !== '';
+      
+      if (!hasLocation) {
+        console.log('[v0] API: Filtered out memory (no location):', m.id, 'lat:', m.latitude, 'lng:', m.longitude);
+      }
+      if (!hasAudio) {
+        console.log('[v0] API: Filtered out memory (no audio_url):', m.id, 'audio_url:', m.audio_url);
+      }
+      
+      return hasLocation && hasAudio;
+    }) as Memory[];
+    
+    console.log('[v0] API: After filtering,', memories.length, 'memories have both location and audio');
 
-    if (error) {
-      console.error('[v0] API: Supabase query error:', error);
-      console.error('[v0] API: Error code:', error.code);
-      console.error('[v0] API: Error message:', error.message);
-      console.error('[v0] API: Error details:', error.details);
-      console.error('[v0] API: Error hint:', error.hint);
+    if (queryError) {
+      console.error('[v0] API: Supabase query error:', queryError);
+      console.error('[v0] API: Error code:', queryError.code);
+      console.error('[v0] API: Error message:', queryError.message);
+      console.error('[v0] API: Error details:', queryError.details);
+      console.error('[v0] API: Error hint:', queryError.hint);
       return NextResponse.json(
-        { error: 'Failed to fetch memories', details: error.message, code: error.code },
+        { error: 'Failed to fetch memories', details: queryError.message, code: queryError.code },
         { status: 500 }
       );
     }
