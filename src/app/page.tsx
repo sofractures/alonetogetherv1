@@ -218,7 +218,15 @@ export default function Home() {
           <div className="space-y-1">
             <div>Memories: {memories.length}</div>
             <div>Loading: {isLoading ? 'Yes' : 'No'}</div>
-            <div>Error: {error || 'None'}</div>
+            <div className={error ? 'text-red-400' : ''}>
+              Error: {error || 'None'}
+            </div>
+            {error && (
+              <div className="mt-2 pt-2 border-t border-gray-600 text-red-300 text-xs break-all">
+                <div className="font-bold">API Error Details:</div>
+                <div>{error}</div>
+              </div>
+            )}
             <div>Has Started Exploring: {hasStartedExploring ? 'Yes' : 'No'}</div>
             <div>Processing: {isProcessing ? 'Yes' : 'No'}</div>
             <div>Processed Audio: {processedAudioUrl ? 'Yes' : 'No'}</div>
