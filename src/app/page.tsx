@@ -20,7 +20,7 @@ export default function Home() {
   const [isMemoryPlayerOpen, setIsMemoryPlayerOpen] = useState(false);
   
   // Memory store
-  const { memories, fetchMemories, selectMemory, selectedMemory, addMemory, isLoading, error } = useMemoryStore();
+  const { memories, fetchMemories, selectMemory, selectedMemory } = useMemoryStore();
 
   // Fetch memories on mount
   useEffect(() => {

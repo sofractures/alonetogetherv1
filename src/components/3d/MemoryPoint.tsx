@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, ThreeEvent } from '@react-three/fiber';
 import { Mesh } from 'three';
 import { Billboard, Text } from '@react-three/drei';
 import { useTexture } from '@react-three/drei';
@@ -41,9 +41,8 @@ export default function MemoryPoint({
   const scale = hovered ? 1.3 : 1;
   const opacity = hovered ? 1 : 0.85;
 
-  const handleClick = (e: any) => {
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
-    e.nativeEvent?.stopImmediatePropagation?.();
     console.log('[v0] Single click on memory:', location);
     
     // Clear any pending double-click timeout
@@ -53,9 +52,8 @@ export default function MemoryPoint({
     }
   };
 
-  const handleDoubleClick = (e: any) => {
+  const handleDoubleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
-    e.nativeEvent?.stopImmediatePropagation?.();
     console.log('[v0] Double click on memory:', location);
     
     // Clear single-click timeout
@@ -68,13 +66,13 @@ export default function MemoryPoint({
     onClick?.();
   };
 
-  const handlePointerOver = (e: any) => {
+  const handlePointerOver = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     console.log('[v0] Hover start:', location);
     setHovered(true);
   };
 
-  const handlePointerOut = (e: any) => {
+  const handlePointerOut = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     console.log('[v0] Hover end:', location);
     setHovered(false);
