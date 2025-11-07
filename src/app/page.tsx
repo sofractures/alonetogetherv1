@@ -18,12 +18,17 @@ export default function Home() {
   const [isProcessing, setIsProcessing] = useState(false);
   
   // Memory store
-  const { memories, fetchMemories, selectMemory, selectedMemory, addMemory } = useMemoryStore();
+  const { memories, fetchMemories, selectMemory, selectedMemory, addMemory, isLoading, error } = useMemoryStore();
 
   // Fetch memories on mount
   useEffect(() => {
     fetchMemories();
   }, [fetchMemories]);
+  
+  // Debug: Log memories
+  useEffect(() => {
+    console.log('Page: Current memories count:', memories.length, memories);
+  }, [memories]);
 
   const handleStart = async () => {
     const c = getAudioController();

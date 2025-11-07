@@ -28,10 +28,12 @@ export default function MemoryPoint({
   );
 
   // Floating animation (sine wave on Y-axis)
+  // Note: Billboard handles positioning, so we animate within the Billboard's local space
   useFrame((state) => {
     if (meshRef.current) {
       const time = state.clock.getElapsedTime();
-      meshRef.current.position.y = position[1] + Math.sin(time * 0.5) * 0.1;
+      // Animate in local space (relative to Billboard position)
+      meshRef.current.position.y = Math.sin(time * 0.5) * 0.1;
     }
   });
 
@@ -40,33 +42,38 @@ export default function MemoryPoint({
 
   return (
     <Billboard position={position} follow={true} lockX={false} lockY={false} lockZ={false}>
-      <mesh
-        ref={meshRef}
-        scale={scale}
-        onClick={onClick}
-        onPointerOver={() => setHovered(true)}
-        onPointerOut={() => setHovered(false)}
-      >
-        <planeGeometry args={[1, 1]} />
-        <meshStandardMaterial
-          map={texture}
-          transparent
-          opacity={opacity}
-          emissive={hovered ? '#a78bfa' : '#000000'}
-          emissiveIntensity={hovered ? 0.3 : 0}
-        />
-      </mesh>
-      {hovered && location && (
-        <Text
-          position={[0, -0.7, 0]}
-          fontSize={0.15}
-          color="#a78bfa"
-          anchorX="center"
-          anchorY="middle"
+      <group>
+        <mesh
+          ref={meshRef}
+          scale={scale}
+          onClick={onClick}
+          onPointerOver={() => setHovered(true)}
+          onPointerOut={() => setHovered(false)}
         >
-          {location}
-        </Text>
-      )}
+          <planeGeometry args={[1.5, 1.5]} />
+          <meshStandardMaterial
+            map={texture}
+            transparent
+            opacity={opacity}
+            emissive={hovered ? '#a78bfa' : '#000000'}
+            emissiveIntensity={hovered ? 0.5 : 0}
+            side={2} // DoubleSide - render both sides
+          />
+        </mesh>
+        {hovered && location && (
+          <Text
+            position={[0, -1, 0]}
+            fontSize={0.2}
+            color="#a78bfa"
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.02}
+            outlineColor="#000000"
+          >
+            {location}
+          </Text>
+        )}
+      </group>
     </Billboard>
   );
 }

@@ -14,11 +14,14 @@ interface MemoryGlobeProps {
 }
 
 // Convert lat/lng to 3D spherical coordinates
-function latLngToPosition(lat: number, lng: number, radius: number = 5): [number, number, number] {
-  const phi = (90 - lat) * (Math.PI / 180); // Convert latitude to radians
-  const theta = (lng + 180) * (Math.PI / 180); // Convert longitude to radians
+// Uses standard spherical coordinate conversion for globe mapping
+function latLngToPosition(lat: number, lng: number, radius: number = 4.5): [number, number, number] {
+  // Convert to radians
+  const phi = (90 - lat) * (Math.PI / 180); // Latitude: 90° = north pole, -90° = south pole
+  const theta = (lng + 180) * (Math.PI / 180); // Longitude: -180° to 180° -> 0° to 360°
 
-  const x = -(radius * Math.sin(phi) * Math.cos(theta));
+  // Spherical to Cartesian conversion
+  const x = radius * Math.sin(phi) * Math.cos(theta);
   const y = radius * Math.cos(phi);
   const z = radius * Math.sin(phi) * Math.sin(theta);
 
@@ -30,24 +33,28 @@ export default function MemoryGlobe({
   autoRotate = false,
   onMemoryClick 
 }: MemoryGlobeProps) {
+  // Debug: Log memories count
+  console.log('MemoryGlobe: Rendering with', memories.length, 'memories');
+  
   return (
     <div className="absolute inset-0 w-full h-full">
       <Canvas>
         <Suspense fallback={null}>
           {/* Lighting */}
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[10, 10, 5]} intensity={1} />
-          <pointLight position={[-10, -10, -5]} intensity={0.5} color="#a78bfa" />
+          <ambientLight intensity={0.6} />
+          <directionalLight position={[10, 10, 5]} intensity={1.2} />
+          <pointLight position={[-10, -10, -5]} intensity={0.6} color="#a78bfa" />
           
           {/* Camera */}
-          <PerspectiveCamera makeDefault position={[0, 0, 10]} fov={50} />
+          <PerspectiveCamera makeDefault position={[0, 0, 8]} fov={60} />
           
           {/* Central Building Cube */}
           <BuildingCube autoRotate={autoRotate} rotationSpeed={0.2} />
           
           {/* Memory Windows */}
-          {memories.map((memory) => {
-            const position = latLngToPosition(memory.latitude, memory.longitude, 5);
+          {memories.length > 0 && memories.map((memory) => {
+            const position = latLngToPosition(memory.latitude, memory.longitude, 4.5);
+            console.log('Rendering memory:', memory.id, 'at position:', position);
             return (
               <MemoryPoint
                 key={memory.id}
@@ -58,6 +65,16 @@ export default function MemoryGlobe({
               />
             );
           })}
+          
+          {/* Debug: Show test memory if no memories exist (for testing rendering) */}
+          {memories.length === 0 && (
+            <MemoryPoint
+              position={[3, 2, 0]}
+              windowVariant={1}
+              location="Test Memory"
+              onClick={() => console.log('Test memory clicked')}
+            />
+          )}
           
           {/* Environment for better lighting */}
           <Environment preset="night" />

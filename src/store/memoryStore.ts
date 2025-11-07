@@ -27,8 +27,10 @@ export const useMemoryStore = create<MemoryStore>((set, get) => ({
         throw new Error(data.error || 'Failed to fetch memories');
       }
 
+      const fetchedMemories = data.memories || [];
+      console.log('MemoryStore: Fetched', fetchedMemories.length, 'memories:', fetchedMemories);
       set({ 
-        memories: data.memories || [],
+        memories: fetchedMemories,
         isLoading: false,
         error: null
       });
