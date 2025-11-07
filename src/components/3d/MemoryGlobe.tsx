@@ -94,32 +94,36 @@ export default function MemoryGlobe({
           <BuildingCube autoRotate={autoRotate} rotationSpeed={0.2} />
           
           {/* Memory Windows */}
-          {memories.length > 0 && memories.map((memory) => {
-            const position = latLngToPosition(memory.latitude, memory.longitude, 4.5);
-            console.log('[v0] Rendering memory:', memory.id, memory.location, 'at position:', position);
-            return (
-              <MemoryPoint
-                key={memory.id}
-                position={position}
-                windowVariant={memory.windowVariant}
-                location={memory.location}
-                onClick={() => {
-                  console.log('[v0] Memory clicked:', memory.id);
-                  onMemoryClick?.(memory.id);
-                }}
-              />
-            );
-          })}
-          
-          {/* Debug: Show test memory if no memories exist (for testing rendering) */}
-          {/* Temporarily disabled - only show if explicitly needed for debugging */}
-          {false && memories.length === 0 && (
-            <MemoryPoint
-              position={[3, 2, 0]}
-              windowVariant={1}
-              location="Test Memory"
-              onClick={() => console.log('[v0] Test memory clicked')}
-            />
+          {memories.length > 0 ? (
+            memories.map((memory) => {
+              const position = latLngToPosition(memory.latitude, memory.longitude, 4.5);
+              console.log('[v0] Rendering memory window:', {
+                id: memory.id,
+                location: memory.location,
+                position: position,
+                lat: memory.latitude,
+                lng: memory.longitude,
+                hasAudio: !!memory.audioUrl
+              });
+              return (
+                <MemoryPoint
+                  key={memory.id}
+                  position={position}
+                  windowVariant={memory.windowVariant}
+                  location={memory.location}
+                  onClick={() => {
+                    console.log('[v0] Memory clicked:', memory.id);
+                    onMemoryClick?.(memory.id);
+                  }}
+                />
+              );
+            })
+          ) : (
+            // Debug indicator when no memories - red cube at top
+            <mesh position={[0, 3, 0]}>
+              <boxGeometry args={[0.3, 0.3, 0.3]} />
+              <meshStandardMaterial color="red" />
+            </mesh>
           )}
           
           {/* Environment for better lighting */}
