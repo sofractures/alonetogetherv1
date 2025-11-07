@@ -38,6 +38,15 @@ export default function Home() {
     setPendingBlob(null);
     setPendingUrl(null);
     setUploadError(null);
+    
+    // If we just finished processing, refresh memories to show the new window
+    if (processedAudioUrl) {
+      // Small delay to ensure database update has completed
+      setTimeout(() => {
+        fetchMemories();
+      }, 1000);
+    }
+    
     setProcessedAudioUrl(null);
     
     await onRecordingStopResumeBackground();
@@ -96,25 +105,6 @@ export default function Home() {
         // Processing complete - store the processed audio URL for playback
         if (pdata.signedUrl) {
           setProcessedAudioUrl(pdata.signedUrl);
-          
-          // Refresh memories list to include the new memory
-          // Also add it optimistically if we have location data
-          if (data.memoryId && location) {
-            // Optimistically add to store (will be refreshed from server)
-            addMemory({
-              id: data.memoryId,
-              latitude: location.latitude,
-              longitude: location.longitude,
-              windowVariant: Math.random() > 0.5 ? 2 : 1,
-              location: location.city 
-                ? `${location.city}${location.country ? `, ${location.country}` : ''}`
-                : undefined,
-              audioUrl: pdata.processedPath,
-            });
-          }
-          
-          // Refresh full list from server
-          fetchMemories();
         }
       } finally {
         setIsProcessing(false);

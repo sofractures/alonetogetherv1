@@ -6,12 +6,13 @@ export const runtime = 'nodejs';
 
 export async function GET() {
   try {
-    // Fetch all memories with location data
+    // Fetch all memories with location data and processed audio
     const { data: memories, error } = await supabaseServer
       .from('memories')
       .select('*')
       .not('latitude', 'is', null)
       .not('longitude', 'is', null)
+      .not('audio_url', 'is', null)
       .order('created_at', { ascending: false });
 
     if (error) {

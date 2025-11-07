@@ -44,7 +44,11 @@ export async function POST(req: NextRequest) {
         longitude?: number;
         location_city?: string;
         location_country?: string;
-      } = { raw_recording_url: path };
+        window_variant?: number;
+      } = { 
+        raw_recording_url: path,
+        window_variant: Math.floor(Math.random() * 2) + 1, // Random 1 or 2
+      };
       
       // Add location data if provided
       if (locationData) {
