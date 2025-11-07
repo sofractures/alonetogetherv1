@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Mesh, TextureLoader } from 'three';
+import { Mesh } from 'three';
 import { useTexture } from '@react-three/drei';
 
 interface BuildingCubeProps {

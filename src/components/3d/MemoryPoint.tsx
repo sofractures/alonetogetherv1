@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Mesh, Vector3 } from 'three';
+import { Mesh } from 'three';
 import { Billboard, Text } from '@react-three/drei';
 import { useTexture } from '@react-three/drei';
 

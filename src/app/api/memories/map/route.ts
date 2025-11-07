@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
 import { Memory, MemoryForMap } from '@/types/memory';
 
 export const runtime = 'nodejs';
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     // Fetch all memories with location data
     const { data: memories, error } = await supabaseServer

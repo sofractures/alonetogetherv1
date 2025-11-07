@@ -38,7 +38,13 @@ export async function POST(req: NextRequest) {
     // Try creating a DB entry (optional if table exists)
     let memoryId: string | null = null;
     try {
-      const insertData: any = { raw_recording_url: path };
+      const insertData: {
+        raw_recording_url: string;
+        latitude?: number;
+        longitude?: number;
+        location_city?: string;
+        location_country?: string;
+      } = { raw_recording_url: path };
       
       // Add location data if provided
       if (locationData) {
