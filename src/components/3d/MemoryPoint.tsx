@@ -42,25 +42,15 @@ export default function MemoryPoint({
   const opacity = hovered ? 1 : 0.85;
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation();
+    // Don't stop propagation on single click - let OrbitControls handle it
+    // Only handle double-click for opening modal
     console.log('[v0] Single click on memory:', location);
-    
-    // Clear any pending double-click timeout
-    if (clickTimeoutRef.current) {
-      clearTimeout(clickTimeoutRef.current);
-      clickTimeoutRef.current = null;
-    }
   };
 
   const handleDoubleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
+    e.stopImmediatePropagation?.();
     console.log('[v0] Double click on memory:', location);
-    
-    // Clear single-click timeout
-    if (clickTimeoutRef.current) {
-      clearTimeout(clickTimeoutRef.current);
-      clickTimeoutRef.current = null;
-    }
     
     // Trigger the onClick handler (which opens modal)
     onClick?.();

@@ -40,8 +40,37 @@ export default function MemoryGlobe({
   console.log('[v0] Memory data:', memories);
   
   return (
-    <div className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'auto' }}>
-      <Canvas>
+    <div 
+      className="absolute inset-0 w-full h-full" 
+      style={{ 
+        pointerEvents: 'auto', 
+        touchAction: 'none',
+        zIndex: 0,
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0
+      }}
+      onMouseDown={(e) => console.log('[v0] Canvas container mouse down')}
+      onWheel={(e) => console.log('[v0] Canvas container wheel')}
+    >
+      <Canvas
+        style={{ 
+          display: 'block', 
+          width: '100%', 
+          height: '100%',
+          position: 'absolute',
+          top: 0,
+          left: 0
+        }}
+        gl={{ antialias: true, alpha: true }}
+        dpr={[1, 2]}
+        onCreated={(state) => {
+          console.log('[v0] Canvas created, gl:', state.gl);
+          console.log('[v0] Canvas size:', state.size);
+        }}
+      >
         <Suspense fallback={null}>
           {/* Lighting */}
           <ambientLight intensity={0.6} />
@@ -100,6 +129,15 @@ export default function MemoryGlobe({
             autoRotateSpeed={0.5}
             rotateSpeed={0.5}
             zoomSpeed={0.8}
+            mouseButtons={{
+              LEFT: 0, // Rotate
+              MIDDLE: -1, // Disable
+              RIGHT: -1, // Disable
+            }}
+            touches={{
+              ONE: 0, // Rotate
+              TWO: 2, // Zoom
+            }}
             onChange={(e) => {
               if (e?.target) {
                 console.log('[v0] Camera moved:', e.target.object.position);

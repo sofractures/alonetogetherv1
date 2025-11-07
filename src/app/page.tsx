@@ -128,7 +128,10 @@ export default function Home() {
   return (
     <div className="relative w-full h-screen overflow-hidden">
       {/* 3D Scene - Always visible in background */}
-      <div className="absolute inset-0 z-0">
+      <div 
+        className="absolute inset-0 z-0"
+        style={{ pointerEvents: hasStartedExploring ? 'auto' : 'none' }}
+      >
         <MemoryGlobe 
           memories={memories} 
           autoRotate={!hasStartedExploring}
@@ -141,7 +144,10 @@ export default function Home() {
       </div>
       
       {/* Content overlays */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen">
+      <div 
+        className="relative z-10 flex flex-col items-center justify-center min-h-screen"
+        style={{ pointerEvents: (isWelcomeOpen || isOverlayOpen || (!hasStartedExploring && !isWelcomeOpen && !isOverlayOpen)) ? 'auto' : 'none' }}
+      >
         {/* Title and Start button - only show on initial landing, before user starts exploring */}
         {!hasStartedExploring && !isWelcomeOpen && !isOverlayOpen && (
           <div className="text-center">
