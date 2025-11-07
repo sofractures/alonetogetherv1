@@ -98,14 +98,15 @@ app.post('/process-audio', async (req, res) => {
     // Try signed URL method first (more reliable with new Supabase API)
     let voiceBuf = null;
     try {
-      console.log('Creating signed URL for voice recording...');
+      console.log('Creating signed URL for voice recording...', { path: normalizedInputPath, bucket: 'memory-songs' });
       const { data: signed, error: signErr } = await supabase.storage
         .from('memory-songs')
         .createSignedUrl(normalizedInputPath, 300);
       
       if (signErr || !signed?.signedUrl) {
-        console.error('Signed URL creation failed:', signErr);
+        console.error('Signed URL creation failed:', { error: signErr, path: normalizedInputPath });
         // Fallback to direct download
+        console.log('Attempting direct download fallback...');
         const { data: voiceData, error: voiceError } = await supabase.storage
           .from('memory-songs')
           .download(normalizedInputPath);
@@ -113,6 +114,11 @@ app.post('/process-audio', async (req, res) => {
         if (voiceError || !voiceData) {
           // Try to read error body if available
           let errorDetails = voiceError?.message || signErr?.message || 'Unknown error';
+          console.error('Direct download also failed:', { 
+            voiceError: voiceError?.message, 
+            signErr: signErr?.message,
+            path: normalizedInputPath 
+          });
           if (voiceError?.originalError?.body) {
             try {
               const errorBody = await voiceError.originalError.body.text();
@@ -121,29 +127,35 @@ app.post('/process-audio', async (req, res) => {
           }
           return res.status(500).json({
             error: 'Failed to download voice recording',
-            details: errorDetails
+            details: errorDetails,
+            path: normalizedInputPath
           });
         }
         voiceBuf = await toBuffer(voiceData);
+        console.log('Direct download succeeded, buffer size:', voiceBuf.length);
       } else {
         console.log('Fetching from signed URL:', signed.signedUrl.substring(0, 100) + '...');
         const resp = await fetch(signed.signedUrl);
         if (!resp.ok) {
           const errorText = await resp.text().catch(() => '');
+          console.error('Signed URL fetch failed:', { status: resp.status, statusText: resp.statusText, errorText });
           return res.status(500).json({
             error: 'Failed to download voice recording',
-            details: `HTTP ${resp.status}: ${errorText || resp.statusText}`
+            details: `HTTP ${resp.status}: ${errorText || resp.statusText}`,
+            path: normalizedInputPath
           });
         }
         voiceBuf = Buffer.from(await resp.arrayBuffer());
+        console.log('Signed URL download succeeded, buffer size:', voiceBuf.length);
       }
       await fs.writeFile(voicePath, voiceBuf);
-      console.log('Voice recording downloaded successfully');
+      console.log('Voice recording downloaded successfully, file size:', voiceBuf.length, 'bytes');
     } catch (error) {
-      console.error('Voice download exception:', error);
+      console.error('Voice download exception:', { error: error.message, stack: error.stack, path: normalizedInputPath });
       return res.status(500).json({ 
         error: 'Failed to download voice recording',
-        details: error.message || String(error) 
+        details: error.message || String(error),
+        path: normalizedInputPath
       });
     }
 
@@ -198,11 +210,76 @@ app.post('/process-audio', async (req, res) => {
       });
     }
 
-    // 3) Process with FFmpeg (validated parameters)
-    // High-pass 80Hz, compression 3:1 (attack/release in ms), echo/reverb effect, normalize -6dB, mix with instrumental
+    // 3) Two-pass loudnorm normalization for consistent input levels
+    // Pass 1: Analyze audio to measure current loudness characteristics
+    const pass1Args = [
+      '-i', voicePath,
+      '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11:print_format=json',
+      '-f', 'null',
+      '-'
+    ];
+
+    console.log('Running loudnorm analysis pass...');
+    let loudnormStats = null;
+    try {
+      const { stdout, stderr } = await execFileAsync('ffmpeg', pass1Args, { 
+        timeout: 300000,
+        maxBuffer: 10 * 1024 * 1024 // 10MB buffer for JSON output
+      });
+      
+      // FFmpeg outputs loudnorm stats to stderr in JSON format
+      // Extract JSON from stderr (it's mixed with other output)
+      const stderrStr = stderr || '';
+      const jsonMatch = stderrStr.match(/\{[\s\S]*"input_i"[\s\S]*\}/);
+      
+      if (jsonMatch) {
+        try {
+          loudnormStats = JSON.parse(jsonMatch[0]);
+          console.log('Loudnorm analysis complete:', {
+            input_i: loudnormStats.input_i,
+            input_tp: loudnormStats.input_tp,
+            input_lra: loudnormStats.input_lra
+          });
+        } catch (parseError) {
+          console.error('Failed to parse loudnorm stats JSON:', parseError);
+          // Fall back to single-pass if JSON parsing fails
+          loudnormStats = null;
+        }
+      } else {
+        console.warn('Could not extract loudnorm stats from FFmpeg output, falling back to single-pass');
+        loudnormStats = null;
+      }
+    } catch (error) {
+      console.error('Loudnorm analysis pass error:', error.stderr || error.message);
+      // Continue with single-pass normalization if analysis fails
+      loudnormStats = null;
+    }
+
+    // Pass 2: Apply normalization using measured stats, then process with effects
+    // If we have stats from pass 1, use them for accurate normalization
+    // Otherwise, use single-pass loudnorm as fallback
+    let normalizationFilter;
+    if (loudnormStats && loudnormStats.input_i !== undefined) {
+      // Two-pass: Use measured values for precise normalization
+      normalizationFilter = `loudnorm=I=-16:TP=-1.5:LRA=11:` +
+        `measured_I=${loudnormStats.input_i}:` +
+        `measured_TP=${loudnormStats.input_tp}:` +
+        `measured_LRA=${loudnormStats.input_lra}:` +
+        `measured_thresh=${loudnormStats.input_thresh}:` +
+        `offset=${loudnormStats.target_offset}`;
+      console.log('Using two-pass loudnorm normalization');
+    } else {
+      // Single-pass fallback: Still normalize, but less precise
+      normalizationFilter = 'loudnorm=I=-16:TP=-1.5:LRA=11:linear=true';
+      console.log('Using single-pass loudnorm normalization (fallback)');
+    }
+
+    // Processing chain: Normalize → High-pass → Compression → Echo/Reverb → Volume Boost → Mix
+    // Normalization makes all voices uniform, then we boost voice volume after effects for better mix balance
+    // High-pass 80Hz, compression 3:1 (attack/release in ms), echo/reverb effect, boost +6dB for mix balance
     // aecho syntax: aecho=in_gain:out_gain:delays:decays (delays/decays are pipe-separated for multiple echoes)
-    const filterComplex = '[0:a]highpass=f=80,acompressor=ratio=3:attack=10:release=50:threshold=-10dB,aecho=0.8:0.9:1000|1800:0.3|0.25,volume=-6dB[voice];' +
-      '[voice][1:a]amix=inputs=2:duration=longest[out]';
+    const filterComplex = `[0:a]${normalizationFilter},highpass=f=80,acompressor=ratio=3:attack=10:release=50:threshold=-10dB,aecho=0.8:0.9:1000|1800:0.3|0.25,volume=+6dB[voice];` +
+      `[voice][1:a]amix=inputs=2:duration=longest[out]`;
     
     const ffmpegArgs = [
       '-i', voicePath,
@@ -216,8 +293,10 @@ app.post('/process-audio', async (req, res) => {
       outputPath
     ];
 
+    console.log('Running FFmpeg processing pass with normalization and effects...');
     try {
       await execFileAsync('ffmpeg', ffmpegArgs, { timeout: 300000 }); // 5 minute timeout
+      console.log('FFmpeg processing complete');
     } catch (error) {
       console.error('FFmpeg error:', error.stderr);
       return res.status(500).json({ 

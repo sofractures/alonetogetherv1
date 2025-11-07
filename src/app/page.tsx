@@ -10,7 +10,7 @@ export default function Home() {
   const [pendingUrl, setPendingUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  // Removed uploadedPath (unused)
+  const [processedAudioUrl, setProcessedAudioUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleStart = async () => {
@@ -27,6 +27,7 @@ export default function Home() {
     setPendingBlob(null);
     setPendingUrl(null);
     setUploadError(null);
+    setProcessedAudioUrl(null);
     
     await onRecordingStopResumeBackground();
   };
@@ -64,9 +65,10 @@ export default function Home() {
           setUploadError(msg);
           throw new Error(msg);
         }
-        // Processing complete - close overlay and return to home
-        // The 3D map will handle displaying the new memory when implemented
-        await closeOverlay();
+        // Processing complete - store the processed audio URL for playback
+        if (pdata.signedUrl) {
+          setProcessedAudioUrl(pdata.signedUrl);
+        }
       } finally {
         setIsProcessing(false);
       }
@@ -162,7 +164,7 @@ export default function Home() {
             <div
               className="absolute inset-0 bg-black/60"
               onClick={() => {
-                if (isUploading || isProcessing) return;
+                if (isUploading || isProcessing || processedAudioUrl) return;
                 closeOverlay();
               }}
             />
@@ -174,7 +176,7 @@ export default function Home() {
                 <AudioRecorder onComplete={onRecorderComplete} onStartRecording={onRecordingStartFadeOutBackground} />
               )}
 
-              {pendingBlob && (
+              {pendingBlob && !processedAudioUrl && (
                 <div>
                   <div className="text-gray-300 text-sm mb-2">Preview your recording</div>
                   {pendingUrl && <audio src={pendingUrl} controls className="w-full" />}
@@ -191,9 +193,31 @@ export default function Home() {
                 </div>
               )}
 
-              {isProcessing && (
+              {isProcessing && !processedAudioUrl && (
                 <div className="mt-4 p-4 rounded bg-purple-900/30 border border-purple-400/30 text-purple-100">
                   Processing… we are creating your song.
+                </div>
+              )}
+
+              {processedAudioUrl && (
+                <div className="mt-4 p-4 rounded bg-purple-900/30 border border-purple-400/30">
+                  <div className="text-purple-100 font-semibold mb-3">Your song is ready!</div>
+                  <audio src={processedAudioUrl} controls className="w-full mb-4" />
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={closeOverlay} 
+                      className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 transition-colors"
+                    >
+                      Done
+                    </button>
+                    <a 
+                      href={processedAudioUrl} 
+                      download="my-song.mp3"
+                      className="px-4 py-2 rounded border border-purple-400/40 text-purple-200 hover:bg-purple-800/30 transition-colors"
+                    >
+                      Download
+                    </a>
+                  </div>
                 </div>
               )}
             </div>
