@@ -102,7 +102,8 @@ export default function MemoryGlobe({
           })}
           
           {/* Debug: Show test memory if no memories exist (for testing rendering) */}
-          {memories.length === 0 && (
+          {/* Temporarily disabled - only show if explicitly needed for debugging */}
+          {false && memories.length === 0 && (
             <MemoryPoint
               position={[3, 2, 0]}
               windowVariant={1}

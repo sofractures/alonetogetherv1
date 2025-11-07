@@ -14,6 +14,17 @@ export async function GET() {
       .not('longitude', 'is', null)
       .not('audio_url', 'is', null)
       .order('created_at', { ascending: false });
+    
+    console.log('[v0] API: Fetched', memories?.length || 0, 'memories from database');
+    if (memories && memories.length > 0) {
+      console.log('[v0] API: Memory details:', memories.map((m: any) => ({
+        id: m.id,
+        audio_url: m.audio_url,
+        latitude: m.latitude,
+        longitude: m.longitude,
+        location_city: m.location_city
+      })));
+    }
 
     if (error) {
       console.error('Error fetching memories:', error);
