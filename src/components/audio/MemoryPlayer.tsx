@@ -21,14 +21,23 @@ export default function MemoryPlayer({ memory, isOpen, onClose }: MemoryPlayerPr
       return;
     }
 
+    console.log('[v0] MemoryPlayer: Opening modal for memory:', {
+      id: memory.id,
+      location: memory.location,
+      audioUrl: memory.audioUrl,
+      hasAudioUrl: !!memory.audioUrl
+    });
+
     // If audioUrl is already a full URL, use it directly
     if (memory.audioUrl?.startsWith('http')) {
+      console.log('[v0] MemoryPlayer: Using direct URL:', memory.audioUrl);
       setAudioUrl(memory.audioUrl);
       return;
     }
 
     // Otherwise, fetch signed URL from API
     if (memory.audioUrl) {
+      console.log('[v0] MemoryPlayer: Fetching signed URL for memory ID:', memory.id, 'audioUrl path:', memory.audioUrl);
       setIsLoadingAudio(true);
       fetch(`/api/memory/${memory.id}/audio`)
         .then(res => res.json())

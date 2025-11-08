@@ -65,6 +65,16 @@ export const useMemoryStore = create<MemoryStore>((set, get) => ({
     }
     
     const memory = get().memories.find(m => m.id === id);
+    if (memory) {
+      console.log('[v0] MemoryStore: Selected memory:', {
+        id: memory.id,
+        location: memory.location,
+        hasAudio: !!memory.audioUrl,
+        audioUrl: memory.audioUrl
+      });
+    } else {
+      console.warn('[v0] MemoryStore: Memory not found for ID:', id, 'Available IDs:', get().memories.map(m => m.id));
+    }
     set({ selectedMemory: memory || null });
   },
 
