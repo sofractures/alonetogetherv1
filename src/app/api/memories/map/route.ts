@@ -98,7 +98,12 @@ export async function GET() {
     console.error('[v0] API: Stack trace:', stack);
     
     // If it's a Supabase error, include more details
-    const supabaseError = e as any;
+    interface SupabaseError {
+      message?: string;
+      code?: string;
+      hint?: string;
+    }
+    const supabaseError = e as SupabaseError;
     const errorDetails = supabaseError?.message || message;
     const errorCode = supabaseError?.code;
     const errorHint = supabaseError?.hint;
