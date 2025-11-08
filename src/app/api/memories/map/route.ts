@@ -26,7 +26,19 @@ export async function GET() {
     
     if (queryError) {
       console.error('[v0] API: Query failed:', queryError);
-      throw queryError;
+      console.error('[v0] API: Error code:', queryError.code);
+      console.error('[v0] API: Error message:', queryError.message);
+      console.error('[v0] API: Error details:', queryError.details);
+      console.error('[v0] API: Error hint:', queryError.hint);
+      return NextResponse.json(
+        { 
+          error: 'Failed to fetch memories from database',
+          details: queryError.message || 'Unknown error',
+          code: queryError.code,
+          hint: queryError.hint
+        },
+        { status: 500 }
+      );
     }
     
     console.log('[v0] API: Fetched', allMemories?.length || 0, 'total memories from database');
@@ -48,7 +60,6 @@ export async function GET() {
     
     console.log('[v0] API: After filtering,', memories.length, 'memories have both location and audio');
     
-    console.log('[v0] API: Fetched', memories?.length || 0, 'memories from database');
     if (memories && memories.length > 0) {
       console.log('[v0] API: Memory details:', memories.map((m: Memory) => ({
         id: m.id,
@@ -59,20 +70,8 @@ export async function GET() {
       })));
     }
 
-    // Transform to format needed for 3D map
-    const memoriesForMap: MemoryForMap[] = (memories || [])
-      .filter((m: Memory) => {
-        const hasLocation = m.latitude && m.longitude;
-        const hasAudio = m.audio_url;
-        if (!hasLocation) {
-          console.log('[v0] API: Filtered out memory (no location):', m.id);
-        }
-        if (!hasAudio) {
-          console.log('[v0] API: Filtered out memory (no audio_url):', m.id);
-        }
-        return hasLocation && hasAudio;
-      })
-      .map((m: Memory) => ({
+    // Transform to format needed for 3D map (memories are already filtered)
+    const memoriesForMap: MemoryForMap[] = memories.map((m: Memory) => ({
         id: m.id,
         latitude: m.latitude!,
         longitude: m.longitude!,
@@ -97,8 +96,21 @@ export async function GET() {
     const stack = e instanceof Error ? e.stack : undefined;
     console.error('[v0] API: Exception fetching memories:', message);
     console.error('[v0] API: Stack trace:', stack);
+    
+    // If it's a Supabase error, include more details
+    const supabaseError = e as any;
+    const errorDetails = supabaseError?.message || message;
+    const errorCode = supabaseError?.code;
+    const errorHint = supabaseError?.hint;
+    
     return NextResponse.json(
-      { error: message, details: stack ? 'See server logs for details' : undefined },
+      { 
+        error: 'Exception while fetching memories',
+        details: errorDetails,
+        code: errorCode,
+        hint: errorHint,
+        stack: process.env.NODE_ENV === 'development' ? stack : undefined
+      },
       { status: 500 }
     );
   }
