@@ -150,8 +150,18 @@
   - Validate audio file (format, size, duration)
   - Upload to Supabase Storage bucket 'memory-songs'
   - Create database entry with location data
-  - Return memory ID for processing
+  - Return memory ID (UUID) for processing
   ```
+- [x] **Understanding `memoryId` in this flow:**
+  - `memoryId` = UUID returned from database INSERT into `memories` table
+  - **NOT** the geolocation, processed song file, or audio file path
+  - **IS** the database record ID that links location + audio + metadata
+  - **Flow:** 
+    1. Insert record → Get `memoryId` (UUID) ← **CRITICAL: Table must exist!**
+    2. Pass `memoryId` to audio processor
+    3. Processor updates record with `audio_url` using `memoryId`
+    4. Globe query finds record by `memoryId` (via location + audio_url filter)
+  - **If `memoryId = null`:** Database insert failed (table missing, constraint violation, etc.)
 - [ ] Implement progress tracking for upload
 - [ ] Add retry logic for failed uploads
 - [ ] Create upload status UI component
