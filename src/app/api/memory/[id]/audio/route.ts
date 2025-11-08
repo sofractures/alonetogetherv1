@@ -54,8 +54,9 @@ export async function GET(
       );
     }
 
-    // Redirect to the signed URL
-    return NextResponse.redirect(signedData.signedUrl);
+    // Return the signed URL as JSON
+    // The client will use this URL directly in the audio element
+    return NextResponse.json({ url: signedData.signedUrl });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Failed to get audio';
     console.error('[v0] API: Exception getting audio:', message);

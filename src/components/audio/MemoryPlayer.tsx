@@ -53,7 +53,9 @@ export default function MemoryPlayer({ memory, isOpen, onClose }: MemoryPlayerPr
           </p>
         )}
 
-        {audioUrl ? (
+        {isLoadingAudio ? (
+          <p className="text-gray-400 mt-4">Loading audio...</p>
+        ) : audioUrl ? (
           <div className="mt-4">
             <audio
               ref={audioRef}
