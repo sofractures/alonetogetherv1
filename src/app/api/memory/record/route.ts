@@ -73,6 +73,8 @@ export async function POST(req: NextRequest) {
         console.error('[v0] API: Error details:', error.details);
         console.error('[v0] API: Error hint:', error.hint);
         console.error('[v0] API: Insert data was:', JSON.stringify(insertData, null, 2));
+        // Don't fail the request - continue without memoryId
+        // The audio processor can still work, but won't update the database
       } else if (data?.id) {
         memoryId = data.id;
         console.log('[v0] API: Memory record created successfully, ID:', memoryId);
