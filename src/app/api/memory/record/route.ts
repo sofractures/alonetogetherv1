@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
     try {
       const insertData: {
         raw_recording_url: string;
+        audio_url?: string; // Will be set after processing
         latitude?: number;
         longitude?: number;
         location_city?: string;
@@ -47,6 +48,7 @@ export async function POST(req: NextRequest) {
         window_variant?: number;
       } = { 
         raw_recording_url: path,
+        audio_url: '', // Temporary empty string if NOT NULL constraint exists
         window_variant: Math.floor(Math.random() * 2) + 1, // Random 1 or 2
       };
       
@@ -68,10 +70,22 @@ export async function POST(req: NextRequest) {
       
       if (error) {
         console.error('[v0] API: Error creating memory record:', error);
-        console.error('[v0] API: Insert data was:', insertData);
+        console.error('[v0] API: Error code:', error.code);
+        console.error('[v0] API: Error message:', error.message);
+        console.error('[v0] API: Error details:', error.details);
+        console.error('[v0] API: Error hint:', error.hint);
+        console.error('[v0] API: Insert data was:', JSON.stringify(insertData, null, 2));
       } else if (data?.id) {
         memoryId = data.id;
         console.log('[v0] API: Memory record created successfully, ID:', memoryId);
+        console.log('[v0] API: Location data saved:', {
+          hasLat: !!insertData.latitude,
+          hasLng: !!insertData.longitude,
+          lat: insertData.latitude,
+          lng: insertData.longitude,
+          city: insertData.location_city,
+          country: insertData.location_country
+        });
       } else {
         console.warn('[v0] API: Memory record insert succeeded but no ID returned');
       }
