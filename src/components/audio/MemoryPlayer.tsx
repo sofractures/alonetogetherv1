@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MemoryForMap } from '@/types/memory';
 
 interface MemoryPlayerProps {
@@ -11,23 +11,50 @@ interface MemoryPlayerProps {
 
 export default function MemoryPlayer({ memory, isOpen, onClose }: MemoryPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
 
+  // Fetch signed URL when modal opens and memory is available
   useEffect(() => {
-    if (isOpen && audioRef.current) {
-      audioRef.current.load();
+    if (!isOpen || !memory) {
+      setAudioUrl(null);
+      return;
+    }
+
+    // If audioUrl is already a full URL, use it directly
+    if (memory.audioUrl?.startsWith('http')) {
+      setAudioUrl(memory.audioUrl);
+      return;
+    }
+
+    // Otherwise, fetch signed URL from API
+    if (memory.audioUrl) {
+      setIsLoadingAudio(true);
+      fetch(`/api/memory/${memory.id}/audio`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.url) {
+            setAudioUrl(data.url);
+          } else {
+            console.error('[v0] MemoryPlayer: No URL in response:', data);
+          }
+        })
+        .catch(error => {
+          console.error('[v0] MemoryPlayer: Error fetching audio URL:', error);
+        })
+        .finally(() => {
+          setIsLoadingAudio(false);
+        });
     }
   }, [isOpen, memory]);
 
-  if (!isOpen || !memory) return null;
+  useEffect(() => {
+    if (isOpen && audioRef.current && audioUrl) {
+      audioRef.current.load();
+    }
+  }, [isOpen, audioUrl]);
 
-  // Get signed URL for audio playback
-  // audioUrl from database is a path like "final/{uuid}.mp3"
-  // We need to use the API route to get a signed URL from Supabase Storage
-  const audioUrl = memory.audioUrl 
-    ? (memory.audioUrl.startsWith('http') 
-        ? memory.audioUrl  // Already a full URL (signed URL)
-        : `/api/memory/${memory.id}/audio`)  // API route will create signed URL
-    : null;
+  if (!isOpen || !memory) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
