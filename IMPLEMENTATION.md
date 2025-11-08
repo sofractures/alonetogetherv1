@@ -14,39 +14,38 @@
 - [ ] Verify `instrumental.mp3` duration and structure for voice placement
 
 ### Supabase Configuration
-- [ ] Create Supabase project
-- [ ] Set up storage buckets:
+- [x] Create Supabase project
+- [x] Set up storage buckets:
   ```sql
   -- Run in Supabase SQL Editor
   INSERT INTO storage.buckets (id, name, public) VALUES 
     ('memory-songs', 'memory-songs', false),
     ('processed-songs', 'processed-songs', true);
   ```
-- [ ] Configure RLS policies for buckets
-- [ ] Create database tables:
+- [x] Configure RLS policies for buckets
+- [x] Create database tables:
+  - [x] **CRITICAL: Create `memories` table** - See `CREATE_TABLE.sql` in project root
+    - Table must exist before memory records can be created
+    - `audio_url` must be nullable (set after processing)
+    - Includes RLS policies and indexes
   ```sql
-  CREATE TABLE memories (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    audio_url TEXT NOT NULL,
-    raw_recording_url TEXT,
-    window_variant INTEGER DEFAULT floor(random() * 2 + 1),
-    prompt_id INTEGER REFERENCES prompts(id),
-    location_city TEXT,
-    location_country TEXT,
-    latitude DECIMAL,
-    longitude DECIMAL,
-    play_count INTEGER DEFAULT 0,
-    like_count INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT NOW()
-  );
-  
+  -- See CREATE_TABLE.sql for complete script
+  -- Key points:
+  -- - audio_url TEXT (nullable, not NOT NULL)
+  -- - RLS enabled with service_role policy
+  -- - Indexes on location and audio_url
+  ```
+- [ ] Create `prompts` table (if needed):
+  ```sql
   CREATE TABLE prompts (
     id SERIAL PRIMARY KEY,
     text TEXT NOT NULL,
     active BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT NOW()
   );
-  
+  ```
+- [ ] Create `memory_interactions` table (if needed):
+  ```sql
   CREATE TABLE memory_interactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     memory_id UUID REFERENCES memories(id),
@@ -289,8 +288,10 @@
 - [ ] Test across different browsers/devices
 
 ### Data Fetching & Management
-- [ ] Create `/api/memories/map/route.ts`:
-  - [ ] Fetch all memories with locations
+- [x] Create `/api/memories/map/route.ts`:
+  - [x] Fetch all memories with locations
+  - [x] Filter in JavaScript (avoids PostgREST syntax issues)
+  - [x] Error handling with detailed logging
   - [ ] Implement pagination for large datasets
   - [ ] Add caching strategy
 - [ ] Set up Zustand store for memory state:
