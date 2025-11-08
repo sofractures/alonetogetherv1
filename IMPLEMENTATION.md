@@ -294,17 +294,10 @@
   - [x] Error handling with detailed logging
   - [ ] Implement pagination for large datasets
   - [ ] Add caching strategy
-- [ ] Set up Zustand store for memory state:
-  ```typescript
-  interface MemoryStore {
-    memories: Memory[]
-    selectedMemory: Memory | null
-    isLoading: boolean
-    // actions
-    fetchMemories: () => Promise<void>
-    selectMemory: (id: string) => void
-  }
-  ```
+- [x] Set up Zustand store for memory state:
+  - [x] Created `src/store/memoryStore.ts`
+  - [x] Implements `fetchMemories()`, `selectMemory()`, `addMemory()`
+  - [x] Error handling and loading states
 - [ ] Implement real-time updates with Supabase subscriptions
 - [ ] Add optimistic updates for new memories
 
