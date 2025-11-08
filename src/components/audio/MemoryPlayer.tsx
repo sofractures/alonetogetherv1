@@ -21,11 +21,12 @@ export default function MemoryPlayer({ memory, isOpen, onClose }: MemoryPlayerPr
   if (!isOpen || !memory) return null;
 
   // Get signed URL for audio playback
-  // For now, we'll use the audioUrl directly if it's a full URL, or construct an API route
+  // audioUrl from database is a path like "final/{uuid}.mp3"
+  // We need to use the API route to get a signed URL from Supabase Storage
   const audioUrl = memory.audioUrl 
     ? (memory.audioUrl.startsWith('http') 
-        ? memory.audioUrl 
-        : `/api/memory/${memory.id}/audio`)
+        ? memory.audioUrl  // Already a full URL (signed URL)
+        : `/api/memory/${memory.id}/audio`)  // API route will create signed URL
     : null;
 
   return (
