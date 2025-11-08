@@ -498,20 +498,37 @@ Buckets:
 ### Database Schema (Supabase)
 ```sql
 -- Memories table
+-- CRITICAL: This table MUST be created before any memory records can be saved
+-- See CREATE_TABLE.sql in project root for complete setup script
 CREATE TABLE memories (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  audio_url TEXT NOT NULL,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),  -- This is the 'memoryId' used throughout the app
+  audio_url TEXT,  -- NOTE: Nullable (not NOT NULL) - set after processing completes
   raw_recording_url TEXT,
   window_variant INTEGER DEFAULT 1, -- 1 for window.jpeg, 2 for window2.jpeg
   prompt_id INTEGER REFERENCES prompts(id),
   location_city TEXT,
   location_country TEXT,
-  latitude DECIMAL,
-  longitude DECIMAL,
+  latitude DECIMAL,  -- Required for globe positioning
+  longitude DECIMAL,  -- Required for globe positioning
   play_count INTEGER DEFAULT 0,
   like_count INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT NOW()
 );
+```
+
+**Important Notes:**
+- **`id` (memoryId):** The UUID primary key that uniquely identifies each memory record
+  - Generated automatically by database: `gen_random_uuid()`
+  - Returned after INSERT: `SELECT id FROM memories WHERE ...`
+  - Used to link: location data + audio file path + metadata
+  - **NOT** the geolocation, processed song file, or audio file path
+  - **IS** the database record identifier that connects everything together
+- **`audio_url`:** Must be nullable (not `NOT NULL`) because:
+  - Memory record is created BEFORE audio processing
+  - `audio_url` is set AFTER processing completes
+  - If `NOT NULL`, the initial INSERT will fail
+- **Location fields:** `latitude` and `longitude` are required for globe positioning
+  - If NULL, memory will be filtered out and won't appear on globe
 
 -- Note: Window images are consistent assets, not stored per-memory
 -- The 3D position is calculated from lat/lng coordinates
