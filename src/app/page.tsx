@@ -142,25 +142,58 @@ export default function Home() {
           setProcessedAudioUrl(pdata.signedUrl);
           
           console.log('[v0] Processing complete for memoryId:', data.memoryId);
+          console.log('[v0] Processed audio URL:', pdata.signedUrl);
+          console.log('[v0] Processed path:', pdata.processedPath);
           console.log('[v0] Your song is ready! Starting memory refresh to show new window...');
           
           // Immediately start refreshing memories so the new window appears while user sees "Your song is ready"
           // Refresh memories multiple times with increasing delays to catch DB updates
-          fetchMemories();
+          fetchMemories().then(() => {
+            console.log('[v0] Initial fetch complete. Checking if new memory is in store...');
+            const currentMemories = useMemoryStore.getState().memories;
+            const newMemory = currentMemories.find(m => m.id === data.memoryId);
+            if (newMemory) {
+              console.log('[v0] ✅ New memory found in store:', {
+                id: newMemory.id,
+                location: newMemory.location,
+                hasAudio: !!newMemory.audioUrl,
+                audioUrl: newMemory.audioUrl
+              });
+            } else {
+              console.warn('[v0] ⚠️ New memory NOT found in store. Available IDs:', currentMemories.map(m => m.id));
+            }
+          });
           
           setTimeout(() => {
             console.log('[v0] Refresh 1: 1 second delay');
-            fetchMemories();
+            fetchMemories().then(() => {
+              const mems = useMemoryStore.getState().memories;
+              const found = mems.find(m => m.id === data.memoryId);
+              console.log('[v0] After 1s refresh:', found ? '✅ Found' : '❌ Not found');
+            });
           }, 1000);
           
           setTimeout(() => {
             console.log('[v0] Refresh 2: 3 second delay');
-            fetchMemories();
+            fetchMemories().then(() => {
+              const mems = useMemoryStore.getState().memories;
+              const found = mems.find(m => m.id === data.memoryId);
+              console.log('[v0] After 3s refresh:', found ? '✅ Found' : '❌ Not found');
+            });
           }, 3000);
           
           setTimeout(() => {
             console.log('[v0] Refresh 3: 5 second delay');
-            fetchMemories();
+            fetchMemories().then(() => {
+              const mems = useMemoryStore.getState().memories;
+              const found = mems.find(m => m.id === data.memoryId);
+              console.log('[v0] After 5s refresh:', found ? '✅ Found' : '❌ Not found');
+              if (!found) {
+                console.error('[v0] ❌ CRITICAL: New memory still not found after 5 seconds!');
+                console.error('[v0] Expected memoryId:', data.memoryId);
+                console.error('[v0] Available memories:', mems.map(m => ({ id: m.id, location: m.location, hasAudio: !!m.audioUrl })));
+              }
+            });
           }, 5000);
         }
       } finally {

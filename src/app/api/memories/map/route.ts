@@ -49,10 +49,34 @@ export async function GET() {
       const hasAudio = m.audio_url != null && m.audio_url.trim() !== '';
       
       if (!hasLocation) {
-        console.log('[v0] API: Filtered out memory (no location):', m.id, 'lat:', m.latitude, 'lng:', m.longitude);
+        console.log('[v0] API: ❌ Filtered out memory (no location):', {
+          id: m.id,
+          lat: m.latitude,
+          lng: m.longitude,
+          city: m.location_city,
+          country: m.location_country,
+          hasAudio: hasAudio,
+          audio_url: m.audio_url
+        });
       }
       if (!hasAudio) {
-        console.log('[v0] API: Filtered out memory (no audio_url):', m.id, 'audio_url:', m.audio_url);
+        console.log('[v0] API: ❌ Filtered out memory (no audio_url):', {
+          id: m.id,
+          audio_url: m.audio_url,
+          hasLocation: hasLocation,
+          lat: m.latitude,
+          lng: m.longitude
+        });
+      }
+      
+      if (hasLocation && hasAudio) {
+        console.log('[v0] API: ✅ Memory passed filter:', {
+          id: m.id,
+          location: `${m.location_city || ''}, ${m.location_country || ''}`,
+          lat: m.latitude,
+          lng: m.longitude,
+          audio_url: m.audio_url
+        });
       }
       
       return hasLocation && hasAudio;
