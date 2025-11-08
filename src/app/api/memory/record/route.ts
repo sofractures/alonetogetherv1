@@ -40,7 +40,6 @@ export async function POST(req: NextRequest) {
     try {
       const insertData: {
         raw_recording_url: string;
-        audio_url?: string; // Will be set after processing
         latitude?: number;
         longitude?: number;
         location_city?: string;
@@ -48,7 +47,6 @@ export async function POST(req: NextRequest) {
         window_variant?: number;
       } = { 
         raw_recording_url: path,
-        audio_url: '', // Temporary empty string if NOT NULL constraint exists
         window_variant: Math.floor(Math.random() * 2) + 1, // Random 1 or 2
       };
       
