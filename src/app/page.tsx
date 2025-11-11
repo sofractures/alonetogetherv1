@@ -2,6 +2,7 @@
 import AudioRecorder from "@/components/audio/AudioRecorder";
 import MemoryGlobe from "@/components/3d/MemoryGlobe";
 import MemoryPlayer from "@/components/audio/MemoryPlayer";
+import LocationSelector from "@/components/location/LocationSelector";
 import { useState, useEffect } from "react";
 import { getAudioController, onRecordingStartFadeOutBackground, onRecordingStopResumeBackground } from "@/lib/audio-context";
 import { useMemoryStore } from "@/store/memoryStore";
@@ -20,6 +21,8 @@ export default function Home() {
   const [isMemoryPlayerOpen, setIsMemoryPlayerOpen] = useState(false);
   const [lastCreatedMemoryId, setLastCreatedMemoryId] = useState<string | null>(null);
   const [highlightMemoryId, setHighlightMemoryId] = useState<string | null>(null);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
+  const [pendingLocation, setPendingLocation] = useState<LocationData | null>(null);
   
   // Memory store
   const { memories, fetchMemories, selectMemory, selectedMemory, isLoading, error } = useMemoryStore();
@@ -82,32 +85,35 @@ export default function Home() {
     setPendingUrl(url);
   };
 
-  const acceptRecording = async () => {
-    if (!pendingBlob) return;
-    try {
-      // Ensure the recording overlay stays open for processing flow
-      setIsOverlayOpen(true);
-      setIsWelcomeOpen(false);
-      setIsUploading(true);
-      setUploadError(null);
-      
-      // Get user location
-      let location: LocationData | null = null;
+  const handleLocationSelected = async (location: LocationData | null) => {
+    setShowLocationSelector(false);
+    
+    // If location is null, try to get it automatically
+    if (!location) {
       try {
         location = await getBrowserLocation();
-        // Fallback to IP-based location if browser geolocation fails
         if (!location) {
           location = await getIPLocation();
         }
       } catch (error) {
         console.warn('Location fetch error:', error);
       }
-      
-      const form = new FormData();
-      form.append("file", pendingBlob, "recording.webm");
-      if (location) {
-        form.append("location", JSON.stringify(location));
-      }
+    }
+    
+    setPendingLocation(location);
+    // Continue with upload
+    await proceedWithUpload(location);
+  };
+
+  const proceedWithUpload = async (location: LocationData | null) => {
+    if (!pendingBlob) return;
+    
+    try {
+      // Ensure the recording overlay stays open for processing flow
+      setIsOverlayOpen(true);
+      setIsWelcomeOpen(false);
+      setIsUploading(true);
+      setUploadError(null);
       
       const res = await fetch("/api/memory/record", { method: "POST", body: form });
       const data = await res.json();
@@ -120,6 +126,7 @@ export default function Home() {
         location: location
       });
       setLastCreatedMemoryId(data.memoryId ?? null);
+      setPendingLocation(null); // Clear pending location after use
       
       if (!data.memoryId) {
         console.error('[v0] WARNING: Memory record was not created! memoryId is null');
@@ -367,7 +374,11 @@ export default function Home() {
                     <button onClick={() => { setPendingBlob(null); setPendingUrl(null); }} className="px-4 py-2 rounded border border-purple-400/40 text-purple-200">
                       Re-record
                     </button>
-                    <button onClick={acceptRecording} disabled={isUploading || isProcessing} className="px-4 py-2 rounded bg-purple-600 text-white disabled:opacity-60">
+                    <button 
+                      onClick={() => setShowLocationSelector(true)} 
+                      disabled={isUploading || isProcessing} 
+                      className="px-4 py-2 rounded bg-purple-600 text-white disabled:opacity-60"
+                    >
                       {isUploading ? 'Uploading…' : isProcessing ? 'Processing…' : 'Accept & Upload'}
                     </button>
                     <button onClick={closeOverlay} disabled={isUploading || isProcessing} className="ml-auto px-4 py-2 rounded border border-gray-500/40 text-gray-200 disabled:opacity-60">Close</button>
@@ -417,6 +428,15 @@ export default function Home() {
           selectMemory(null);
         }}
       />
+      
+      {/* Location Selector Modal */}
+      {showLocationSelector && (
+        <LocationSelector
+          onLocationSelected={handleLocationSelected}
+          onCancel={() => setShowLocationSelector(false)}
+          initialLocation={pendingLocation}
+        />
+      )}
     </div>
   );
 }

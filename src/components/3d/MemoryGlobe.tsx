@@ -1,11 +1,12 @@
 "use client";
 
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, PerspectiveCamera } from '@react-three/drei';
 import BuildingCube from './BuildingCube';
 import MemoryPoint from './MemoryPoint';
 import { MemoryForMap } from '@/types/memory';
+import { clusterAndSpreadMemories } from '@/lib/clustering';
 
 interface MemoryGlobeProps {
   memories?: MemoryForMap[];
@@ -37,6 +38,19 @@ export default function MemoryGlobe({
   onMemoryClick,
   highlightId
 }: MemoryGlobeProps) {
+  // Apply smart clustering to spread overlapping memories
+  const clusteredMemories = useMemo(() => {
+    if (memories.length === 0) return [];
+    
+    // Cluster memories within 100m and spread them within 50m radius
+    const clustered = clusterAndSpreadMemories(memories, 100, 50);
+    
+    console.log('[v0] MemoryGlobe: Clustered', memories.length, 'memories into', 
+      new Set(clustered.map(c => `${c.lat.toFixed(6)},${c.lon.toFixed(6)}`)).size, 'unique positions');
+    
+    return clustered;
+  }, [memories]);
+
   // Debug: Log memories count and details
   console.log('[v0] MemoryGlobe: Rendering with', memories.length, 'memories');
   if (memories.length > 0) {
@@ -90,15 +104,9 @@ export default function MemoryGlobe({
           <BuildingCube autoRotate={autoRotate} rotationSpeed={0.2} />
           
           {/* Memory Windows */}
-          {memories.length > 0 ? (
-            memories.map((memory, idx) => {
-              // Slight jitter to reduce perfect overlap when multiple pins have nearly identical coords
-              const jitter = (idx % 5) * 0.02; // small offset
-              const position = latLngToPosition(
-                memory.latitude + jitter * 0.01,
-                memory.longitude + jitter * 0.01,
-                4.5
-              );
+          {clusteredMemories.length > 0 ? (
+            clusteredMemories.map(({ memory, lat, lon }) => {
+              const position = latLngToPosition(lat, lon, 4.5);
               return (
                 <MemoryPoint
                   key={memory.id}
