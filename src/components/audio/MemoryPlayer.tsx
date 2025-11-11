@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { MemoryForMap } from '@/types/memory';
+import { onMemoryPlaybackStartMuteBackground, onMemoryPlaybackStopUnmuteBackground } from '@/lib/audio-context';
 
 interface MemoryPlayerProps {
   memory: MemoryForMap | null;
@@ -63,6 +64,17 @@ export default function MemoryPlayer({ memory, isOpen, onClose }: MemoryPlayerPr
       audioRef.current.load();
     }
   }, [isOpen, audioUrl]);
+
+  // Fade out background music when memory player opens
+  useEffect(() => {
+    if (isOpen) {
+      onMemoryPlaybackStartMuteBackground();
+      // Resume background music when modal closes
+      return () => {
+        onMemoryPlaybackStopUnmuteBackground();
+      };
+    }
+  }, [isOpen]);
 
   if (!isOpen || !memory) return null;
 
