@@ -342,14 +342,33 @@ app.post('/process-audio', async (req, res) => {
     // 7) Update database if memoryId provided
     if (memoryId) {
       try {
-        await supabase
+        console.log('[v0] Processor: Updating memory record', memoryId, 'with audio_url:', processedPath);
+        const { data: updateData, error: updateError } = await supabase
           .from('memories')
           .update({ audio_url: processedPath })
-          .eq('id', memoryId);
+          .eq('id', memoryId)
+          .select('id, audio_url, latitude, longitude');
+        
+        if (updateError) {
+          console.error('[v0] Processor: Failed to update database:', updateError);
+          console.error('[v0] Processor: Error code:', updateError.code);
+          console.error('[v0] Processor: Error message:', updateError.message);
+          console.error('[v0] Processor: Error details:', updateError.details);
+        } else if (updateData && updateData.length > 0) {
+          console.log('[v0] Processor: Successfully updated memory record:', {
+            id: updateData[0].id,
+            audio_url: updateData[0].audio_url,
+            hasLocation: !!(updateData[0].latitude && updateData[0].longitude)
+          });
+        } else {
+          console.warn('[v0] Processor: Update succeeded but no rows were updated. Memory ID might not exist:', memoryId);
+        }
       } catch (error) {
-        console.error('Failed to update database:', error);
+        console.error('[v0] Processor: Exception updating database:', error);
         // Don't fail the request if DB update fails
       }
+    } else {
+      console.warn('[v0] Processor: No memoryId provided, skipping database update');
     }
 
     // 8) Return success

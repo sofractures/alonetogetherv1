@@ -11,11 +11,15 @@
   "dependencies": {
     "@ffmpeg/core": "^0.12.10",
     "@ffmpeg/ffmpeg": "^0.12.15",
+    "@react-three/drei": "^10.7.6",
+    "@react-three/fiber": "^9.4.0",
     "@supabase/supabase-js": "^2.46.1",
     "cloudinary": "^2.8.0",
     "next": "15.5.6",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "three": "^0.181.0",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -23,6 +27,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.181.0",
     "eslint": "^9",
     "eslint-config-next": "15.5.6",
     "tailwindcss": "^4",

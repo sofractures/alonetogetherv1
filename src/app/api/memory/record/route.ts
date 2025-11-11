@@ -31,16 +31,70 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: uploadError.message, attemptedPath: path }, { status: 500 });
     }
 
+    // Get location data from request body if provided
+    const body = Object.fromEntries(form.entries());
+    const locationData = body.location ? JSON.parse(body.location as string) : null;
+    const displayName = (body.display_name as string | undefined)?.toString()?.slice(0, 120) || null;
+
     // Try creating a DB entry (optional if table exists)
     let memoryId: string | null = null;
     try {
+      const insertData: {
+        raw_recording_url: string;
+        latitude?: number;
+        longitude?: number;
+        location_city?: string;
+        location_country?: string;
+        window_variant?: number;
+        display_name?: string | null;
+      } = { 
+        raw_recording_url: path,
+        window_variant: Math.floor(Math.random() * 2) + 1, // Random 1 or 2
+      };
+      
+      // Add location data if provided
+      if (locationData) {
+        if (locationData.latitude && locationData.longitude) {
+          insertData.latitude = parseFloat(locationData.latitude);
+          insertData.longitude = parseFloat(locationData.longitude);
+        }
+        if (locationData.city) insertData.location_city = locationData.city;
+        if (locationData.country) insertData.location_country = locationData.country;
+      }
+      if (displayName) insertData.display_name = displayName;
+
       const { data, error } = await supabaseServer
         .from('memories')
-        .insert({ raw_recording_url: path })
+        .insert(insertData)
         .select('id')
         .single();
-      if (!error && data?.id) memoryId = data.id;
-    } catch {}
+      
+      if (error) {
+        console.error('[v0] API: Error creating memory record:', error);
+        console.error('[v0] API: Error code:', error.code);
+        console.error('[v0] API: Error message:', error.message);
+        console.error('[v0] API: Error details:', error.details);
+        console.error('[v0] API: Error hint:', error.hint);
+        console.error('[v0] API: Insert data was:', JSON.stringify(insertData, null, 2));
+        // Don't fail the request - continue without memoryId
+        // The audio processor can still work, but won't update the database
+      } else if (data?.id) {
+        memoryId = data.id;
+        console.log('[v0] API: Memory record created successfully, ID:', memoryId);
+        console.log('[v0] API: Location data saved:', {
+          hasLat: !!insertData.latitude,
+          hasLng: !!insertData.longitude,
+          lat: insertData.latitude,
+          lng: insertData.longitude,
+          city: insertData.location_city,
+          country: insertData.location_country
+        });
+      } else {
+        console.warn('[v0] API: Memory record insert succeeded but no ID returned');
+      }
+    } catch (error) {
+      console.error('[v0] API: Exception creating memory record:', error);
+    }
 
     // Diagnostics: verify object exists by listing and creating a signed URL
     const listRes = await supabaseServer
