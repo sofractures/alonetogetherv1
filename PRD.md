@@ -115,6 +115,12 @@ ffmpeg -i user_voice.wav -i assets/instrumental.mp3 \
 - Opacity: 85% default, 100% on hover
 - Gentle floating animation (sine wave on Y-axis)
 
+Browsing Dense Locations:
+- Intelligent clustering groups memories within ~100–200 meters
+- Zoom-dependent spread increases separation as the user zooms in
+- Explode-on-click (planned): clicking a dense cluster fans out its members in a circular “spiderfy” around the city center for precise selection
+- Mobile/large-cluster fallback (planned): a compact drawer lists all memories at that location (name, time), allowing quick selection without precise tapping
+
 ### 3.4 Memory Exploration Experience
 
 **3D Building Navigation:**

@@ -1,7 +1,8 @@
 "use client";
 
-import { Suspense, useMemo } from 'react';
+import { Suspense, useMemo, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
+import { useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, Environment, PerspectiveCamera } from '@react-three/drei';
 import BuildingCube from './BuildingCube';
 import MemoryPoint from './MemoryPoint';
@@ -38,18 +39,40 @@ export default function MemoryGlobe({
   onMemoryClick,
   highlightId
 }: MemoryGlobeProps) {
-  // Apply smart clustering to spread overlapping memories
+  // Track camera distance to scale spread dynamically
+  const { camera } = useThree();
+  const [camDistance, setCamDistance] = useState<number>(camera.position.length());
+  const lastUpdateRef = useRef<number>(0);
+  const lastDistRef = useRef<number>(camDistance);
+
+  // Throttle updates to camDistance to reduce re-clustering jitter
+  useFrame(({ camera }, delta) => {
+    const now = performance.now();
+    const dist = camera.position.length();
+    if (now - lastUpdateRef.current > 120 && Math.abs(dist - lastDistRef.current) > 0.05) {
+      lastUpdateRef.current = now;
+      lastDistRef.current = dist;
+      setCamDistance(dist);
+    }
+  });
+
+  // Compute dynamic clustering: threshold ~100m; spread increases with cam distance
+  // Base spread 40m at min zoom; up to 120m at far zoom
   const clusteredMemories = useMemo(() => {
     if (memories.length === 0) return [];
     
-    // Cluster memories within 100m and spread them within 50m radius
-    const clustered = clusterAndSpreadMemories(memories, 100, 50);
+    const thresholdMeters = 120; // group items in the same city block
+    const minDist = 6;
+    const maxDist = 20;
+    const t = Math.min(1, Math.max(0, (camDistance - minDist) / (maxDist - minDist)));
+    const spreadRadiusMeters = 40 + t * 80; // 40m → 120m
+    const clustered = clusterAndSpreadMemories(memories, thresholdMeters, spreadRadiusMeters);
     
     console.log('[v0] MemoryGlobe: Clustered', memories.length, 'memories into', 
       new Set(clustered.map(c => `${c.lat.toFixed(6)},${c.lon.toFixed(6)}`)).size, 'unique positions');
     
     return clustered;
-  }, [memories]);
+  }, [memories, camDistance]);
 
   // Debug: Log memories count and details
   console.log('[v0] MemoryGlobe: Rendering with', memories.length, 'memories');

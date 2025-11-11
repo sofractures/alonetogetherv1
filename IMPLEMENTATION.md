@@ -201,6 +201,7 @@
   - [x] Position BuildingCube at center (0,0,0)
   - [x] Implement lat/lng to 3D position conversion
   - [ ] Add intelligent clustering for overlapping locations
+- [x] Add zoom-dependent spread for overlapping locations (dynamic spread radius based on camera distance)
   - [x] Configure OrbitControls:
     ```javascript
     minDistance: 6
@@ -219,6 +220,14 @@
 - [ ] Use InstancedMesh for identical geometries
 - [ ] Implement texture atlasing if needed
 - [ ] Add loading states with Suspense boundaries
+
+### Cluster Browsing (Planned)
+- [ ] Spiderfy explode-on-click: fan out cluster members around city center with ring layout
+  - [ ] Golden-angle ring placement, optional link lines to center
+  - [ ] Collapse on outside click or after selection
+- [ ] Mobile/large-cluster drawer fallback listing (name, location, play/next/prev)
+  - [ ] Open drawer when cluster size > N or on small screens
+  - [ ] Optional “Show on map” highlight for selected memory
 
 ---
 
