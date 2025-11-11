@@ -19,6 +19,7 @@ export default function LocationSelector({
   const [manualLon, setManualLon] = useState(initialLocation?.longitude?.toString() || '');
   const [manualCity, setManualCity] = useState(initialLocation?.city || '');
   const [manualCountry, setManualCountry] = useState(initialLocation?.country || '');
+  const [manualName, setManualName] = useState(initialLocation?.name || '');
 
   const handleUseCurrentLocation = () => {
     onLocationSelected(null); // Let parent handle browser geolocation
@@ -42,6 +43,7 @@ export default function LocationSelector({
         longitude: lon,
         city: manualCity || undefined,
         country: manualCountry || undefined,
+        name: manualName || undefined,
       });
       return;
     }
@@ -61,6 +63,7 @@ export default function LocationSelector({
         longitude: coords.longitude,
         city: manualCity || undefined,
         country: manualCountry || undefined,
+        name: manualName || undefined,
       });
       return;
     }
@@ -143,6 +146,16 @@ export default function LocationSelector({
                 value={manualCountry}
                 onChange={(e) => setManualCountry(e.target.value)}
                 placeholder="e.g., United Kingdom"
+                className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-600 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+              />
+            </div>
+            <div>
+              <label className="block text-gray-300 text-sm mb-1">Name (optional)</label>
+              <input
+                type="text"
+                value={manualName}
+                onChange={(e) => setManualName(e.target.value)}
+                placeholder="Your name or alias"
                 className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-600 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
               />
             </div>

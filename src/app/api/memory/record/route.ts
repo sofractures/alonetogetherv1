@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
     // Get location data from request body if provided
     const body = Object.fromEntries(form.entries());
     const locationData = body.location ? JSON.parse(body.location as string) : null;
+    const displayName = (body.display_name as string | undefined)?.toString()?.slice(0, 120) || null;
 
     // Try creating a DB entry (optional if table exists)
     let memoryId: string | null = null;
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
         location_city?: string;
         location_country?: string;
         window_variant?: number;
+        display_name?: string | null;
       } = { 
         raw_recording_url: path,
         window_variant: Math.floor(Math.random() * 2) + 1, // Random 1 or 2
@@ -59,6 +61,7 @@ export async function POST(req: NextRequest) {
         if (locationData.city) insertData.location_city = locationData.city;
         if (locationData.country) insertData.location_country = locationData.country;
       }
+      if (displayName) insertData.display_name = displayName;
 
       const { data, error } = await supabaseServer
         .from('memories')

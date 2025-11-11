@@ -13,6 +13,7 @@ export default function MemoryPlayer({ memory, isOpen, onClose }: MemoryPlayerPr
   const audioRef = useRef<HTMLAudioElement>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const title = memory?.name || memory?.location || 'Memory';
 
   // Fetch signed URL when modal opens and memory is available
   useEffect(() => {
@@ -80,7 +81,7 @@ export default function MemoryPlayer({ memory, isOpen, onClose }: MemoryPlayerPr
         </button>
         
         <h2 className="text-2xl font-semibold text-white mb-2">
-          Memory from {memory.location || 'Unknown Location'}
+          {title}
         </h2>
         
         {memory.location && (

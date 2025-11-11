@@ -3,6 +3,7 @@ export interface LocationData {
   longitude: number;
   city?: string;
   country?: string;
+  name?: string;
 }
 
 /**

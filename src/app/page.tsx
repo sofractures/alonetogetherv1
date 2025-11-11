@@ -119,6 +119,9 @@ export default function Home() {
       form.append("file", pendingBlob, "recording.webm");
       if (location) {
         form.append("location", JSON.stringify(location));
+        if (location.name) {
+          form.append("display_name", location.name);
+        }
       }
       
       const res = await fetch("/api/memory/record", { method: "POST", body: form });
