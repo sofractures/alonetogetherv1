@@ -104,7 +104,7 @@ export async function GET() {
           ? `${m.location_city}${m.location_country ? `, ${m.location_country}` : ''}`
           : undefined,
         audioUrl: m.audio_url,
-        name: (m as any).display_name, // tolerate missing column during rollout
+        name: m.display_name,
       }));
     
     console.log('[v0] API: Returning', memoriesForMap.length, 'memories for map');
