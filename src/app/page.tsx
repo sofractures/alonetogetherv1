@@ -165,8 +165,8 @@ export default function Home() {
               // Highlight and preselect the newly created memory
               setHighlightMemoryId(newMemory.id);
               selectMemory(newMemory.id);
-              // Auto-open player for immediate playback if desired
-              setIsMemoryPlayerOpen(true);
+              // Don't auto-open player - let user click Done first to go to globe
+              // They can then double-click the highlighted window to play
               // Remove highlight after a few seconds
               setTimeout(() => setHighlightMemoryId(null), 6000);
             } else {
@@ -385,17 +385,17 @@ export default function Home() {
                 <div className="mt-4 p-4 rounded bg-purple-900/30 border border-purple-400/30">
                   <div className="text-purple-100 font-semibold mb-3">Your song is ready!</div>
                   <audio src={processedAudioUrl} controls className="w-full mb-4" />
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 justify-center">
                     <button 
                       onClick={closeOverlay} 
-                      className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 transition-colors"
+                      className="px-6 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 transition-colors font-semibold flex-1"
                     >
                       Done
                     </button>
                     <a 
                       href={processedAudioUrl} 
                       download="my-song.mp3"
-                      className="px-4 py-2 rounded border border-purple-400/40 text-purple-200 hover:bg-purple-800/30 transition-colors"
+                      className="px-6 py-2 rounded border border-purple-400/40 text-purple-200 hover:bg-purple-800/30 transition-colors text-center flex-1"
                     >
                       Download
                     </a>
