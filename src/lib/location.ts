@@ -86,6 +86,45 @@ async function getCityFromCoordinates(
 }
 
 /**
+ * Get coordinates from city/country using a free geocoding service
+ */
+export async function getCoordinatesFromCityCountry(
+  city?: string,
+  country?: string
+): Promise<{ latitude: number; longitude: number } | null> {
+  if (!city && !country) return null;
+  try {
+    // Using OpenStreetMap Nominatim search (free, no API key required)
+    // See usage policy; include User-Agent
+    const query = encodeURIComponent([city, country].filter(Boolean).join(', '));
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
+      {
+        headers: {
+          'User-Agent': 'AloneTogether/1.0',
+        },
+      }
+    );
+    if (!response.ok) {
+      throw new Error('Geocoding search failed');
+    }
+    const results = await response.json();
+    if (Array.isArray(results) && results.length > 0) {
+      const first = results[0];
+      const lat = parseFloat(first.lat);
+      const lon = parseFloat(first.lon);
+      if (!Number.isNaN(lat) && !Number.isNaN(lon)) {
+        return { latitude: lat, longitude: lon };
+      }
+    }
+    return null;
+  } catch (error) {
+    console.warn('Forward geocoding error:', error);
+    return null;
+  }
+}
+
+/**
  * Get approximate location from IP address (fallback)
  */
 export async function getIPLocation(): Promise<LocationData | null> {

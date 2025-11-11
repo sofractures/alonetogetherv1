@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { LocationData } from '@/lib/location';
+import { LocationData, getCoordinatesFromCityCountry } from '@/lib/location';
 
 interface LocationSelectorProps {
   onLocationSelected: (location: LocationData | null) => void;
@@ -24,26 +24,49 @@ export default function LocationSelector({
     onLocationSelected(null); // Let parent handle browser geolocation
   };
 
-  const handleManualSubmit = () => {
-    const lat = parseFloat(manualLat);
-    const lon = parseFloat(manualLon);
-
-    if (isNaN(lat) || isNaN(lon)) {
-      alert('Please enter valid latitude and longitude values');
+  const handleManualSubmit = async () => {
+    // If user provided lat/lon, validate and use them directly
+    if (manualLat.trim() !== '' && manualLon.trim() !== '') {
+      const lat = parseFloat(manualLat);
+      const lon = parseFloat(manualLon);
+      if (isNaN(lat) || isNaN(lon)) {
+        alert('Please enter valid latitude and longitude values');
+        return;
+      }
+      if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+        alert('Latitude must be between -90 and 90, Longitude between -180 and 180');
+        return;
+      }
+      onLocationSelected({
+        latitude: lat,
+        longitude: lon,
+        city: manualCity || undefined,
+        country: manualCountry || undefined,
+      });
       return;
     }
 
-    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
-      alert('Latitude must be between -90 and 90, Longitude between -180 and 180');
+    // Otherwise, allow city/country only and geocode them
+    if ((manualCity && manualCity.trim() !== '') || (manualCountry && manualCountry.trim() !== '')) {
+      const coords = await getCoordinatesFromCityCountry(
+        manualCity?.trim() || undefined,
+        manualCountry?.trim() || undefined
+      );
+      if (!coords) {
+        alert('Could not find that place. Try a more specific city name (e.g., city, country).');
+        return;
+      }
+      onLocationSelected({
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        city: manualCity || undefined,
+        country: manualCountry || undefined,
+      });
       return;
     }
 
-    onLocationSelected({
-      latitude: lat,
-      longitude: lon,
-      city: manualCity || undefined,
-      country: manualCountry || undefined,
-    });
+    // If nothing provided, prompt user
+    alert('Please enter either latitude/longitude OR a city and/or country.');
   };
 
   const handleSkip = () => {
@@ -82,7 +105,7 @@ export default function LocationSelector({
         ) : (
           <div className="space-y-4">
             <div>
-              <label className="block text-gray-300 text-sm mb-1">Latitude *</label>
+              <label className="block text-gray-300 text-sm mb-1">Latitude (optional)</label>
               <input
                 type="number"
                 step="any"
@@ -93,7 +116,7 @@ export default function LocationSelector({
               />
             </div>
             <div>
-              <label className="block text-gray-300 text-sm mb-1">Longitude *</label>
+              <label className="block text-gray-300 text-sm mb-1">Longitude (optional)</label>
               <input
                 type="number"
                 step="any"
