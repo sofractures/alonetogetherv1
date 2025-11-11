@@ -19,7 +19,6 @@ export default function Home() {
   const [processedAudioUrl, setProcessedAudioUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isMemoryPlayerOpen, setIsMemoryPlayerOpen] = useState(false);
-  const [lastCreatedMemoryId, setLastCreatedMemoryId] = useState<string | null>(null);
   const [highlightMemoryId, setHighlightMemoryId] = useState<string | null>(null);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [pendingLocation, setPendingLocation] = useState<LocationData | null>(null);
@@ -115,6 +114,13 @@ export default function Home() {
       setIsUploading(true);
       setUploadError(null);
       
+      // Build multipart form data with file and optional location
+      const form = new FormData();
+      form.append("file", pendingBlob, "recording.webm");
+      if (location) {
+        form.append("location", JSON.stringify(location));
+      }
+      
       const res = await fetch("/api/memory/record", { method: "POST", body: form });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Upload failed");
@@ -125,7 +131,6 @@ export default function Home() {
         hasLocation: !!location,
         location: location
       });
-      setLastCreatedMemoryId(data.memoryId ?? null);
       setPendingLocation(null); // Clear pending location after use
       
       if (!data.memoryId) {
@@ -255,6 +260,7 @@ export default function Home() {
         <MemoryGlobe 
           memories={memories} 
           autoRotate={!hasStartedExploring}
+          highlightId={highlightMemoryId || undefined}
           onMemoryClick={(id) => {
             console.log('[v0] Opening modal for memory:', id);
             selectMemory(id);
