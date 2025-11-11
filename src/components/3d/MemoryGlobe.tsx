@@ -11,6 +11,7 @@ interface MemoryGlobeProps {
   memories?: MemoryForMap[];
   autoRotate?: boolean;
   onMemoryClick?: (memoryId: string) => void;
+  highlightId?: string;
 }
 
 // Convert lat/lng to 3D spherical coordinates
@@ -33,7 +34,8 @@ function latLngToPosition(lat: number, lng: number, radius: number = 4.5): [numb
 export default function MemoryGlobe({ 
   memories = [], 
   autoRotate = false,
-  onMemoryClick 
+  onMemoryClick,
+  highlightId
 }: MemoryGlobeProps) {
   // Debug: Log memories count and details
   console.log('[v0] MemoryGlobe: Rendering with', memories.length, 'memories');
@@ -89,14 +91,21 @@ export default function MemoryGlobe({
           
           {/* Memory Windows */}
           {memories.length > 0 ? (
-            memories.map((memory) => {
-              const position = latLngToPosition(memory.latitude, memory.longitude, 4.5);
+            memories.map((memory, idx) => {
+              // Slight jitter to reduce perfect overlap when multiple pins have nearly identical coords
+              const jitter = (idx % 5) * 0.02; // small offset
+              const position = latLngToPosition(
+                memory.latitude + jitter * 0.01,
+                memory.longitude + jitter * 0.01,
+                4.5
+              );
               return (
                 <MemoryPoint
                   key={memory.id}
                   position={position}
                   windowVariant={memory.windowVariant}
                   location={memory.location}
+                  highlighted={highlightId === memory.id}
                   onClick={() => {
                     console.log('[v0] Memory clicked:', memory.id);
                     onMemoryClick?.(memory.id);

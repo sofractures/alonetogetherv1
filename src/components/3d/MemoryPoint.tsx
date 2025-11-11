@@ -11,6 +11,7 @@ interface MemoryPointProps {
   windowVariant: 1 | 2;
   location?: string;
   onClick?: () => void;
+  highlighted?: boolean;
 }
 
 export default function MemoryPoint({
@@ -18,6 +19,7 @@ export default function MemoryPoint({
   windowVariant,
   location,
   onClick,
+  highlighted = false,
 }: MemoryPointProps) {
   const meshRef = useRef<Mesh>(null);
   const [hovered, setHovered] = useState(false);
@@ -37,8 +39,8 @@ export default function MemoryPoint({
     }
   });
 
-  const scale = hovered ? 1.3 : 1;
-  const opacity = hovered ? 1 : 0.85;
+  const scale = highlighted ? 1.4 : hovered ? 1.3 : 1;
+  const opacity = highlighted ? 1 : hovered ? 1 : 0.85;
 
   const handleClick = () => {
     // Don't stop propagation on single click - let OrbitControls handle it
@@ -82,8 +84,8 @@ export default function MemoryPoint({
             map={texture}
             transparent
             opacity={opacity}
-            emissive={hovered ? '#a78bfa' : '#000000'}
-            emissiveIntensity={hovered ? 0.5 : 0}
+            emissive={highlighted ? '#f59e0b' : hovered ? '#a78bfa' : '#000000'}
+            emissiveIntensity={highlighted ? 1.2 : hovered ? 0.5 : 0}
             side={2} // DoubleSide - render both sides
           />
         </mesh>

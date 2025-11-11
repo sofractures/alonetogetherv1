@@ -18,6 +18,8 @@ export default function Home() {
   const [processedAudioUrl, setProcessedAudioUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isMemoryPlayerOpen, setIsMemoryPlayerOpen] = useState(false);
+  const [lastCreatedMemoryId, setLastCreatedMemoryId] = useState<string | null>(null);
+  const [highlightMemoryId, setHighlightMemoryId] = useState<string | null>(null);
   
   // Memory store
   const { memories, fetchMemories, selectMemory, selectedMemory, isLoading, error } = useMemoryStore();
@@ -117,6 +119,7 @@ export default function Home() {
         hasLocation: !!location,
         location: location
       });
+      setLastCreatedMemoryId(data.memoryId ?? null);
       
       if (!data.memoryId) {
         console.error('[v0] WARNING: Memory record was not created! memoryId is null');
@@ -159,6 +162,13 @@ export default function Home() {
                 hasAudio: !!newMemory.audioUrl,
                 audioUrl: newMemory.audioUrl
               });
+              // Highlight and preselect the newly created memory
+              setHighlightMemoryId(newMemory.id);
+              selectMemory(newMemory.id);
+              // Auto-open player for immediate playback if desired
+              setIsMemoryPlayerOpen(true);
+              // Remove highlight after a few seconds
+              setTimeout(() => setHighlightMemoryId(null), 6000);
             } else {
               console.warn('[v0] ⚠️ New memory NOT found in store. Available IDs:', currentMemories.map(m => m.id));
             }
@@ -170,6 +180,11 @@ export default function Home() {
               const mems = useMemoryStore.getState().memories;
               const found = mems.find(m => m.id === data.memoryId);
               console.log('[v0] After 1s refresh:', found ? '✅ Found' : '❌ Not found');
+              if (found) {
+                setHighlightMemoryId(found.id);
+                selectMemory(found.id);
+                setTimeout(() => setHighlightMemoryId(null), 6000);
+              }
             });
           }, 1000);
           
@@ -179,6 +194,11 @@ export default function Home() {
               const mems = useMemoryStore.getState().memories;
               const found = mems.find(m => m.id === data.memoryId);
               console.log('[v0] After 3s refresh:', found ? '✅ Found' : '❌ Not found');
+              if (found) {
+                setHighlightMemoryId(found.id);
+                selectMemory(found.id);
+                setTimeout(() => setHighlightMemoryId(null), 6000);
+              }
             });
           }, 3000);
           
@@ -192,6 +212,10 @@ export default function Home() {
                 console.error('[v0] ❌ CRITICAL: New memory still not found after 5 seconds!');
                 console.error('[v0] Expected memoryId:', data.memoryId);
                 console.error('[v0] Available memories:', mems.map(m => ({ id: m.id, location: m.location, hasAudio: !!m.audioUrl })));
+              } else {
+                setHighlightMemoryId(found.id);
+                selectMemory(found.id);
+                setTimeout(() => setHighlightMemoryId(null), 6000);
               }
             });
           }, 5000);
