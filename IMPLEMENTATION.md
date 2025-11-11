@@ -181,35 +181,35 @@
 - [ ] Optimize texture size for performance
 
 ### Memory Windows Component
-- [ ] Adapt existing `components/3d/MemoryPoint.tsx`:
-  - [ ] Load both window textures (`window.jpeg`, `window2.jpeg`)
-  - [ ] Implement texture selection based on `window_variant`
-  - [ ] Set up billboard effect (always face camera)
-  - [ ] Add floating animation (sine wave on Y-axis)
-  - [ ] Implement hover effects:
-    - [ ] Scale to 130%
-    - [ ] Opacity change (85% → 100%)
-    - [ ] Purple glow (#a78bfa)
-    - [ ] Show location label
-  - [ ] Add click handler for audio playback
+- [x] Adapt existing `components/3d/MemoryPoint.tsx`:
+  - [x] Load both window textures (`window.jpeg`, `window2.jpeg`)
+  - [x] Implement texture selection based on `window_variant`
+  - [x] Set up billboard effect (always face camera)
+  - [x] Add floating animation (sine wave on Y-axis)
+  - [x] Implement hover effects:
+    - [x] Scale to 130%
+    - [x] Opacity change (85% → 100%)
+    - [x] Purple glow (#a78bfa)
+    - [x] Show location label
+  - [x] Add click handler for audio playback
 - [ ] Create texture preloading system
 - [ ] Test performance with multiple windows
 
 ### 3D Scene Assembly
-- [ ] Update `components/3d/MemoryGlobe.tsx`:
-  - [ ] Set up Three.js scene with proper lighting
-  - [ ] Position BuildingCube at center (0,0,0)
-  - [ ] Implement lat/lng to 3D position conversion
+- [x] Update `components/3d/MemoryGlobe.tsx`:
+  - [x] Set up Three.js scene with proper lighting
+  - [x] Position BuildingCube at center (0,0,0)
+  - [x] Implement lat/lng to 3D position conversion
   - [ ] Add intelligent clustering for overlapping locations
-  - [ ] Configure OrbitControls:
+  - [x] Configure OrbitControls:
     ```javascript
     minDistance: 6
     maxDistance: 20
     enablePan: false
     dampingFactor: 0.05
     ```
-  - [ ] Add touch controls for mobile
-  - [ ] Implement zoom limits
+  - [x] Add touch controls for mobile
+  - [x] Implement zoom limits
 - [ ] Test with mock data (various location densities)
 - [ ] Optimize for 100+ windows
 
@@ -288,12 +288,12 @@
   - [x] Load processed audio from Supabase signed URL
   - [x] Native HTML5 audio player with controls
   - [x] Download button for processed MP3
-- [ ] Create `components/audio/MemoryPlayer.tsx` (for 3D window playback):
+- [x] Create `components/audio/MemoryPlayer.tsx` (for 3D window playback):
   - [ ] Custom audio player UI with progress bar and scrubbing
   - [ ] Volume control
   - [ ] Share functionality
   - [ ] Full memory details display
-- [ ] Integrate with 3D window click events
+- [x] Integrate with 3D window click events
 - [ ] Add keyboard controls for playback
 
 ---
@@ -301,10 +301,10 @@
 ## 📍 Phase 4: Location & Data Flow
 
 ### Geolocation Implementation
-- [ ] Create `lib/location.ts`:
-  - [ ] Browser geolocation API integration
-  - [ ] IP-based fallback (using free service)
-  - [ ] City-level precision only (privacy)
+- [x] Create `lib/location.ts`:
+  - [x] Browser geolocation API integration
+  - [x] IP-based fallback (using free service)
+  - [x] City-level precision only (privacy)
   - [ ] Manual location entry option
 - [ ] Create location permission UI flow
 - [ ] Test across different browsers/devices
@@ -367,7 +367,7 @@
 ## 🎯 Phase 5: User Experience
 
 ### Complete User Flow
-- [ ] Home overlays on top of always-on 3D scene
+- [x] Home overlays on top of always-on 3D scene
   - [x] Title + Start button (keep 3D explore visible in background)
   - [x] Start button begins background song
 - [ ] Recording overlay (full-screen mobile, centered desktop)
@@ -382,9 +382,9 @@
   - [x] Prevent closing overlay while uploading/processing
   - [x] After processing completes, show playback UI with processed audio
   - [x] Display audio player with controls and download button
-  - [ ] 3D map will display new memory automatically when implemented
+  - [x] 3D map will display new memory automatically when implemented
 - [x] Playback overlay after processing completes (integrated into recording overlay)
-- [ ] Pin memory automatically on globe
+- [x] Pin memory automatically on globe
 - [ ] Location permission
 - [ ] Smooth transitions between states
 - [ ] Error/retry screens
