@@ -1,8 +1,7 @@
 "use client";
 
 import { Suspense, useMemo, useRef, useState } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { useThree, useFrame } from '@react-three/fiber';
+import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, Environment, PerspectiveCamera } from '@react-three/drei';
 import BuildingCube from './BuildingCube';
 import MemoryPoint from './MemoryPoint';
@@ -33,6 +32,26 @@ function latLngToPosition(lat: number, lng: number, radius: number = 4.5): [numb
   return [x, y, z];
 }
 
+// Internal component to track camera distance (must be inside Canvas)
+function CameraDistanceTracker({ onDistanceChange }: { onDistanceChange: (distance: number) => void }) {
+  const { camera } = useThree();
+  const lastUpdateRef = useRef<number>(0);
+  const lastDistRef = useRef<number>(camera.position.length());
+
+  useFrame(() => {
+    const now = performance.now();
+    const dist = camera.position.length();
+    // Throttle updates to reduce re-clustering jitter
+    if (now - lastUpdateRef.current > 120 && Math.abs(dist - lastDistRef.current) > 0.05) {
+      lastUpdateRef.current = now;
+      lastDistRef.current = dist;
+      onDistanceChange(dist);
+    }
+  });
+
+  return null;
+}
+
 export default function MemoryGlobe({ 
   memories = [], 
   autoRotate = false,
@@ -40,21 +59,7 @@ export default function MemoryGlobe({
   highlightId
 }: MemoryGlobeProps) {
   // Track camera distance to scale spread dynamically
-  const { camera } = useThree();
-  const [camDistance, setCamDistance] = useState<number>(camera.position.length());
-  const lastUpdateRef = useRef<number>(0);
-  const lastDistRef = useRef<number>(camDistance);
-
-  // Throttle updates to camDistance to reduce re-clustering jitter
-  useFrame(({ camera }, delta) => {
-    const now = performance.now();
-    const dist = camera.position.length();
-    if (now - lastUpdateRef.current > 120 && Math.abs(dist - lastDistRef.current) > 0.05) {
-      lastUpdateRef.current = now;
-      lastDistRef.current = dist;
-      setCamDistance(dist);
-    }
-  });
+  const [camDistance, setCamDistance] = useState<number>(8); // Default camera distance
 
   // Compute dynamic clustering: threshold ~100m; spread increases with cam distance
   // Base spread 40m at min zoom; up to 120m at far zoom
@@ -115,6 +120,9 @@ export default function MemoryGlobe({
         dpr={[1, 2]}
       >
         <Suspense fallback={null}>
+          {/* Camera distance tracker (must be inside Canvas) */}
+          <CameraDistanceTracker onDistanceChange={setCamDistance} />
+          
           {/* Lighting */}
           <ambientLight intensity={0.6} />
           <directionalLight position={[10, 10, 5]} intensity={1.2} />
