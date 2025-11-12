@@ -68,11 +68,15 @@ export default function MemoryGlobe({
   const { positions: clusteredMemories, clusters } = useMemo(() => {
     if (memories.length === 0) return { positions: [], clusters: new Map() };
     
-    const thresholdMeters = 2000; // group items within 2km (for same city/location, accounts for IP geolocation variance)
+    // Reduce threshold to only cluster very close memories (same building/block)
+    // This prevents different cities from being grouped together
+    const thresholdMeters = 500; // group items within 500m (same building/block, not whole cities)
     const minDist = 4;
     const maxDist = 25;
     const t = Math.min(1, Math.max(0, (camDistance - minDist) / (maxDist - minDist)));
-    const spreadRadiusMeters = 50 + t * 150; // 50m → 200m (more visible spread when zoomed in)
+    // More aggressive spread: starts at 100m, goes up to 500m when zoomed in
+    // This ensures memories are always visible and spread out more when zooming
+    const spreadRadiusMeters = 100 + t * 400; // 100m → 500m (much more visible spread)
     const result = clusterAndSpreadMemories(
       memories, 
       thresholdMeters, 

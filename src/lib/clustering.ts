@@ -94,11 +94,17 @@ function spreadCluster(
   // Spiral pattern: place memories in a spiral around the center
   const results: Array<{ memory: MemoryForMap; lat: number; lon: number }> = [];
   
+  // Ensure minimum spacing between memories for visibility
+  // Scale radius based on number of memories to ensure they don't overlap
+  const minSpacingDeg = 0.001; // ~111m minimum spacing
+  const effectiveRadius = Math.max(spreadRadiusDeg, minSpacingDeg * Math.sqrt(cluster.length));
+  
   for (let i = 0; i < cluster.length; i++) {
     // Golden angle for even distribution: 137.508 degrees
     const angle = (i * 137.508) * (Math.PI / 180);
-    // Spiral radius increases with index
-    const radius = spreadRadiusDeg * Math.sqrt(i + 1) / Math.sqrt(cluster.length);
+    // Spiral radius increases with index, ensuring even distribution
+    // Use a more aggressive spread for better visibility
+    const radius = effectiveRadius * Math.sqrt((i + 1) / cluster.length);
     
     // Calculate offset in degrees
     const latOffset = radius * Math.cos(angle);
