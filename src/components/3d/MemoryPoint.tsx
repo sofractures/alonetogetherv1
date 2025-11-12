@@ -23,6 +23,8 @@ export default function MemoryPoint({
 }: MemoryPointProps) {
   const meshRef = useRef<Mesh>(null);
   const [hovered, setHovered] = useState(false);
+  const lastClickTimeRef = useRef<number>(0);
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Load the appropriate window texture
   const texture = useTexture(
@@ -43,20 +45,35 @@ export default function MemoryPoint({
   const opacity = highlighted ? 1 : hovered ? 1 : 0.85;
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
-    // Single click - don't do anything, let OrbitControls handle rotation
-    // Only handle double-click for opening/cluster expansion
-  };
-
-  const handleDoubleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation(); // Stop propagation to prevent OrbitControls from rotating
-    console.log('[v0] MemoryPoint: Double-click detected on:', location);
     
-    // Trigger the onClick handler (which handles cluster expansion or playback)
-    if (onClick) {
-      console.log('[v0] MemoryPoint: Calling onClick handler');
-      onClick();
+    const now = Date.now();
+    const timeSinceLastClick = now - lastClickTimeRef.current;
+    
+    // Clear any pending single-click timeout
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+      clickTimeoutRef.current = null;
+    }
+    
+    // If clicked within 300ms of last click, treat as double-click
+    if (timeSinceLastClick < 300) {
+      console.log('[v0] MemoryPoint: Double-click detected (manual) on:', location);
+      lastClickTimeRef.current = 0; // Reset
+      
+      // Trigger the onClick handler (which handles cluster expansion or playback)
+      if (onClick) {
+        console.log('[v0] MemoryPoint: Calling onClick handler');
+        onClick();
+      }
     } else {
-      console.warn('[v0] MemoryPoint: No onClick handler provided!');
+      // Single click - wait to see if there's a second click
+      lastClickTimeRef.current = now;
+      clickTimeoutRef.current = setTimeout(() => {
+        // Single click after timeout - do nothing, let OrbitControls handle rotation
+        console.log('[v0] MemoryPoint: Single click (ignored) on:', location);
+        clickTimeoutRef.current = null;
+      }, 300);
     }
   };
 
@@ -79,7 +96,6 @@ export default function MemoryPoint({
           ref={meshRef}
           scale={scale}
           onClick={handleClick}
-          onDoubleClick={handleDoubleClick}
           onPointerOver={handlePointerOver}
           onPointerOut={handlePointerOut}
         >
