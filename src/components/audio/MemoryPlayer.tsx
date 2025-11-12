@@ -79,7 +79,7 @@ export default function MemoryPlayer({ memory, isOpen, onClose }: MemoryPlayerPr
   if (!isOpen || !memory) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-labelledby="memory-player-title" aria-describedby="memory-player-description">
       <div 
         className="absolute inset-0 bg-black/70 backdrop-blur-sm" 
         onClick={onClose}
@@ -88,16 +88,17 @@ export default function MemoryPlayer({ memory, isOpen, onClose }: MemoryPlayerPr
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+          aria-label="Close memory player"
         >
           ✕
         </button>
         
-        <h2 className="text-2xl font-semibold text-white mb-2">
+        <h2 id="memory-player-title" className="text-2xl font-semibold text-white mb-2">
           {title}
         </h2>
         
         {memory.location && (
-          <p className="text-gray-300 text-sm mb-4">
+          <p id="memory-player-description" className="text-gray-300 text-sm mb-4">
             📍 {memory.location}
           </p>
         )}

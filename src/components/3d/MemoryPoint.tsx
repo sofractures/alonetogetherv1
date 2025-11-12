@@ -44,10 +44,15 @@ export default function MemoryPoint({
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation(); // Stop propagation to prevent OrbitControls from rotating
-    console.log('[v0] Click on memory:', location);
+    console.log('[v0] MemoryPoint: Click detected on:', location);
     
     // Trigger the onClick handler (which handles cluster expansion or playback)
-    onClick?.();
+    if (onClick) {
+      console.log('[v0] MemoryPoint: Calling onClick handler');
+      onClick();
+    } else {
+      console.warn('[v0] MemoryPoint: No onClick handler provided!');
+    }
   };
 
   const handlePointerOver = (e: ThreeEvent<PointerEvent>) => {

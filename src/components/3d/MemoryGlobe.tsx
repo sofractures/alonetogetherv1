@@ -178,6 +178,7 @@ export default function MemoryGlobe({
                   location={memory.location}
                   highlighted={highlightId === memory.id}
                   onClick={() => {
+                    console.log('=== MEMORY CLICK HANDLER ===');
                     console.log('[v0] Memory clicked:', {
                       memoryId: memory.id,
                       location: memory.location,
@@ -188,10 +189,15 @@ export default function MemoryGlobe({
                       lat: lat,
                       lon: lon
                     });
+                    console.log('[v0] All clusters:', Array.from(clusters.entries()).map(([id, members]) => ({
+                      id,
+                      size: members.length,
+                      members: members.map((m: MemoryForMap) => ({ id: m.id, location: m.location }))
+                    })));
                     
                     // If clicking on a cluster (multiple memories), expand it
                     if (clusterSize > 1 && !isInExpandedCluster) {
-                      console.log('[v0] 🔵 EXPANDING cluster:', clusterId, 'with', clusterSize, 'members');
+                      console.log('[v0] 🔵🔵🔵 EXPANDING cluster:', clusterId, 'with', clusterSize, 'members');
                       setExpandedClusterId(clusterId);
                       // Don't call onMemoryClick - just expand
                       return;
@@ -204,7 +210,7 @@ export default function MemoryGlobe({
                     }
                     // If clicking on a single memory (not in cluster), play it directly
                     else {
-                      console.log('[v0] 🟡 Playing single memory (not in cluster):', memory.id);
+                      console.log('[v0] 🟡 Playing single memory (not in cluster):', memory.id, 'clusterSize:', clusterSize);
                       onMemoryClick?.(memory.id);
                     }
                   }}
