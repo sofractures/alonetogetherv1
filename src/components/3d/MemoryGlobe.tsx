@@ -69,10 +69,10 @@ export default function MemoryGlobe({
     if (memories.length === 0) return { positions: [], clusters: new Map() };
     
     const thresholdMeters = 2000; // group items within 2km (for same city/location, accounts for IP geolocation variance)
-    const minDist = 6;
-    const maxDist = 20;
+    const minDist = 4;
+    const maxDist = 25;
     const t = Math.min(1, Math.max(0, (camDistance - minDist) / (maxDist - minDist)));
-    const spreadRadiusMeters = 40 + t * 80; // 40m → 120m
+    const spreadRadiusMeters = 50 + t * 150; // 50m → 200m (more visible spread when zoomed in)
     const result = clusterAndSpreadMemories(
       memories, 
       thresholdMeters, 
@@ -175,10 +175,12 @@ export default function MemoryGlobe({
               // Find which cluster this memory belongs to
               let clusterId: string | null = null;
               let clusterSize = 1;
+              let isClusterCenter = false;
               for (const [cid, clusterMembers] of clusters.entries()) {
                 if (clusterMembers.some((m: MemoryForMap) => m.id === memory.id)) {
                   clusterId = cid;
                   clusterSize = clusterMembers.length;
+                  isClusterCenter = cid === memory.id; // The cluster center is the memory with ID matching cluster ID
                   break;
                 }
               }
@@ -200,28 +202,30 @@ export default function MemoryGlobe({
                       clusterId: clusterId,
                       clusterSize: clusterSize,
                       isInExpandedCluster: isInExpandedCluster,
+                      isClusterCenter: isClusterCenter,
                       expandedClusterId: expandedClusterId,
                       lat: lat,
                       lon: lon
                     });
-                    console.log('[v0] All clusters:', Array.from(clusters.entries()).map(([id, members]) => ({
-                      id,
-                      size: members.length,
-                      members: members.map((m: MemoryForMap) => ({ id: m.id, location: m.location }))
-                    })));
                     
-                    // If clicking on a cluster (multiple memories), expand it
-                    if (clusterSize > 1 && !isInExpandedCluster) {
-                      console.log('[v0] 🔵🔵🔵 EXPANDING cluster:', clusterId, 'with', clusterSize, 'members');
-                      setExpandedClusterId(clusterId);
-                      // Don't call onMemoryClick - just expand
-                      return;
-                    } 
                     // If clicking on a memory in an expanded cluster, play it and collapse
-                    else if (isInExpandedCluster) {
+                    if (isInExpandedCluster) {
                       console.log('[v0] 🟢 Playing memory from expanded cluster:', memory.id);
                       setExpandedClusterId(null); // Collapse
                       onMemoryClick?.(memory.id);
+                    }
+                    // If clicking on a non-expanded cluster, expand it OR play center memory
+                    // If it's the cluster center, play it directly (fallback if expansion not visible)
+                    else if (clusterSize > 1) {
+                      if (isClusterCenter) {
+                        // Play the center memory directly as fallback
+                        console.log('[v0] 🟡 Playing cluster center memory directly:', memory.id);
+                        onMemoryClick?.(memory.id);
+                      } else {
+                        // Expand the cluster
+                        console.log('[v0] 🔵🔵🔵 EXPANDING cluster:', clusterId, 'with', clusterSize, 'members');
+                        setExpandedClusterId(clusterId);
+                      }
                     }
                     // If clicking on a single memory (not in cluster), play it directly
                     else {
@@ -250,8 +254,8 @@ export default function MemoryGlobe({
             enableRotate={true}
             enableZoom={true}
             enablePan={false}
-            minDistance={6}
-            maxDistance={20}
+            minDistance={4}
+            maxDistance={25}
             dampingFactor={0.05}
             enableDamping
             autoRotate={autoRotate}
