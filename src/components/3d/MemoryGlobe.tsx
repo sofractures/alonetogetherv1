@@ -68,7 +68,7 @@ export default function MemoryGlobe({
   const { positions: clusteredMemories, clusters } = useMemo(() => {
     if (memories.length === 0) return { positions: [], clusters: new Map() };
     
-    const thresholdMeters = 120; // group items in the same city block
+    const thresholdMeters = 2000; // group items within 2km (for same city/location, accounts for IP geolocation variance)
     const minDist = 6;
     const maxDist = 20;
     const t = Math.min(1, Math.max(0, (camDistance - minDist) / (maxDist - minDist)));
@@ -81,9 +81,18 @@ export default function MemoryGlobe({
       300 // Explode radius: 300m when expanded
     );
     
+    // Log cluster information for debugging
     console.log('[v0] MemoryGlobe: Clustered', memories.length, 'memories into', 
       new Set(result.positions.map(c => `${c.lat.toFixed(6)},${c.lon.toFixed(6)}`)).size, 
       'unique positions. Expanded cluster:', expandedClusterId);
+    
+    // Log all clusters and their sizes
+    for (const [clusterId, clusterMembers] of result.clusters.entries()) {
+      if (clusterMembers.length > 1) {
+        console.log('[v0] MemoryGlobe: Cluster', clusterId, 'has', clusterMembers.length, 'members:', 
+          clusterMembers.map(m => ({ id: m.id, location: m.location, lat: m.latitude, lon: m.longitude })));
+      }
+    }
     
     return result;
   }, [memories, camDistance, expandedClusterId]);
@@ -169,22 +178,33 @@ export default function MemoryGlobe({
                   location={memory.location}
                   highlighted={highlightId === memory.id}
                   onClick={() => {
-                    console.log('[v0] Memory clicked:', memory.id, 'cluster:', clusterId, 'size:', clusterSize);
+                    console.log('[v0] Memory clicked:', {
+                      memoryId: memory.id,
+                      location: memory.location,
+                      clusterId: clusterId,
+                      clusterSize: clusterSize,
+                      isInExpandedCluster: isInExpandedCluster,
+                      expandedClusterId: expandedClusterId,
+                      lat: lat,
+                      lon: lon
+                    });
                     
                     // If clicking on a cluster (multiple memories), expand it
                     if (clusterSize > 1 && !isInExpandedCluster) {
-                      console.log('[v0] Expanding cluster:', clusterId);
+                      console.log('[v0] 🔵 EXPANDING cluster:', clusterId, 'with', clusterSize, 'members');
                       setExpandedClusterId(clusterId);
+                      // Don't call onMemoryClick - just expand
+                      return;
                     } 
                     // If clicking on a memory in an expanded cluster, play it and collapse
                     else if (isInExpandedCluster) {
-                      console.log('[v0] Playing memory from expanded cluster:', memory.id);
+                      console.log('[v0] 🟢 Playing memory from expanded cluster:', memory.id);
                       setExpandedClusterId(null); // Collapse
                       onMemoryClick?.(memory.id);
                     }
                     // If clicking on a single memory (not in cluster), play it directly
                     else {
-                      console.log('[v0] Playing single memory:', memory.id);
+                      console.log('[v0] 🟡 Playing single memory (not in cluster):', memory.id);
                       onMemoryClick?.(memory.id);
                     }
                   }}

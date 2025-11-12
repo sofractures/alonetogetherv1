@@ -26,6 +26,8 @@ function groupByProximity(
   const clusters = new Map<string, MemoryForMap[]>();
   const processed = new Set<string>();
 
+  console.log('[v0] Clustering: Grouping', memories.length, 'memories with threshold', thresholdMeters, 'meters');
+
   for (const memory of memories) {
     if (processed.has(memory.id)) continue;
 
@@ -46,11 +48,17 @@ function groupByProximity(
       if (dist <= thresholdMeters) {
         cluster.push(other);
         processed.add(other.id);
+        console.log('[v0] Clustering: Added memory', other.id, 'to cluster', memory.id, 
+          'distance:', dist.toFixed(2), 'm');
       }
     }
 
     // Use the first memory's ID as cluster key
     clusters.set(memory.id, cluster);
+    
+    if (cluster.length > 1) {
+      console.log('[v0] Clustering: Created cluster', memory.id, 'with', cluster.length, 'members');
+    }
   }
 
   return clusters;
