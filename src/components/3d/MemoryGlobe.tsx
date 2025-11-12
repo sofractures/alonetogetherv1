@@ -59,7 +59,7 @@ export default function MemoryGlobe({
   highlightId
 }: MemoryGlobeProps) {
   // Track camera distance to scale spread dynamically
-  const [camDistance, setCamDistance] = useState<number>(8); // Default camera distance
+  const [camDistance, setCamDistance] = useState<number>(18); // Start zoomed out further (default camera distance)
   // Track which cluster is expanded (spiderfied)
   const [expandedClusterId, setExpandedClusterId] = useState<string | null>(null);
 
@@ -70,13 +70,18 @@ export default function MemoryGlobe({
     
     // Reduce threshold to only cluster very close memories (same building/block)
     // This prevents different cities from being grouped together
-    const thresholdMeters = 500; // group items within 500m (same building/block, not whole cities)
-    const minDist = 4;
-    const maxDist = 25;
-    const t = Math.min(1, Math.max(0, (camDistance - minDist) / (maxDist - minDist)));
-    // More aggressive spread: starts at 100m, goes up to 500m when zoomed in
-    // This ensures memories are always visible and spread out more when zooming
-    const spreadRadiusMeters = 100 + t * 400; // 100m → 500m (much more visible spread)
+    const thresholdMeters = 300; // group items within 300m (very close, same building)
+    const minDist = 6;
+    const maxDist = 30;
+    // More aggressive spread calculation: exponential curve for better visibility
+    // When zoomed out (18): minimal spread (200m)
+    // When zoomed in (6): maximum spread (2000m) - very visible separation
+    const normalizedDist = Math.min(1, Math.max(0, (camDistance - minDist) / (maxDist - minDist)));
+    // Use exponential curve: spread increases dramatically when zooming in
+    const t = 1 - normalizedDist; // Invert so closer = higher spread
+    const spreadRadiusMeters = 200 + (t * t * t) * 1800; // 200m → 2000m (exponential curve for visible spread)
+    
+    console.log('[v0] MemoryGlobe: Camera distance:', camDistance.toFixed(2), 'Spread radius:', spreadRadiusMeters.toFixed(0), 'm');
     const result = clusterAndSpreadMemories(
       memories, 
       thresholdMeters, 
@@ -151,7 +156,7 @@ export default function MemoryGlobe({
           <pointLight position={[-10, -10, -5]} intensity={0.6} color="#a78bfa" />
           
           {/* Camera */}
-          <PerspectiveCamera makeDefault position={[0, 0, 8]} fov={60} />
+          <PerspectiveCamera makeDefault position={[0, 0, 18]} fov={60} />
           
           {/* Central Building Cube */}
           <BuildingCube autoRotate={autoRotate} rotationSpeed={0.2} />
@@ -198,6 +203,7 @@ export default function MemoryGlobe({
                   windowVariant={memory.windowVariant}
                   location={memory.location}
                   highlighted={highlightId === memory.id}
+                  cameraDistance={camDistance}
                   onClick={() => {
                     console.log('=== MEMORY CLICK HANDLER ===');
                     console.log('[v0] Memory clicked:', {
@@ -258,8 +264,8 @@ export default function MemoryGlobe({
             enableRotate={true}
             enableZoom={true}
             enablePan={false}
-            minDistance={4}
-            maxDistance={25}
+            minDistance={6}
+            maxDistance={30}
             dampingFactor={0.05}
             enableDamping
             autoRotate={autoRotate}

@@ -12,6 +12,7 @@ interface MemoryPointProps {
   location?: string;
   onClick?: () => void;
   highlighted?: boolean;
+  cameraDistance?: number; // Optional camera distance for scaling
 }
 
 export default function MemoryPoint({
@@ -20,6 +21,7 @@ export default function MemoryPoint({
   location,
   onClick,
   highlighted = false,
+  cameraDistance = 18, // Default camera distance
 }: MemoryPointProps) {
   const meshRef = useRef<Mesh>(null);
   const [hovered, setHovered] = useState(false);
@@ -41,7 +43,16 @@ export default function MemoryPoint({
     }
   });
 
-  const scale = highlighted ? 1.4 : hovered ? 1.3 : 1;
+  // Scale window size based on camera distance
+  // When zoomed out (far): smaller windows (0.6x)
+  // When zoomed in (close): larger windows (1.2x)
+  const minDist = 6;
+  const maxDist = 30;
+  const normalizedDist = Math.min(1, Math.max(0, (cameraDistance - minDist) / (maxDist - minDist)));
+  const distanceScale = 0.6 + (1 - normalizedDist) * 0.6; // 0.6 → 1.2
+  
+  const baseScale = highlighted ? 1.4 : hovered ? 1.3 : 1;
+  const scale = baseScale * distanceScale;
   const opacity = highlighted ? 1 : hovered ? 1 : 0.85;
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
