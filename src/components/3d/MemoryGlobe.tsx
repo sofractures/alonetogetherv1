@@ -159,7 +159,7 @@ export default function MemoryGlobe({
               
               // Log position changes for expanded clusters
               if (expandedClusterId) {
-                const isInExpanded = clusters.get(expandedClusterId)?.some(m => m.id === memory.id);
+                const isInExpanded = clusters.get(expandedClusterId)?.some((m: MemoryForMap) => m.id === memory.id);
                 if (isInExpanded) {
                   console.log('[v0] Expanded cluster memory position:', {
                     id: memory.id,
