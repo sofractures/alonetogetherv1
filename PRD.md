@@ -116,9 +116,10 @@ ffmpeg -i user_voice.wav -i assets/instrumental.mp3 \
 - Gentle floating animation (sine wave on Y-axis)
 
 Browsing Dense Locations:
-- Intelligent clustering groups memories within ~100–200 meters
-- Zoom-dependent spread increases separation as the user zooms in
-- Explode-on-click (planned): clicking a dense cluster fans out its members in a circular “spiderfy” around the city center for precise selection
+- Intelligent clustering groups memories within ~120 meters
+- Zoom-dependent spread increases separation as the user zooms in (40m → 120m based on camera distance)
+- Explode-on-click (implemented): clicking a dense cluster fans out its members in a golden-angle spiral pattern around the city center (300m radius) for precise selection
+- Cluster automatically collapses when user rotates/zooms (clicking away) or selects a memory
 - Mobile/large-cluster fallback (planned): a compact drawer lists all memories at that location (name, time), allowing quick selection without precise tapping
 
 ### 3.4 Memory Exploration Experience

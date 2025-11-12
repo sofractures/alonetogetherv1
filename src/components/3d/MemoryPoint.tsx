@@ -42,17 +42,11 @@ export default function MemoryPoint({
   const scale = highlighted ? 1.4 : hovered ? 1.3 : 1;
   const opacity = highlighted ? 1 : hovered ? 1 : 0.85;
 
-  const handleClick = () => {
-    // Don't stop propagation on single click - let OrbitControls handle it
-    // Only handle double-click for opening modal
-    console.log('[v0] Single click on memory:', location);
-  };
-
-  const handleDoubleClick = (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation();
-    console.log('[v0] Double click on memory:', location);
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation(); // Stop propagation to prevent OrbitControls from rotating
+    console.log('[v0] Click on memory:', location);
     
-    // Trigger the onClick handler (which opens modal)
+    // Trigger the onClick handler (which handles cluster expansion or playback)
     onClick?.();
   };
 
@@ -75,7 +69,6 @@ export default function MemoryPoint({
           ref={meshRef}
           scale={scale}
           onClick={handleClick}
-          onDoubleClick={handleDoubleClick}
           onPointerOver={handlePointerOver}
           onPointerOut={handlePointerOut}
         >

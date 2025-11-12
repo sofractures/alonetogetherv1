@@ -99,27 +99,41 @@ function spreadCluster(
 /**
  * Main clustering function: groups nearby memories and spreads them
  * Returns memories with adjusted coordinates to prevent overlap
+ * Also returns cluster information for explode-on-click functionality
  */
 export function clusterAndSpreadMemories(
   memories: MemoryForMap[],
   thresholdMeters: number = 100,
-  spreadRadiusMeters: number = 50
-): Array<{ memory: MemoryForMap; lat: number; lon: number }> {
+  spreadRadiusMeters: number = 50,
+  expandedClusterId: string | null = null,
+  explodeRadiusMeters: number = 200 // Larger radius when exploded
+): {
+  positions: Array<{ memory: MemoryForMap; lat: number; lon: number }>;
+  clusters: Map<string, MemoryForMap[]>; // cluster center ID -> memories in cluster
+} {
   const clusters = groupByProximity(memories, thresholdMeters);
   const results: Array<{ memory: MemoryForMap; lat: number; lon: number }> = [];
 
   for (const [centerId, cluster] of clusters) {
     // Find the center memory (first one in cluster)
     const centerMemory = cluster.find(m => m.id === centerId) || cluster[0];
+    
+    // If this cluster is expanded, use larger spread radius
+    const isExpanded = expandedClusterId === centerId;
+    const currentSpreadRadius = isExpanded ? explodeRadiusMeters : spreadRadiusMeters;
+    
     const spread = spreadCluster(
       cluster,
       centerMemory.latitude,
       centerMemory.longitude,
-      spreadRadiusMeters
+      currentSpreadRadius
     );
     results.push(...spread);
   }
 
-  return results;
+  return {
+    positions: results,
+    clusters: clusters
+  };
 }
 

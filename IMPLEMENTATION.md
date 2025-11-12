@@ -200,8 +200,9 @@
   - [x] Set up Three.js scene with proper lighting
   - [x] Position BuildingCube at center (0,0,0)
   - [x] Implement lat/lng to 3D position conversion
-  - [ ] Add intelligent clustering for overlapping locations
-- [x] Add zoom-dependent spread for overlapping locations (dynamic spread radius based on camera distance)
+  - [x] Add intelligent clustering for overlapping locations (120m threshold)
+- [x] Add zoom-dependent spread for overlapping locations (dynamic spread radius based on camera distance: 40m → 120m)
+- [x] Implement explode-on-click (spiderfy) for clusters: clicking a cluster expands it into a 3D ring (300m radius) for easy selection
   - [x] Configure OrbitControls:
     ```javascript
     minDistance: 6
@@ -221,13 +222,15 @@
 - [ ] Implement texture atlasing if needed
 - [ ] Add loading states with Suspense boundaries
 
-### Cluster Browsing (Planned)
-- [ ] Spiderfy explode-on-click: fan out cluster members around city center with ring layout
-  - [ ] Golden-angle ring placement, optional link lines to center
-  - [ ] Collapse on outside click or after selection
+### Cluster Browsing
+- [x] Spiderfy explode-on-click: fan out cluster members around city center with ring layout
+  - [x] Golden-angle spiral placement for even distribution
+  - [x] Expand cluster on click (300m radius when exploded)
+  - [x] Collapse on outside click (rotate/zoom) or after memory selection
+  - [x] Single-click interaction (changed from double-click)
 - [ ] Mobile/large-cluster drawer fallback listing (name, location, play/next/prev)
   - [ ] Open drawer when cluster size > N or on small screens
-  - [ ] Optional “Show on map” highlight for selected memory
+  - [ ] Optional "Show on map" highlight for selected memory
 
 ---
 

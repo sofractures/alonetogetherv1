@@ -60,24 +60,33 @@ export default function MemoryGlobe({
 }: MemoryGlobeProps) {
   // Track camera distance to scale spread dynamically
   const [camDistance, setCamDistance] = useState<number>(8); // Default camera distance
+  // Track which cluster is expanded (spiderfied)
+  const [expandedClusterId, setExpandedClusterId] = useState<string | null>(null);
 
   // Compute dynamic clustering: threshold ~100m; spread increases with cam distance
   // Base spread 40m at min zoom; up to 120m at far zoom
-  const clusteredMemories = useMemo(() => {
-    if (memories.length === 0) return [];
+  const { positions: clusteredMemories, clusters } = useMemo(() => {
+    if (memories.length === 0) return { positions: [], clusters: new Map() };
     
     const thresholdMeters = 120; // group items in the same city block
     const minDist = 6;
     const maxDist = 20;
     const t = Math.min(1, Math.max(0, (camDistance - minDist) / (maxDist - minDist)));
     const spreadRadiusMeters = 40 + t * 80; // 40m → 120m
-    const clustered = clusterAndSpreadMemories(memories, thresholdMeters, spreadRadiusMeters);
+    const result = clusterAndSpreadMemories(
+      memories, 
+      thresholdMeters, 
+      spreadRadiusMeters,
+      expandedClusterId,
+      300 // Explode radius: 300m when expanded
+    );
     
     console.log('[v0] MemoryGlobe: Clustered', memories.length, 'memories into', 
-      new Set(clustered.map(c => `${c.lat.toFixed(6)},${c.lon.toFixed(6)}`)).size, 'unique positions');
+      new Set(result.positions.map(c => `${c.lat.toFixed(6)},${c.lon.toFixed(6)}`)).size, 
+      'unique positions. Expanded cluster:', expandedClusterId);
     
-    return clustered;
-  }, [memories, camDistance]);
+    return result;
+  }, [memories, camDistance, expandedClusterId]);
 
   // Debug: Log memories count and details
   console.log('[v0] MemoryGlobe: Rendering with', memories.length, 'memories');
@@ -138,6 +147,20 @@ export default function MemoryGlobe({
           {clusteredMemories.length > 0 ? (
             clusteredMemories.map(({ memory, lat, lon }) => {
               const position = latLngToPosition(lat, lon, 4.5);
+              
+              // Find which cluster this memory belongs to
+              let clusterId: string | null = null;
+              let clusterSize = 1;
+              for (const [cid, clusterMembers] of clusters.entries()) {
+                if (clusterMembers.some((m: MemoryForMap) => m.id === memory.id)) {
+                  clusterId = cid;
+                  clusterSize = clusterMembers.length;
+                  break;
+                }
+              }
+              
+              const isInExpandedCluster = expandedClusterId === clusterId;
+              
               return (
                 <MemoryPoint
                   key={memory.id}
@@ -146,8 +169,24 @@ export default function MemoryGlobe({
                   location={memory.location}
                   highlighted={highlightId === memory.id}
                   onClick={() => {
-                    console.log('[v0] Memory clicked:', memory.id);
-                    onMemoryClick?.(memory.id);
+                    console.log('[v0] Memory clicked:', memory.id, 'cluster:', clusterId, 'size:', clusterSize);
+                    
+                    // If clicking on a cluster (multiple memories), expand it
+                    if (clusterSize > 1 && !isInExpandedCluster) {
+                      console.log('[v0] Expanding cluster:', clusterId);
+                      setExpandedClusterId(clusterId);
+                    } 
+                    // If clicking on a memory in an expanded cluster, play it and collapse
+                    else if (isInExpandedCluster) {
+                      console.log('[v0] Playing memory from expanded cluster:', memory.id);
+                      setExpandedClusterId(null); // Collapse
+                      onMemoryClick?.(memory.id);
+                    }
+                    // If clicking on a single memory (not in cluster), play it directly
+                    else {
+                      console.log('[v0] Playing single memory:', memory.id);
+                      onMemoryClick?.(memory.id);
+                    }
                   }}
                 />
               );
@@ -185,7 +224,12 @@ export default function MemoryGlobe({
               ONE: 0, // Rotate
               TWO: 2, // Zoom
             }}
-            // onChange removed - was causing excessive logging
+            onChange={() => {
+              // Collapse expanded cluster when user rotates/zooms (clicking away)
+              if (expandedClusterId) {
+                setExpandedClusterId(null);
+              }
+            }}
           />
         </Suspense>
       </Canvas>
