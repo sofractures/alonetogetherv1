@@ -78,7 +78,7 @@ export default function MemoryGlobe({
       thresholdMeters, 
       spreadRadiusMeters,
       expandedClusterId,
-      3 // Explode radius: 3 degrees when expanded (visible on globe)
+      0.5 // Explode radius: 0.5 degrees when expanded (~55km, visible but not too far)
     );
     
     // Log cluster information for debugging
@@ -251,10 +251,8 @@ export default function MemoryGlobe({
               TWO: 2, // Zoom
             }}
             onChange={() => {
-              // Collapse expanded cluster when user rotates/zooms (clicking away)
-              if (expandedClusterId) {
-                setExpandedClusterId(null);
-              }
+              // Don't auto-collapse on every camera change - let user click away or select a memory
+              // Auto-collapse was too aggressive and collapsed immediately after expansion
             }}
           />
         </Suspense>
