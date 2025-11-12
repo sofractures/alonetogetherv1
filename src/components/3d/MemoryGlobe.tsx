@@ -78,7 +78,7 @@ export default function MemoryGlobe({
       thresholdMeters, 
       spreadRadiusMeters,
       expandedClusterId,
-      300 // Explode radius: 300m when expanded
+      3 // Explode radius: 3 degrees when expanded (visible on globe)
     );
     
     // Log cluster information for debugging
