@@ -43,8 +43,13 @@ export default function MemoryPoint({
   const opacity = highlighted ? 1 : hovered ? 1 : 0.85;
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
+    // Single click - don't do anything, let OrbitControls handle rotation
+    // Only handle double-click for opening/cluster expansion
+  };
+
+  const handleDoubleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation(); // Stop propagation to prevent OrbitControls from rotating
-    console.log('[v0] MemoryPoint: Click detected on:', location);
+    console.log('[v0] MemoryPoint: Double-click detected on:', location);
     
     // Trigger the onClick handler (which handles cluster expansion or playback)
     if (onClick) {
@@ -74,6 +79,7 @@ export default function MemoryPoint({
           ref={meshRef}
           scale={scale}
           onClick={handleClick}
+          onDoubleClick={handleDoubleClick}
           onPointerOver={handlePointerOver}
           onPointerOut={handlePointerOut}
         >

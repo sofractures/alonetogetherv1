@@ -78,7 +78,7 @@ export default function MemoryGlobe({
       thresholdMeters, 
       spreadRadiusMeters,
       expandedClusterId,
-      0.5 // Explode radius: 0.5 degrees when expanded (~55km, visible but not too far)
+      1.5 // Explode radius: 1.5 degrees when expanded (~167km, clearly visible on globe)
     );
     
     // Log cluster information for debugging
@@ -156,6 +156,21 @@ export default function MemoryGlobe({
           {clusteredMemories.length > 0 ? (
             clusteredMemories.map(({ memory, lat, lon }) => {
               const position = latLngToPosition(lat, lon, 4.5);
+              
+              // Log position changes for expanded clusters
+              if (expandedClusterId) {
+                const isInExpanded = clusters.get(expandedClusterId)?.some(m => m.id === memory.id);
+                if (isInExpanded) {
+                  console.log('[v0] Expanded cluster memory position:', {
+                    id: memory.id,
+                    originalLat: memory.latitude,
+                    originalLon: memory.longitude,
+                    spreadLat: lat,
+                    spreadLon: lon,
+                    position: position
+                  });
+                }
+              }
               
               // Find which cluster this memory belongs to
               let clusterId: string | null = null;

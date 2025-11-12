@@ -33,6 +33,7 @@ export async function GET(
     }
 
     if (!memory.audio_url) {
+      console.error('[v0] API: Memory has no audio_url:', memoryId);
       return NextResponse.json(
         { error: 'Audio not available for this memory' },
         { status: 404 }
@@ -40,19 +41,31 @@ export async function GET(
     }
 
     // Create a signed URL for the audio file
-    // audio_url is stored as a path like "final/{uuid}.mp3"
+    // audio_url is stored as a path like "final/{uuid}.mp3" or just "{uuid}.mp3"
+    console.log('[v0] API: Creating signed URL for memory:', memoryId, 'path:', memory.audio_url);
+    
+    // Ensure the path doesn't have leading slashes
+    const cleanPath = memory.audio_url.startsWith('/') ? memory.audio_url.slice(1) : memory.audio_url;
+    
     const { data: signedData, error: signedError } = await supabaseServer
       .storage
       .from('processed-songs')
-      .createSignedUrl(memory.audio_url, 3600); // 1 hour expiry
+      .createSignedUrl(cleanPath, 3600); // 1 hour expiry
 
     if (signedError || !signedData?.signedUrl) {
-      console.error('[v0] API: Error creating signed URL:', signedError);
+      console.error('[v0] API: Error creating signed URL:', {
+        error: signedError,
+        path: cleanPath,
+        memoryId: memoryId,
+        originalPath: memory.audio_url
+      });
       return NextResponse.json(
-        { error: 'Failed to generate audio URL' },
+        { error: 'Failed to generate audio URL', details: signedError?.message },
         { status: 500 }
       );
     }
+    
+    console.log('[v0] API: Successfully created signed URL for:', memoryId);
 
     // Return the signed URL as JSON
     // The client will use this URL directly in the audio element
