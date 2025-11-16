@@ -2,7 +2,7 @@
 
 import { Suspense, useMemo, useRef, useState } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { OrbitControls, Environment, PerspectiveCamera, Text } from '@react-three/drei';
+import { OrbitControls, Environment, PerspectiveCamera, Text, Billboard } from '@react-three/drei';
 import { Vector3 } from 'three';
 import BuildingCube from './BuildingCube';
 import MemoryPoint from './MemoryPoint';
@@ -286,10 +286,14 @@ export default function MemoryGlobe({
         {/* Dark overlay when spiral is expanded - behind canvas but visible */}
         {expandedOverlapId && (
           <div 
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-none"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             style={{
               transition: 'opacity 0.3s ease-in-out',
               zIndex: 1
+            }}
+            onClick={() => {
+              console.log('[v0] Clicked on overlay - collapsing expansion');
+              setExpandedOverlapId(null);
             }}
           />
         )}
