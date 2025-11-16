@@ -296,6 +296,7 @@ export default function MemoryGlobe({
             onClick={() => {
               console.log('[v0] Clicked on overlay - collapsing expansion');
               setExpandedOverlapId(null);
+              setHoveredMemoryInSpiral(null); // Reset hover state
             }}
           />
         )}
