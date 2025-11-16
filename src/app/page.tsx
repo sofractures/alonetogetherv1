@@ -275,6 +275,118 @@ export default function Home() {
       setIsUploading(false);
     }
   };
+
+  // New flow handlers
+  const handleAddToGlobe = () => {
+    setFlowState('pinning');
+  };
+
+  const handlePinMemory = async (data: { email: string; location: LocationData | null; name?: string }) => {
+    setUserEmail(data.email);
+    setUserName(data.name || null);
+    setFlowState('pinning-processing');
+    
+    // Get location if not provided
+    let location = data.location;
+    if (!location) {
+      try {
+        location = await getBrowserLocation();
+        if (!location) {
+          location = await getIPLocation();
+        }
+      } catch (error) {
+        console.warn('Location fetch error:', error);
+      }
+    }
+    
+    // Update the existing memory record with email, name, and location
+    if (pinnedMemoryId) {
+      try {
+        const updateBody: {
+          email: string;
+          user_name?: string;
+          location?: LocationData;
+        } = {
+          email: data.email,
+        };
+        
+        if (data.name) {
+          updateBody.user_name = data.name;
+        }
+        if (location) {
+          updateBody.location = location;
+        }
+        
+        const res = await fetch(`/api/memory/${pinnedMemoryId}/update`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updateBody),
+        });
+        
+        const result = await res.json();
+        
+        if (!res.ok) {
+          throw new Error(result.error || 'Failed to update memory');
+        }
+        
+        setPinnedLocation(location ? `${location.city || ''}${location.city && location.country ? ', ' : ''}${location.country || ''}`.trim() : null);
+        
+        // Refresh memories to show the updated pin
+        await fetchMemories();
+        
+        // Move to celebration screen
+        setFlowState('celebrating');
+      } catch (error) {
+        console.error('Error pinning memory:', error);
+        setUploadError('Failed to pin memory. Please try again.');
+        setFlowState('pinning');
+      }
+    } else {
+      // If we don't have a memory ID yet, create it now with all the data
+      await proceedWithUpload(location, data.email, data.name);
+    }
+  };
+
+  const handleDownload = () => {
+    if (processedAudioUrl) {
+      const link = document.createElement('a');
+      link.href = processedAudioUrl;
+      link.download = `alone-together-${pinnedMemoryId || 'memory'}.mp3`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  const handleExploreGlobe = () => {
+    setFlowState('complete');
+    setIsOverlayOpen(false);
+    setHasStartedExploring(true);
+    
+    // Highlight the new memory
+    if (pinnedMemoryId) {
+      setHighlightMemoryId(pinnedMemoryId);
+      setTimeout(() => setHighlightMemoryId(null), 6000);
+    }
+    
+    // Refresh memories one more time
+    fetchMemories();
+  };
+
+  const handleCreateAnother = () => {
+    // Reset everything for a new recording
+    setFlowState('idle');
+    setPendingBlob(null);
+    setPendingUrl(null);
+    setProcessedAudioUrl(null);
+    setUserEmail(null);
+    setUserName(null);
+    setPinnedMemoryId(null);
+    setPinnedLocation(null);
+    setIsOverlayOpen(false);
+    setIsWelcomeOpen(true);
+  };
+
   return (
     <div className="relative w-full h-screen overflow-hidden">
       {/* 3D Scene - Always visible in background */}
