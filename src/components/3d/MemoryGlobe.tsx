@@ -312,7 +312,7 @@ export default function MemoryGlobe({
         }}
         gl={{ antialias: true, alpha: true }}
         dpr={[1, 2]}
-        onClick={(e) => {
+        onClick={() => {
           // If spiral is expanded and click didn't hit a memory window, collapse it
           // Memory windows stop propagation, so if we get here, it's a background click
           if (expandedOverlapId) {
