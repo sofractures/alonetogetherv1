@@ -525,15 +525,14 @@ export default function MemoryGlobe({
                       lon: lon
                     });
                     
-                    // If clicking on a window in expanded overlap (spiral mode), play that memory
+                    // If clicking on a window in expanded overlap (spiral mode), play that SINGLE memory
                     // Don't collapse spiral - let it stay open so user returns to it after closing popup
                     if (isInExpandedOverlap) {
-                      console.log('[v0] 🎵 Playing memory from expanded spiral:', memory.id, '- keeping spiral open');
+                      console.log('[v0] 🎵 Playing SINGLE memory from expanded spiral:', memory.id, '- keeping spiral open');
                       // Don't collapse spiral - keep it open
                       setHoveredMemoryInSpiral(null); // Reset hover state
-                      // Pass overlapping memories for playlist if available
-                      const overlappingForPlaylist = overlappingMemories && overlappingMemories.length > 1 ? overlappingMemories : undefined;
-                      onMemoryClick?.(memory.id, overlappingForPlaylist, true); // Play the selected memory, keepSpiralOpen=true
+                      // Play just this single memory (no playlist) - user clicked on a specific window
+                      onMemoryClick?.(memory.id, undefined, true); // Play the selected memory, keepSpiralOpen=true, no playlist
                       return;
                     }
                     
