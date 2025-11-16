@@ -348,58 +348,57 @@ export default function MemoryGlobe({
             const activeMemory = expandedGroup.find(m => m.id === activeMemoryId) || centerMemory;
             
             if (centerPos && activeMemory.location) {
-              // Calculate the position of the lowest window in the spiral
-              // Windows are arranged in a circle, so find the one at the bottom (270 degrees / -90 degrees)
-              const fixedRadiusDegrees = 15.0;
-              const centerLat = centerPos.lat;
-              const centerLon = centerPos.lon;
-              
-              // Find the angle that corresponds to the bottom of the circle (south)
-              // In a circle, the bottom is at 270 degrees (or -90 degrees)
-              const bottomAngle = (3 * Math.PI) / 2; // 270 degrees in radians
-              
-              // Calculate the lat/lon offset for the bottom window
-              const latOffset = fixedRadiusDegrees * Math.cos(bottomAngle);
-              const lonOffset = fixedRadiusDegrees * Math.sin(bottomAngle) / Math.cos(centerLat * Math.PI / 180);
-              
-              // Position of the bottom window
-              const bottomWindowLat = centerLat + latOffset;
-              const bottomWindowLon = centerLon + lonOffset;
-              
-              // Convert to 3D position
-              const bottomWindowPosition3D = latLngToPosition(bottomWindowLat, bottomWindowLon, 4.5);
-              
-              // Position text below the bottom window
-              // Each window is ~1.5 units tall, so the bottom edge is at ~-0.75 from window center
-              // Position text further below that
-              const textOffsetY = -1.5; // Offset below the window
-              
-              // Calculate text position: move down from the bottom window position
-              // We need to move in the direction opposite to the window's position vector
-              const textPosition3D: [number, number, number] = [
-                bottomWindowPosition3D[0],
-                bottomWindowPosition3D[1] + textOffsetY, // Move down in Y (screen space)
-                bottomWindowPosition3D[2]
-              ];
-              
-              return (
-                <group renderOrder={1000}>
-                  <Billboard position={textPosition3D} follow={true} lockX={false} lockY={false} lockZ={false}>
-                    <Text
-                      position={[0, 0, 0]}
-                      fontSize={0.2}
-                      color="#ffffff"
-                      anchorX="center"
-                      anchorY="middle"
-                      outlineWidth={0.03}
-                      outlineColor="#000000"
-                      renderOrder={1000}
-                    >
-                      {activeMemory.location}
-                    </Text>
-                  </Billboard>
-                </group>
+              // Find the actual lowest window from the circle positions
+              // Get all positions for the expanded group
+              const expandedPositions = clusteredMemories.filter(p => 
+                expandedGroup.some(m => m.id === p.memory.id)
               );
+              
+              if (expandedPositions.length > 0) {
+                // Find the window with the lowest Y coordinate in 3D space
+                let lowestPosition = expandedPositions[0];
+                let lowestY = latLngToPosition(lowestPosition.lat, lowestPosition.lon, 4.5)[1];
+                
+                for (const pos of expandedPositions) {
+                  const pos3D = latLngToPosition(pos.lat, pos.lon, 4.5);
+                  if (pos3D[1] < lowestY) {
+                    lowestY = pos3D[1];
+                    lowestPosition = pos;
+                  }
+                }
+                
+                // Get the 3D position of the lowest window
+                const lowestWindow3D = latLngToPosition(lowestPosition.lat, lowestPosition.lon, 4.5);
+                
+                // Calculate position below the lowest window
+                // Move south (decrease latitude) to position text below on the globe
+                const fixedRadiusDegrees = 15.0;
+                const textLatOffset = -0.25; // Move further south (negative = south)
+                const textLat = lowestPosition.lat + textLatOffset;
+                const textLon = lowestPosition.lon;
+                
+                // Convert to 3D position for the text
+                const textPosition3D = latLngToPosition(textLat, textLon, 4.5);
+                
+                return (
+                  <group renderOrder={1000}>
+                    <Billboard position={textPosition3D} follow={true} lockX={false} lockY={false} lockZ={false}>
+                      <Text
+                        position={[0, 0, 0]}
+                        fontSize={0.2}
+                        color="#ffffff"
+                        anchorX="center"
+                        anchorY="middle"
+                        outlineWidth={0.03}
+                        outlineColor="#000000"
+                        renderOrder={1000}
+                      >
+                        {activeMemory.location}
+                      </Text>
+                    </Billboard>
+                  </group>
+                );
+              }
             }
             return null;
           })()}
