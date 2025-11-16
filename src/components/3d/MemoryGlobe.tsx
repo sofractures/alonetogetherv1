@@ -126,7 +126,8 @@ export default function MemoryGlobe({
   autoRotate = false,
   onMemoryClick,
   highlightId,
-  onSpiralStateChange
+  onSpiralStateChange,
+  restoreSpiralId
 }: MemoryGlobeProps) {
   // Track camera distance to scale spread dynamically
   const [camDistance, setCamDistance] = useState<number>(18); // Start zoomed out further (default camera distance)
@@ -138,6 +139,15 @@ export default function MemoryGlobe({
   const [expandedOverlapId, setExpandedOverlapId] = useState<string | null>(null);
   // Track which memory in the expanded spiral is currently hovered/highlighted
   const [hoveredMemoryInSpiral, setHoveredMemoryInSpiral] = useState<string | null>(null);
+  
+  // Restore spiral when restoreSpiralId changes
+  useEffect(() => {
+    if (restoreSpiralId && restoreSpiralId !== expandedOverlapId) {
+      console.log('[v0] Restoring spiral:', restoreSpiralId);
+      setExpandedOverlapId(restoreSpiralId);
+      onSpiralStateChange?.(true, restoreSpiralId);
+    }
+  }, [restoreSpiralId, expandedOverlapId, onSpiralStateChange]);
 
   // Compute dynamic clustering: threshold ~100m; spread increases with cam distance
   // Base spread 40m at min zoom; up to 120m at far zoom
