@@ -425,7 +425,7 @@ export default function MemoryGlobe({
                   location={memory.location}
                   highlighted={highlightId === memory.id}
                   cameraDistance={camDistance}
-                  showLabelAlways={false} // Don't show labels in spiral mode - only center label shows
+                  hideLabelInSpiral={isInExpandedOverlap} // Hide individual labels when in spiral mode
                   onHoverChange={(isHovered) => {
                     // Track hover state for center label
                     if (isInExpandedOverlap) {
