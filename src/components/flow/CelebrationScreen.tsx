@@ -2,7 +2,6 @@
 
 interface CelebrationScreenProps {
   isOpen: boolean;
-  audioUrl: string;
   email: string;
   location?: string;
   onDownload: () => void;
