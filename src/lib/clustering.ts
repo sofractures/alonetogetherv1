@@ -64,14 +64,22 @@ function spreadCluster(
   cluster: MemoryForMap[],
   baseLat: number,
   baseLon: number,
-  spreadRadiusMeters: number = 50 // Spread within 50 meters
+  spreadRadiusMeters: number = 50, // Spread within 50 meters (for normal clustering)
+  useDegrees: boolean = false, // If true, treat spreadRadiusMeters as degrees (for exploded clusters)
+  spreadRadiusDegrees?: number // Optional explicit degree-based spread
 ): Array<{ memory: MemoryForMap; lat: number; lon: number }> {
   if (cluster.length === 1) {
     return [{ memory: cluster[0], lat: baseLat, lon: baseLon }];
   }
 
-  // Convert meters to degrees (approximate: 1 degree ≈ 111km)
-  const spreadRadiusDegrees = spreadRadiusMeters / 111000;
+  let spreadRadiusDeg: number;
+  if (spreadRadiusDegrees !== undefined) {
+    spreadRadiusDeg = spreadRadiusDegrees;
+  } else if (useDegrees) {
+    spreadRadiusDeg = spreadRadiusMeters; // Treat as degrees
+  } else {
+    spreadRadiusDeg = spreadRadiusMeters / 111000; // Convert meters to degrees
+  }
 
   // Spiral pattern: place memories in a spiral around the center
   const results: Array<{ memory: MemoryForMap; lat: number; lon: number }> = [];
@@ -80,7 +88,7 @@ function spreadCluster(
     // Golden angle for even distribution: 137.508 degrees
     const angle = (i * 137.508) * (Math.PI / 180);
     // Spiral radius increases with index
-    const radius = spreadRadiusDegrees * Math.sqrt(i + 1) / Math.sqrt(cluster.length);
+    const radius = spreadRadiusDeg * Math.sqrt(i + 1) / Math.sqrt(cluster.length);
     
     // Calculate offset in degrees
     const latOffset = radius * Math.cos(angle);
@@ -103,23 +111,31 @@ function spreadCluster(
 export function clusterAndSpreadMemories(
   memories: MemoryForMap[],
   thresholdMeters: number = 100,
-  spreadRadiusMeters: number = 50
-): Array<{ memory: MemoryForMap; lat: number; lon: number }> {
+  spreadRadiusMeters: number = 50,
+  expandedClusterId: string | null = null,
+  explodeRadiusDegrees: number = 3 // Angular spread in degrees when exploded
+): {
+  positions: Array<{ memory: MemoryForMap; lat: number; lon: number }>;
+  clusters: Map<string, MemoryForMap[]>;
+} {
   const clusters = groupByProximity(memories, thresholdMeters);
   const results: Array<{ memory: MemoryForMap; lat: number; lon: number }> = [];
 
-  for (const [centerId, cluster] of clusters) {
+  for (const [centerId, cluster] of clusters.entries()) {
     // Find the center memory (first one in cluster)
     const centerMemory = cluster.find(m => m.id === centerId) || cluster[0];
-    const spread = spreadCluster(
-      cluster,
-      centerMemory.latitude,
-      centerMemory.longitude,
-      spreadRadiusMeters
-    );
+    const isExpanded = expandedClusterId === centerId;
+    
+    let spread: Array<{ memory: MemoryForMap; lat: number; lon: number }>;
+    if (isExpanded) {
+      spread = spreadCluster(cluster, centerMemory.latitude, centerMemory.longitude, 0, false, explodeRadiusDegrees);
+      console.log('[v0] Clustering: Expanded cluster', centerId, 'with', explodeRadiusDegrees, 'degree spread');
+    } else {
+      spread = spreadCluster(cluster, centerMemory.latitude, centerMemory.longitude, spreadRadiusMeters);
+    }
     results.push(...spread);
   }
-
-  return results;
+  
+  return { positions: results, clusters: clusters };
 }
 

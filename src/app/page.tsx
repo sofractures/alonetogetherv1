@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import { getAudioController, onRecordingStartFadeOutBackground, onRecordingStopResumeBackground } from "@/lib/audio-context";
 import { useMemoryStore } from "@/store/memoryStore";
 import { getBrowserLocation, getIPLocation, LocationData } from "@/lib/location";
+import { MemoryForMap } from "@/types/memory";
 
 type FlowState = 
   | 'idle'
@@ -591,11 +592,14 @@ export default function Home() {
       {/* Memory Player Modal */}
       <MemoryPlayer
         memory={selectedMemory}
+        memories={selectedMemoryPlaylist}
         isOpen={isMemoryPlayerOpen}
         onClose={() => {
           console.log('[v0] Closing memory player modal');
           setIsMemoryPlayerOpen(false);
           selectMemory(null);
+          setSelectedMemoryPlaylist(undefined); // Reset playlist on close
+          // If spiral was open, it will be restored by MemoryGlobe's useEffect
         }}
       />
       
