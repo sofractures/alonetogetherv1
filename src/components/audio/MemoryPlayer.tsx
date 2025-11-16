@@ -150,7 +150,18 @@ export default function MemoryPlayer({ memory, memories, isOpen, onClose }: Memo
                       : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
                   }`}
                 >
-                  {idx + 1}. {mem.name || mem.location || `Memory ${idx + 1}`}
+                  <div className="flex items-center justify-between">
+                    <span>
+                      {idx + 1}. {mem.name || `Memory ${idx + 1}`}
+                    </span>
+                    {mem.location && (
+                      <span className={`text-xs ml-2 ${
+                        idx === currentTrackIndex ? 'text-purple-200' : 'text-gray-400'
+                      }`}>
+                        📍 {mem.location}
+                      </span>
+                    )}
+                  </div>
                 </button>
               ))}
             </div>
