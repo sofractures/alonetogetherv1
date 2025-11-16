@@ -183,9 +183,30 @@ export default function MemoryGlobe({
           p => !sortedMemories.some(m => m.id === p.memory.id)
         );
         
-        // Create spiral expansion: 5 degrees radius (very dramatic spread, clearly visible on globe)
-        // This ensures windows are far enough apart to be easily distinguished
-        const spiralRadiusDegrees = 5.0;
+        // Calculate spiral radius based on camera distance and globe size
+        // Globe radius is 4.5 units, so we want to spread across a significant portion
+        // Scale with camera distance: when zoomed in (closer), spread more dramatically
+        const globeRadius = 4.5;
+        const minDist = 6;
+        const maxDist = 30;
+        
+        // Normalize camera distance (0 = zoomed in, 1 = zoomed out)
+        const normalizedDist = Math.min(1, Math.max(0, (camDistance - minDist) / (maxDist - minDist)));
+        
+        // When zoomed in (close camera), spread across ~60% of globe circumference
+        // When zoomed out (far camera), spread across ~30% of globe circumference
+        // This ensures windows are always clearly separated
+        const baseSpreadRatio = 0.3 + (1 - normalizedDist) * 0.3; // 0.3 to 0.6 of globe
+        const spiralRadiusDegrees = (baseSpreadRatio * 180); // Convert to degrees (half globe = 180 degrees)
+        
+        // For very large groups, ensure minimum spacing between items
+        const minSpacingDegrees = 2.0; // Minimum 2 degrees between items (~222km)
+        const requiredRadius = Math.max(spiralRadiusDegrees, minSpacingDegrees * Math.sqrt(sortedMemories.length));
+        
+        console.log('[v0] Spiral expansion: camera distance:', camDistance.toFixed(2), 
+          'spread radius:', requiredRadius.toFixed(2), 'degrees (~', 
+          (requiredRadius * 111).toFixed(0), 'km)');
+        
         const spiralPositions: Array<{ memory: MemoryForMap; lat: number; lon: number }> = [];
         
         for (let i = 0; i < sortedMemories.length; i++) {
@@ -194,8 +215,8 @@ export default function MemoryGlobe({
           const angle = (i * 137.508) * (Math.PI / 180);
           // Spiral radius increases with index - use more aggressive scaling for better separation
           // Minimum radius ensures even the first item is spread out
-          const minRadius = spiralRadiusDegrees * 0.3; // Start at 30% of max radius
-          const maxRadius = spiralRadiusDegrees;
+          const minRadius = requiredRadius * 0.2; // Start at 20% of max radius
+          const maxRadius = requiredRadius;
           const radius = minRadius + (maxRadius - minRadius) * Math.sqrt((i + 1) / sortedMemories.length);
           
           const latOffset = radius * Math.cos(angle);
