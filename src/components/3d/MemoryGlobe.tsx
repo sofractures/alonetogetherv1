@@ -3,6 +3,7 @@
 import { Suspense, useMemo, useRef, useState } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, Environment, PerspectiveCamera } from '@react-three/drei';
+import { Vector3 } from 'three';
 import BuildingCube from './BuildingCube';
 import MemoryPoint from './MemoryPoint';
 import { MemoryForMap } from '@/types/memory';
@@ -11,7 +12,7 @@ import { clusterAndSpreadMemories } from '@/lib/clustering';
 interface MemoryGlobeProps {
   memories?: MemoryForMap[];
   autoRotate?: boolean;
-  onMemoryClick?: (memoryId: string) => void;
+  onMemoryClick?: (memoryId: string, overlappingMemories?: MemoryForMap[]) => void;
   highlightId?: string;
 }
 
@@ -52,6 +53,72 @@ function CameraDistanceTracker({ onDistanceChange }: { onDistanceChange: (distan
   return null;
 }
 
+// Internal component to detect screen-space overlaps (must be inside Canvas)
+function OverlapDetector({ 
+  positions, 
+  onOverlapsDetected 
+}: { 
+  positions: Array<{ memory: MemoryForMap; lat: number; lon: number }>;
+  onOverlapsDetected: (overlaps: Map<string, MemoryForMap[]>) => void;
+}) {
+  const { camera, size } = useThree();
+  const lastUpdateRef = useRef<number>(0);
+
+  useFrame(() => {
+    const now = performance.now();
+    // Check overlaps every 200ms (less frequent than camera tracking)
+    if (now - lastUpdateRef.current < 200) return;
+    lastUpdateRef.current = now;
+
+    // Convert 3D positions to screen space and detect overlaps
+    const overlaps = new Map<string, MemoryForMap[]>();
+    const screenPositions = new Map<string, { x: number; y: number; memory: MemoryForMap }>();
+    
+    // Project all positions to screen space
+    for (const { memory, lat, lon } of positions) {
+      const worldPos = latLngToPosition(lat, lon, 4.5);
+      const vector = new Vector3(...worldPos);
+      vector.project(camera);
+      
+      // Convert to screen coordinates (0-1 range, then to pixels)
+      const x = (vector.x * 0.5 + 0.5) * size.width;
+      const y = (vector.y * -0.5 + 0.5) * size.height;
+      
+      screenPositions.set(memory.id, { x, y, memory });
+    }
+    
+    // Detect overlaps: windows are ~1.5 units, roughly 50-100px on screen depending on zoom
+    // Use a threshold based on window size (scaled by camera distance)
+    const windowSizePixels = Math.max(30, 100 * (6 / camera.position.length())); // Scale with zoom
+    const overlapThreshold = windowSizePixels * 0.8; // 80% overlap = considered overlapping
+    
+    for (const [id1, pos1] of screenPositions.entries()) {
+      const overlapping: MemoryForMap[] = [pos1.memory];
+      
+      for (const [id2, pos2] of screenPositions.entries()) {
+        if (id1 === id2) continue;
+        
+        const dx = pos1.x - pos2.x;
+        const dy = pos1.y - pos2.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < overlapThreshold) {
+          overlapping.push(pos2.memory);
+        }
+      }
+      
+      if (overlapping.length > 1) {
+        // Use the first memory ID as the key for this overlap group
+        overlaps.set(id1, overlapping);
+      }
+    }
+    
+    onOverlapsDetected(overlaps);
+  });
+
+  return null;
+}
+
 export default function MemoryGlobe({ 
   memories = [], 
   autoRotate = false,
@@ -62,6 +129,8 @@ export default function MemoryGlobe({
   const [camDistance, setCamDistance] = useState<number>(18); // Start zoomed out further (default camera distance)
   // Track which cluster is expanded (spiderfied)
   const [expandedClusterId, setExpandedClusterId] = useState<string | null>(null);
+  // Track screen-space overlaps for playlist feature
+  const [screenOverlaps, setScreenOverlaps] = useState<Map<string, MemoryForMap[]>>(new Map());
 
   // Compute dynamic clustering: threshold ~100m; spread increases with cam distance
   // Base spread 40m at min zoom; up to 120m at far zoom
@@ -150,6 +219,12 @@ export default function MemoryGlobe({
           {/* Camera distance tracker (must be inside Canvas) */}
           <CameraDistanceTracker onDistanceChange={setCamDistance} />
           
+          {/* Screen-space overlap detector (must be inside Canvas) */}
+          <OverlapDetector 
+            positions={clusteredMemories} 
+            onOverlapsDetected={setScreenOverlaps}
+          />
+          
           {/* Lighting */}
           <ambientLight intensity={0.6} />
           <directionalLight position={[10, 10, 5]} intensity={1.2} />
@@ -217,6 +292,15 @@ export default function MemoryGlobe({
                       lat: lat,
                       lon: lon
                     });
+                    
+                    // Check for screen-space overlaps first (most accurate)
+                    const overlappingMemories = screenOverlaps.get(memory.id);
+                    if (overlappingMemories && overlappingMemories.length > 1) {
+                      console.log('[v0] 🎵 Screen overlap detected:', overlappingMemories.length, 'memories');
+                      // Pass all overlapping memories for playlist
+                      onMemoryClick?.(memory.id, overlappingMemories);
+                      return;
+                    }
                     
                     // If clicking on a memory in an expanded cluster, play it and collapse
                     if (isInExpandedCluster) {

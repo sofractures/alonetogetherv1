@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { getAudioController, onRecordingStartFadeOutBackground, onRecordingStopResumeBackground } from "@/lib/audio-context";
 import { useMemoryStore } from "@/store/memoryStore";
 import { getBrowserLocation, getIPLocation, LocationData } from "@/lib/location";
+import { MemoryForMap } from "@/types/memory";
 
 export default function Home() {
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
@@ -22,6 +23,7 @@ export default function Home() {
   const [highlightMemoryId, setHighlightMemoryId] = useState<string | null>(null);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [pendingLocation, setPendingLocation] = useState<LocationData | null>(null);
+  const [selectedMemoryPlaylist, setSelectedMemoryPlaylist] = useState<MemoryForMap[] | undefined>(undefined);
   
   // Memory store
   const { memories, fetchMemories, selectMemory, selectedMemory, isLoading, error } = useMemoryStore();
@@ -264,9 +266,10 @@ export default function Home() {
           memories={memories} 
           autoRotate={!hasStartedExploring}
           highlightId={highlightMemoryId || undefined}
-          onMemoryClick={(id) => {
-            console.log('[v0] Opening modal for memory:', id);
+          onMemoryClick={(id, overlappingMemories) => {
+            console.log('[v0] Opening modal for memory:', id, 'with playlist:', overlappingMemories?.length || 0);
             selectMemory(id);
+            setSelectedMemoryPlaylist(overlappingMemories);
             setIsMemoryPlayerOpen(true);
           }}
         />
@@ -430,11 +433,13 @@ export default function Home() {
       {/* Memory Player Modal */}
       <MemoryPlayer
         memory={selectedMemory}
+        memories={selectedMemoryPlaylist}
         isOpen={isMemoryPlayerOpen}
         onClose={() => {
           console.log('[v0] Closing memory player modal');
           setIsMemoryPlayerOpen(false);
           selectMemory(null);
+          setSelectedMemoryPlaylist(undefined);
         }}
       />
       
