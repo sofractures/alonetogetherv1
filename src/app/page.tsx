@@ -477,7 +477,7 @@ export default function Home() {
         }}
       />
       
-      {/* Location Selector Modal */}
+      {/* Location Selector Modal (old flow) */}
       {showLocationSelector && (
         <LocationSelector
           onLocationSelected={handleLocationSelected}
@@ -485,6 +485,42 @@ export default function Home() {
           initialLocation={pendingLocation}
         />
       )}
+
+      {/* New Flow Modals */}
+      
+      {/* Playback Modal - Step 7 */}
+      <PlaybackModal
+        audioUrl={processedAudioUrl || ''}
+        isOpen={flowState === 'playback' && !!processedAudioUrl}
+        onAddToGlobe={handleAddToGlobe}
+        onClose={() => {
+          // Allow closing to go back, but encourage adding to globe
+          if (confirm('Are you sure? You can add your memory to the globe and get your download link.')) {
+            setFlowState('idle');
+          }
+        }}
+      />
+
+      {/* Pin Modal - Step 8 */}
+      <PinModal
+        isOpen={flowState === 'pinning'}
+        onPin={handlePinMemory}
+        onCancel={() => {
+          setFlowState('playback'); // Go back to playback
+        }}
+        initialLocation={pendingLocation}
+      />
+
+      {/* Celebration Screen - Step 10 */}
+      <CelebrationScreen
+        isOpen={flowState === 'celebrating'}
+        audioUrl={processedAudioUrl || ''}
+        email={userEmail || ''}
+        location={pinnedLocation || undefined}
+        onDownload={handleDownload}
+        onExploreGlobe={handleExploreGlobe}
+        onCreateAnother={handleCreateAnother}
+      />
     </div>
   );
 }
