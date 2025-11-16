@@ -367,9 +367,20 @@ export default function MemoryGlobe({
                   }
                 }
                 
-                // Calculate position below the lowest window
-                // Move south (decrease latitude) to position text below on the globe
-                const textLatOffset = -0.25; // Move further south (negative = south)
+                // Get the 3D position of the lowest window
+                const lowestWindow3D = latLngToPosition(lowestPosition.lat, lowestPosition.lon, 4.5);
+                
+                // Calculate position below the bottom edge of the window
+                // Windows are ~1.5 units tall, so bottom edge is at ~-0.75 from center
+                // We need to position text below that bottom edge
+                // On a globe, moving "down" means moving south (decreasing latitude)
+                // Calculate the distance needed: window height (1.5) + spacing (0.5) = ~2.0 units
+                // Convert to degrees: ~2.0 units on globe radius 4.5 ≈ 0.025 degrees
+                // But we want more spacing, so use a larger offset
+                const windowHeightDegrees = 0.05; // Approximate window height in degrees
+                const spacingDegrees = 0.03; // Additional spacing below window
+                const textLatOffset = -(windowHeightDegrees + spacingDegrees); // Move south
+                
                 const textLat = lowestPosition.lat + textLatOffset;
                 const textLon = lowestPosition.lon;
                 
