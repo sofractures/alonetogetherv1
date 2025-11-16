@@ -367,25 +367,21 @@ export default function MemoryGlobe({
                   }
                 }
                 
-                // Calculate position below the bottom edge of the window
+                // Get the 3D position of the lowest window
+                const lowestWindow3D = latLngToPosition(lowestPosition.lat, lowestPosition.lon, 4.5);
+                
+                // Position text below the bottom edge of the window
                 // Windows are billboards ~1.5 units tall, so bottom edge is at ~-0.75 from center
-                // We need to position text below that bottom edge on the globe surface
-                // On a globe, moving "down" means moving south (decreasing latitude)
-                // Use a larger offset to ensure text is clearly below the window's bottom edge
-                // 0.1 degrees ≈ 11km, which should be enough to clear the window height
-                const textLatOffset = -0.15; // Move south to position below window bottom edge
-                
-                const textLat = lowestPosition.lat + textLatOffset;
-                const textLon = lowestPosition.lon;
-                
-                // Convert to 3D position for the text
-                const textPosition3D = latLngToPosition(textLat, textLon, 4.5);
+                // Use the same 3D position as the window, but offset the Text component downward
+                // The Text position is in local space relative to the Billboard
+                // Negative Y moves down in screen space (since Billboard faces camera)
+                const windowBottomOffset = -0.9; // Half window height (0.75) + spacing (0.15)
                 
                 return (
                   <group renderOrder={1000}>
-                    <Billboard position={textPosition3D} follow={true} lockX={false} lockY={false} lockZ={false}>
+                    <Billboard position={lowestWindow3D} follow={true} lockX={false} lockY={false} lockZ={false}>
                       <Text
-                        position={[0, 0, 0]}
+                        position={[0, windowBottomOffset, 0]}
                         fontSize={0.2}
                         color="#ffffff"
                         anchorX="center"
