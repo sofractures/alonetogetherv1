@@ -161,12 +161,13 @@ export default function MemoryGlobe({
       1.5 // Explode radius: 1.5 degrees when expanded (~167km, clearly visible on globe)
     );
     
-    // Handle visual expansion of overlapped windows (spiral pattern)
-    // If an overlap group is expanded, spread those memories in a spiral sorted by creation time
+    // Handle visual expansion of overlapped windows (circular pattern for maximum visibility)
+    // If an overlap group is expanded, spread those memories in a simple circle pattern
+    // Focus on visibility and ease of use, not geographic accuracy
     if (expandedOverlapId && screenOverlaps.has(expandedOverlapId)) {
       const overlappingMemories = screenOverlaps.get(expandedOverlapId)!;
       
-      // Sort by creation time (oldest first)
+      // Sort by creation time (oldest first) for consistent ordering
       const sortedMemories = [...overlappingMemories].sort((a, b) => {
         const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -183,53 +184,32 @@ export default function MemoryGlobe({
           p => !sortedMemories.some(m => m.id === p.memory.id)
         );
         
-        // Calculate spiral radius based on camera distance and globe size
-        // Scale with camera distance: when zoomed in (closer), spread more dramatically
-        const minDist = 6;
-        const maxDist = 30;
+        // Use a fixed, large radius for maximum visibility
+        // 15 degrees = ~1665km - ensures windows are clearly separated
+        // This is purely for visual clarity, not geographic accuracy
+        const fixedRadiusDegrees = 15.0;
         
-        // Normalize camera distance (0 = zoomed in, 1 = zoomed out)
-        const normalizedDist = Math.min(1, Math.max(0, (camDistance - minDist) / (maxDist - minDist)));
-        
-        // When zoomed in (close camera), spread across ~60% of globe circumference
-        // When zoomed out (far camera), spread across ~30% of globe circumference
-        // This ensures windows are always clearly separated
-        const baseSpreadRatio = 0.3 + (1 - normalizedDist) * 0.3; // 0.3 to 0.6 of globe
-        const spiralRadiusDegrees = (baseSpreadRatio * 180); // Convert to degrees (half globe = 180 degrees)
-        
-        // For very large groups, ensure minimum spacing between items
-        const minSpacingDegrees = 2.0; // Minimum 2 degrees between items (~222km)
-        const requiredRadius = Math.max(spiralRadiusDegrees, minSpacingDegrees * Math.sqrt(sortedMemories.length));
-        
-        console.log('[v0] Spiral expansion: camera distance:', camDistance.toFixed(2), 
-          'spread radius:', requiredRadius.toFixed(2), 'degrees (~', 
-          (requiredRadius * 111).toFixed(0), 'km)');
-        
-        const spiralPositions: Array<{ memory: MemoryForMap; lat: number; lon: number }> = [];
+        const circlePositions: Array<{ memory: MemoryForMap; lat: number; lon: number }> = [];
         
         for (let i = 0; i < sortedMemories.length; i++) {
           const memory = sortedMemories[i];
-          // Golden angle spiral: 137.508 degrees per item
-          const angle = (i * 137.508) * (Math.PI / 180);
-          // Spiral radius increases with index - use more aggressive scaling for better separation
-          // Minimum radius ensures even the first item is spread out
-          const minRadius = requiredRadius * 0.2; // Start at 20% of max radius
-          const maxRadius = requiredRadius;
-          const radius = minRadius + (maxRadius - minRadius) * Math.sqrt((i + 1) / sortedMemories.length);
+          // Simple circular pattern: evenly distribute around a circle
+          const angle = (i / sortedMemories.length) * 2 * Math.PI;
           
-          const latOffset = radius * Math.cos(angle);
-          const lonOffset = radius * Math.sin(angle) / Math.cos(centerPos.lat * Math.PI / 180);
+          // Use fixed radius for all items - ensures maximum separation
+          const latOffset = fixedRadiusDegrees * Math.cos(angle);
+          const lonOffset = fixedRadiusDegrees * Math.sin(angle) / Math.cos(centerPos.lat * Math.PI / 180);
           
-          spiralPositions.push({
+          circlePositions.push({
             memory,
             lat: centerPos.lat + latOffset,
             lon: centerPos.lon + lonOffset,
           });
         }
         
-        // Combine filtered positions with spiral positions
+        // Combine filtered positions with circle positions
         return {
-          positions: [...filteredPositions, ...spiralPositions],
+          positions: [...filteredPositions, ...circlePositions],
           clusters: result.clusters
         };
       }
@@ -266,20 +246,31 @@ export default function MemoryGlobe({
   }
   
   return (
-    <div 
-      className="absolute inset-0 w-full h-full" 
-      style={{ 
-        pointerEvents: 'auto', 
-        touchAction: 'none',
-        zIndex: 0,
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0
-      }}
-    >
-      <Canvas
+    <>
+      {/* Dark overlay when spiral is expanded */}
+      {expandedOverlapId && (
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 pointer-events-none"
+          style={{
+            transition: 'opacity 0.3s ease-in-out'
+          }}
+        />
+      )}
+      
+      <div 
+        className="absolute inset-0 w-full h-full" 
+        style={{ 
+          pointerEvents: 'auto', 
+          touchAction: 'none',
+          zIndex: 0,
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0
+        }}
+      >
+        <Canvas
         style={{ 
           display: 'block', 
           width: '100%', 
