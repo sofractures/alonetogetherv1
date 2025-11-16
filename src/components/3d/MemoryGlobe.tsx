@@ -334,6 +334,33 @@ export default function MemoryGlobe({
           {/* Central Building Cube */}
           <BuildingCube autoRotate={autoRotate} rotationSpeed={0.2} />
           
+          {/* Location label at center of expanded spiral */}
+          {expandedOverlapId && screenOverlaps.has(expandedOverlapId) && (() => {
+            const expandedGroup = screenOverlaps.get(expandedOverlapId)!;
+            const centerMemory = expandedGroup[0];
+            const centerPos = clusteredMemories.find(p => p.memory.id === centerMemory.id);
+            if (centerPos && centerMemory.location) {
+              const centerPosition3D = latLngToPosition(centerPos.lat, centerPos.lon, 4.5);
+              return (
+                <Billboard position={centerPosition3D} follow={true} lockX={false} lockY={false} lockZ={false}>
+                  <Text
+                    position={[0, -2.5, 0]}
+                    fontSize={0.4}
+                    color="#ffffff"
+                    anchorX="center"
+                    anchorY="middle"
+                    outlineWidth={0.05}
+                    outlineColor="#000000"
+                    fontWeight="bold"
+                  >
+                    {centerMemory.location}
+                  </Text>
+                </Billboard>
+              );
+            }
+            return null;
+          })()}
+          
           {/* Memory Windows */}
           {clusteredMemories.length > 0 ? (
             clusteredMemories.map(({ memory, lat, lon }) => {
