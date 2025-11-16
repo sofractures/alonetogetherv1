@@ -44,12 +44,13 @@ export default function MemoryPoint({
   });
 
   // Scale window size based on camera distance
-  // When zoomed out (far): smaller windows (0.6x)
-  // When zoomed in (close): larger windows (1.2x)
+  // When zoomed out (far): larger windows (1.0x) - easier to see from far away
+  // When zoomed in (close): smaller windows (0.5x) - allows spread to be visible, prevents overlap
   const minDist = 6;
   const maxDist = 30;
   const normalizedDist = Math.min(1, Math.max(0, (cameraDistance - minDist) / (maxDist - minDist)));
-  const distanceScale = 0.6 + (1 - normalizedDist) * 0.6; // 0.6 → 1.2
+  // Invert: closer camera = smaller windows (so spread is visible)
+  const distanceScale = 0.5 + normalizedDist * 0.5; // 0.5 → 1.0 (smaller when zoomed in)
   
   const baseScale = highlighted ? 1.4 : hovered ? 1.3 : 1;
   const scale = baseScale * distanceScale;
