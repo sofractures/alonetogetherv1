@@ -287,10 +287,13 @@ export default function MemoryGlobe({
           <CameraDistanceTracker onDistanceChange={setCamDistance} />
           
           {/* Screen-space overlap detector (must be inside Canvas) */}
-          <OverlapDetector 
-            positions={clusteredMemories} 
-            onOverlapsDetected={setScreenOverlaps}
-          />
+          {/* Disable overlap detection when expanded to prevent flickering */}
+          {!expandedOverlapId && (
+            <OverlapDetector 
+              positions={clusteredMemories} 
+              onOverlapsDetected={setScreenOverlaps}
+            />
+          )}
           
           {/* Lighting */}
           <ambientLight intensity={0.6} />
@@ -481,7 +484,8 @@ export default function MemoryGlobe({
           />
         </Suspense>
       </Canvas>
-    </div>
+      </div>
+    </>
   );
 }
 
