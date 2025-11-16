@@ -451,6 +451,7 @@ export default function MemoryGlobe({
                     if (isInExpandedOverlap) {
                       console.log('[v0] 🎵 Playing memory from expanded overlap:', memory.id);
                       setExpandedOverlapId(null); // Collapse
+                      setHoveredMemoryInSpiral(null); // Reset hover state
                       onMemoryClick?.(memory.id); // Play single memory, not playlist
                       return;
                     }
@@ -475,6 +476,7 @@ export default function MemoryGlobe({
                     if (isInExpandedOverlap) {
                       console.log('[v0] 🔄 Collapsing expanded overlap');
                       setExpandedOverlapId(null);
+                      setHoveredMemoryInSpiral(null); // Reset hover state
                       return;
                     }
                     
