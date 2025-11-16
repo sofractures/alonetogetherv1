@@ -15,6 +15,7 @@ interface MemoryPointProps {
   highlighted?: boolean;
   cameraDistance?: number; // Optional camera distance for scaling
   showLabelAlways?: boolean; // If true, always show location label (for expanded overlaps)
+  hideLabelInSpiral?: boolean; // If true, hide label even on hover (for spiral mode)
   onHoverChange?: (isHovered: boolean) => void; // Callback when hover state changes
 }
 
@@ -27,6 +28,7 @@ export default function MemoryPoint({
   highlighted = false,
   cameraDistance = 18, // Default camera distance
   showLabelAlways = false, // Default to only show on hover
+  hideLabelInSpiral = false, // Default to show labels normally
   onHoverChange,
 }: MemoryPointProps) {
   const meshRef = useRef<Mesh>(null);
@@ -136,7 +138,8 @@ export default function MemoryPoint({
             side={2} // DoubleSide - render both sides
           />
         </mesh>
-        {(hovered || showLabelAlways || highlighted) && location && (
+        {/* Don't show label in spiral mode - only center label shows */}
+        {!hideLabelInSpiral && (hovered || showLabelAlways || highlighted) && location && (
           <Text
             position={[0, -1, 0]}
             fontSize={0.2}

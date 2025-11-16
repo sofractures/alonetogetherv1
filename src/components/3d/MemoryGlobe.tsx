@@ -337,7 +337,7 @@ export default function MemoryGlobe({
           {/* Central Building Cube */}
           <BuildingCube autoRotate={autoRotate} rotationSpeed={0.2} />
           
-          {/* Location label at center of expanded spiral - shows hovered/highlighted memory location */}
+          {/* Location label at base of expanded spiral - shows hovered/highlighted memory location */}
           {expandedOverlapId && screenOverlaps.has(expandedOverlapId) && (() => {
             const expandedGroup = screenOverlaps.get(expandedOverlapId)!;
             const centerMemory = expandedGroup[0];
@@ -349,17 +349,19 @@ export default function MemoryGlobe({
             
             if (centerPos && activeMemory.location) {
               const centerPosition3D = latLngToPosition(centerPos.lat, centerPos.lon, 4.5);
+              // Position label at base of spiral - below the lowest window
+              // Windows are at radius 4.5, each window is ~1.5 units tall, so lowest edge is at ~-0.75
+              // Position text just below that at -1.2 (smaller offset for smaller text)
               return (
                 <Billboard position={centerPosition3D} follow={true} lockX={false} lockY={false} lockZ={false}>
                   <Text
-                    position={[0, -2.5, 0]}
-                    fontSize={0.4}
+                    position={[0, -1.2, 0]}
+                    fontSize={0.2}
                     color="#ffffff"
                     anchorX="center"
                     anchorY="middle"
-                    outlineWidth={0.05}
+                    outlineWidth={0.03}
                     outlineColor="#000000"
-                    fontWeight="bold"
                   >
                     {activeMemory.location}
                   </Text>
@@ -423,7 +425,7 @@ export default function MemoryGlobe({
                   location={memory.location}
                   highlighted={highlightId === memory.id}
                   cameraDistance={camDistance}
-                  showLabelAlways={false} // Don't show labels always - only on hover (like main globe)
+                  showLabelAlways={false} // Don't show labels in spiral mode - only center label shows
                   onHoverChange={(isHovered) => {
                     // Track hover state for center label
                     if (isInExpandedOverlap) {
