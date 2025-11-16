@@ -480,32 +480,6 @@ export default function MemoryGlobe({
                       setHoveredMemoryInSpiral(isHovered ? memory.id : null);
                     }
                   }}
-                  onDoubleClick={() => {
-                    console.log('=== MEMORY DOUBLE-CLICK HANDLER ===');
-                    console.log('[v0] Memory double-clicked:', {
-                      memoryId: memory.id,
-                      location: memory.location,
-                      hasOverlaps: hasOverlaps,
-                      isInExpandedOverlap: isInExpandedOverlap,
-                      expandedOverlapId: expandedOverlapId
-                    });
-                    
-                    // If double-clicking on an overlapped window that's not expanded, expand it visually
-                    if (hasOverlaps && !isInExpandedOverlap) {
-                      console.log('[v0] 🌀🌀🌀 EXPANDING overlap group visually:', memory.id, 'with', overlappingMemories!.length, 'memories');
-                      setExpandedOverlapId(memory.id);
-                      return;
-                    }
-                    
-                    // If double-clicking on an expanded overlap window, play that single memory
-                    if (isInExpandedOverlap) {
-                      console.log('[v0] 🎵 Playing memory from expanded overlap:', memory.id);
-                      setExpandedOverlapId(null); // Collapse
-                      setHoveredMemoryInSpiral(null); // Reset hover state
-                      onMemoryClick?.(memory.id); // Play single memory, not playlist
-                      return;
-                    }
-                  }}
                   onClick={() => {
                     console.log('=== MEMORY CLICK HANDLER ===');
                     console.log('[v0] Memory clicked:', {
@@ -531,11 +505,10 @@ export default function MemoryGlobe({
                       return;
                     }
                     
-                    // Check for screen-space overlaps - show playlist if not expanded
+                    // If clicking on an overlapped window that's not expanded, open spiral
                     if (hasOverlaps && !isInExpandedOverlap) {
-                      console.log('[v0] 🎵 Screen overlap detected:', overlappingMemories!.length, 'memories - showing playlist');
-                      // Pass all overlapping memories for playlist
-                      onMemoryClick?.(memory.id, overlappingMemories!);
+                      console.log('[v0] 🌀🌀🌀 OPENING spiral for overlap group:', memory.id, 'with', overlappingMemories!.length, 'memories');
+                      setExpandedOverlapId(memory.id);
                       return;
                     }
                     
