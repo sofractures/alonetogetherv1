@@ -362,6 +362,7 @@ export default function MemoryGlobe({
                     anchorY="middle"
                     outlineWidth={0.03}
                     outlineColor="#000000"
+                    renderOrder={1000}
                   >
                     {activeMemory.location}
                   </Text>
