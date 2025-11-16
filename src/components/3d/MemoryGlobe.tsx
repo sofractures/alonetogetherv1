@@ -415,6 +415,7 @@ export default function MemoryGlobe({
                   location={memory.location}
                   highlighted={highlightId === memory.id}
                   cameraDistance={camDistance}
+                  showLabelAlways={isInExpandedOverlap} // Always show label when in expanded overlap
                   onDoubleClick={() => {
                     console.log('=== MEMORY DOUBLE-CLICK HANDLER ===');
                     console.log('[v0] Memory double-clicked:', {
