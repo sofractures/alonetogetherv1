@@ -522,11 +522,12 @@ export default function MemoryGlobe({
                       lon: lon
                     });
                     
-                    // If clicking on an expanded overlap, collapse it (single click = collapse)
+                    // If clicking on a window in expanded overlap (spiral mode), play that memory
                     if (isInExpandedOverlap) {
-                      console.log('[v0] 🔄 Collapsing expanded overlap');
-                      setExpandedOverlapId(null);
+                      console.log('[v0] 🎵 Playing memory from expanded spiral:', memory.id);
+                      setExpandedOverlapId(null); // Collapse spiral
                       setHoveredMemoryInSpiral(null); // Reset hover state
+                      onMemoryClick?.(memory.id); // Play the selected memory
                       return;
                     }
                     
