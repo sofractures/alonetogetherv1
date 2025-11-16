@@ -183,16 +183,20 @@ export default function MemoryGlobe({
           p => !sortedMemories.some(m => m.id === p.memory.id)
         );
         
-        // Create spiral expansion: 2 degrees radius (very visible on globe)
-        const spiralRadiusDegrees = 2.0;
+        // Create spiral expansion: 5 degrees radius (very dramatic spread, clearly visible on globe)
+        // This ensures windows are far enough apart to be easily distinguished
+        const spiralRadiusDegrees = 5.0;
         const spiralPositions: Array<{ memory: MemoryForMap; lat: number; lon: number }> = [];
         
         for (let i = 0; i < sortedMemories.length; i++) {
           const memory = sortedMemories[i];
           // Golden angle spiral: 137.508 degrees per item
           const angle = (i * 137.508) * (Math.PI / 180);
-          // Spiral radius increases with index
-          const radius = spiralRadiusDegrees * Math.sqrt((i + 1) / sortedMemories.length);
+          // Spiral radius increases with index - use more aggressive scaling for better separation
+          // Minimum radius ensures even the first item is spread out
+          const minRadius = spiralRadiusDegrees * 0.3; // Start at 30% of max radius
+          const maxRadius = spiralRadiusDegrees;
+          const radius = minRadius + (maxRadius - minRadius) * Math.sqrt((i + 1) / sortedMemories.length);
           
           const latOffset = radius * Math.cos(angle);
           const lonOffset = radius * Math.sin(angle) / Math.cos(centerPos.lat * Math.PI / 180);
