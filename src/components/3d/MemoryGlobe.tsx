@@ -353,20 +353,23 @@ export default function MemoryGlobe({
               // Windows are at radius 4.5, each window is ~1.5 units tall, so lowest edge is at ~-0.75
               // Position text just below that at -1.2 (smaller offset for smaller text)
               return (
-                <Billboard position={centerPosition3D} follow={true} lockX={false} lockY={false} lockZ={false}>
-                  <Text
-                    position={[0, -1.2, 0]}
-                    fontSize={0.2}
-                    color="#ffffff"
-                    anchorX="center"
-                    anchorY="middle"
-                    outlineWidth={0.03}
-                    outlineColor="#000000"
-                    renderOrder={1000}
-                  >
-                    {activeMemory.location}
-                  </Text>
-                </Billboard>
+                <group renderOrder={1000}>
+                  <Billboard position={centerPosition3D} follow={true} lockX={false} lockY={false} lockZ={false}>
+                    <Text
+                      position={[0, -1.2, 0]}
+                      fontSize={0.2}
+                      color="#ffffff"
+                      anchorX="center"
+                      anchorY="middle"
+                      outlineWidth={0.03}
+                      outlineColor="#000000"
+                      depthTest={false}
+                      renderOrder={1000}
+                    >
+                      {activeMemory.location}
+                    </Text>
+                  </Billboard>
+                </group>
               );
             }
             return null;
