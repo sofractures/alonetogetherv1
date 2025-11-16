@@ -130,7 +130,7 @@ export default function MemoryGlobe({
   restoreSpiralId
 }: MemoryGlobeProps) {
   // Track camera distance to scale spread dynamically
-  const [camDistance, setCamDistance] = useState<number>(18); // Start zoomed out further (default camera distance)
+  const [camDistance, setCamDistance] = useState<number>(14); // Start closer for bigger globe appearance (default camera distance)
   // Track which cluster is expanded (spiderfied)
   const [expandedClusterId, setExpandedClusterId] = useState<string | null>(null);
   // Track screen-space overlaps for playlist feature
@@ -380,7 +380,7 @@ export default function MemoryGlobe({
           <pointLight position={[-10, -10, -5]} intensity={0.6} color="#a78bfa" />
           
           {/* Camera */}
-          <PerspectiveCamera makeDefault position={[0, 0, 18]} fov={60} />
+          <PerspectiveCamera makeDefault position={[0, 0, 14]} fov={60} />
           
           {/* Central Building Cube */}
           <BuildingCube autoRotate={autoRotate} rotationSpeed={0.2} />
