@@ -31,10 +31,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: uploadError.message, attemptedPath: path }, { status: 500 });
     }
 
-    // Get location data from request body if provided
+    // Get location data, email, and name from request body if provided
     const body = Object.fromEntries(form.entries());
     const locationData = body.location ? JSON.parse(body.location as string) : null;
     const displayName = (body.display_name as string | undefined)?.toString()?.slice(0, 120) || null;
+    const email = (body.email as string | undefined)?.toString()?.trim() || null;
+    const userName = (body.user_name as string | undefined)?.toString()?.slice(0, 120) || null;
 
     // Try creating a DB entry (optional if table exists)
     let memoryId: string | null = null;
@@ -47,6 +49,8 @@ export async function POST(req: NextRequest) {
         location_country?: string;
         window_variant?: number;
         display_name?: string | null;
+        email?: string | null;
+        user_name?: string | null;
       } = { 
         raw_recording_url: path,
         window_variant: Math.floor(Math.random() * 2) + 1, // Random 1 or 2
@@ -62,6 +66,8 @@ export async function POST(req: NextRequest) {
         if (locationData.country) insertData.location_country = locationData.country;
       }
       if (displayName) insertData.display_name = displayName;
+      if (email) insertData.email = email;
+      if (userName) insertData.user_name = userName;
 
       const { data, error } = await supabaseServer
         .from('memories')
