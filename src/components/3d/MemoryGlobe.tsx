@@ -308,10 +308,19 @@ export default function MemoryGlobe({
           position: 'absolute',
           top: 0,
           left: 0,
-          zIndex: 2 // Ensure canvas is above overlay
+          zIndex: 2, // Ensure canvas is above overlay
+          pointerEvents: 'auto' // Ensure canvas can receive pointer events
         }}
         gl={{ antialias: true, alpha: true }}
         dpr={[1, 2]}
+        onPointerMissed={(e) => {
+          // Handle clicks that don't hit any object (background clicks)
+          if (expandedOverlapId) {
+            console.log('[v0] Pointer missed - background click detected, collapsing spiral');
+            setExpandedOverlapId(null);
+            setHoveredMemoryInSpiral(null);
+          }
+        }}
       >
         <Suspense fallback={null}>
           {/* Camera distance tracker (must be inside Canvas) */}
@@ -325,14 +334,18 @@ export default function MemoryGlobe({
                 // Only collapse if clicking on the background (not on a memory window)
                 // Memory windows stop propagation, so if we get here, it's a background click
                 e.stopPropagation();
-                console.log('[v0] Background click detected - collapsing spiral');
+                console.log('[v0] Background click detected on transparent mesh - collapsing spiral');
                 setExpandedOverlapId(null);
                 setHoveredMemoryInSpiral(null);
               }}
+              onPointerDown={(e) => {
+                // Also handle pointer down events for better mobile support
+                e.stopPropagation();
+              }}
             >
-              {/* Large invisible sphere that covers the scene */}
-              <sphereGeometry args={[100, 32, 32]} />
-              <meshBasicMaterial transparent opacity={0} />
+              {/* Large invisible sphere that covers the scene - positioned far back */}
+              <sphereGeometry args={[200, 32, 32]} />
+              <meshBasicMaterial transparent opacity={0} side={2} />
             </mesh>
           )}
           
