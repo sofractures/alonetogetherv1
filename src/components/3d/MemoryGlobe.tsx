@@ -133,6 +133,8 @@ export default function MemoryGlobe({
   const [screenOverlaps, setScreenOverlaps] = useState<Map<string, MemoryForMap[]>>(new Map());
   // Track which overlap group is visually expanded (spiral expansion)
   const [expandedOverlapId, setExpandedOverlapId] = useState<string | null>(null);
+  // Track which memory in the expanded spiral is currently hovered/highlighted
+  const [hoveredMemoryInSpiral, setHoveredMemoryInSpiral] = useState<string | null>(null);
 
   // Compute dynamic clustering: threshold ~100m; spread increases with cam distance
   // Base spread 40m at min zoom; up to 120m at far zoom
@@ -334,12 +336,17 @@ export default function MemoryGlobe({
           {/* Central Building Cube */}
           <BuildingCube autoRotate={autoRotate} rotationSpeed={0.2} />
           
-          {/* Location label at center of expanded spiral */}
+          {/* Location label at center of expanded spiral - shows hovered/highlighted memory location */}
           {expandedOverlapId && screenOverlaps.has(expandedOverlapId) && (() => {
             const expandedGroup = screenOverlaps.get(expandedOverlapId)!;
             const centerMemory = expandedGroup[0];
             const centerPos = clusteredMemories.find(p => p.memory.id === centerMemory.id);
-            if (centerPos && centerMemory.location) {
+            
+            // Find the memory that's currently hovered or highlighted
+            const activeMemoryId = hoveredMemoryInSpiral || highlightId;
+            const activeMemory = expandedGroup.find(m => m.id === activeMemoryId) || centerMemory;
+            
+            if (centerPos && activeMemory.location) {
               const centerPosition3D = latLngToPosition(centerPos.lat, centerPos.lon, 4.5);
               return (
                 <Billboard position={centerPosition3D} follow={true} lockX={false} lockY={false} lockZ={false}>
@@ -353,7 +360,7 @@ export default function MemoryGlobe({
                     outlineColor="#000000"
                     fontWeight="bold"
                   >
-                    {centerMemory.location}
+                    {activeMemory.location}
                   </Text>
                 </Billboard>
               );
@@ -415,7 +422,13 @@ export default function MemoryGlobe({
                   location={memory.location}
                   highlighted={highlightId === memory.id}
                   cameraDistance={camDistance}
-                  showLabelAlways={isInExpandedOverlap} // Always show label when in expanded overlap
+                  showLabelAlways={false} // Don't show labels always - only on hover (like main globe)
+                  onHoverChange={(isHovered) => {
+                    // Track hover state for center label
+                    if (isInExpandedOverlap) {
+                      setHoveredMemoryInSpiral(isHovered ? memory.id : null);
+                    }
+                  }}
                   onDoubleClick={() => {
                     console.log('=== MEMORY DOUBLE-CLICK HANDLER ===');
                     console.log('[v0] Memory double-clicked:', {

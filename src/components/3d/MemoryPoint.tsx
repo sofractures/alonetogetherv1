@@ -15,6 +15,7 @@ interface MemoryPointProps {
   highlighted?: boolean;
   cameraDistance?: number; // Optional camera distance for scaling
   showLabelAlways?: boolean; // If true, always show location label (for expanded overlaps)
+  onHoverChange?: (isHovered: boolean) => void; // Callback when hover state changes
 }
 
 export default function MemoryPoint({
@@ -26,6 +27,7 @@ export default function MemoryPoint({
   highlighted = false,
   cameraDistance = 18, // Default camera distance
   showLabelAlways = false, // Default to only show on hover
+  onHoverChange,
 }: MemoryPointProps) {
   const meshRef = useRef<Mesh>(null);
   const [hovered, setHovered] = useState(false);
