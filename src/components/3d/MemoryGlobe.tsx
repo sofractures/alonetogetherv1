@@ -131,6 +131,8 @@ export default function MemoryGlobe({
   const [expandedClusterId, setExpandedClusterId] = useState<string | null>(null);
   // Track screen-space overlaps for playlist feature
   const [screenOverlaps, setScreenOverlaps] = useState<Map<string, MemoryForMap[]>>(new Map());
+  // Track which overlap group is visually expanded (spiral expansion)
+  const [expandedOverlapId, setExpandedOverlapId] = useState<string | null>(null);
 
   // Compute dynamic clustering: threshold ~100m; spread increases with cam distance
   // Base spread 40m at min zoom; up to 120m at far zoom
@@ -159,6 +161,57 @@ export default function MemoryGlobe({
       1.5 // Explode radius: 1.5 degrees when expanded (~167km, clearly visible on globe)
     );
     
+    // Handle visual expansion of overlapped windows (spiral pattern)
+    // If an overlap group is expanded, spread those memories in a spiral sorted by creation time
+    if (expandedOverlapId && screenOverlaps.has(expandedOverlapId)) {
+      const overlappingMemories = screenOverlaps.get(expandedOverlapId)!;
+      
+      // Sort by creation time (oldest first)
+      const sortedMemories = [...overlappingMemories].sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeA - timeB;
+      });
+      
+      // Find the center position (use first memory's position)
+      const centerMemory = sortedMemories[0];
+      const centerPos = result.positions.find(p => p.memory.id === centerMemory.id);
+      
+      if (centerPos) {
+        // Remove expanded memories from result
+        const filteredPositions = result.positions.filter(
+          p => !sortedMemories.some(m => m.id === p.memory.id)
+        );
+        
+        // Create spiral expansion: 2 degrees radius (very visible on globe)
+        const spiralRadiusDegrees = 2.0;
+        const spiralPositions: Array<{ memory: MemoryForMap; lat: number; lon: number }> = [];
+        
+        for (let i = 0; i < sortedMemories.length; i++) {
+          const memory = sortedMemories[i];
+          // Golden angle spiral: 137.508 degrees per item
+          const angle = (i * 137.508) * (Math.PI / 180);
+          // Spiral radius increases with index
+          const radius = spiralRadiusDegrees * Math.sqrt((i + 1) / sortedMemories.length);
+          
+          const latOffset = radius * Math.cos(angle);
+          const lonOffset = radius * Math.sin(angle) / Math.cos(centerPos.lat * Math.PI / 180);
+          
+          spiralPositions.push({
+            memory,
+            lat: centerPos.lat + latOffset,
+            lon: centerPos.lon + lonOffset,
+          });
+        }
+        
+        // Combine filtered positions with spiral positions
+        return {
+          positions: [...filteredPositions, ...spiralPositions],
+          clusters: result.clusters
+        };
+      }
+    }
+    
     // Log cluster information for debugging
     console.log('[v0] MemoryGlobe: Clustered', memories.length, 'memories into', 
       new Set(result.positions.map(c => `${c.lat.toFixed(6)},${c.lon.toFixed(6)}`)).size, 
@@ -173,7 +226,7 @@ export default function MemoryGlobe({
     }
     
     return result;
-  }, [memories, camDistance, expandedClusterId]);
+  }, [memories, camDistance, expandedClusterId, expandedOverlapId, screenOverlaps]);
 
   // Debug: Log memories count and details
   console.log('[v0] MemoryGlobe: Rendering with', memories.length, 'memories');
@@ -271,6 +324,17 @@ export default function MemoryGlobe({
               
               const isInExpandedCluster = expandedClusterId === clusterId;
               
+              // Check if this memory is in an expanded overlap group
+              const overlappingMemories = screenOverlaps.get(memory.id);
+              const hasOverlaps = overlappingMemories && overlappingMemories.length > 1;
+              
+              // Check if this memory is part of the expanded overlap group
+              let isInExpandedOverlap = false;
+              if (expandedOverlapId && screenOverlaps.has(expandedOverlapId)) {
+                const expandedGroup = screenOverlaps.get(expandedOverlapId)!;
+                isInExpandedOverlap = expandedGroup.some(m => m.id === memory.id);
+              }
+              
               return (
                 <MemoryPoint
                   key={memory.id}
@@ -279,6 +343,31 @@ export default function MemoryGlobe({
                   location={memory.location}
                   highlighted={highlightId === memory.id}
                   cameraDistance={camDistance}
+                  onDoubleClick={() => {
+                    console.log('=== MEMORY DOUBLE-CLICK HANDLER ===');
+                    console.log('[v0] Memory double-clicked:', {
+                      memoryId: memory.id,
+                      location: memory.location,
+                      hasOverlaps: hasOverlaps,
+                      isInExpandedOverlap: isInExpandedOverlap,
+                      expandedOverlapId: expandedOverlapId
+                    });
+                    
+                    // If double-clicking on an overlapped window that's not expanded, expand it visually
+                    if (hasOverlaps && !isInExpandedOverlap) {
+                      console.log('[v0] 🌀🌀🌀 EXPANDING overlap group visually:', memory.id, 'with', overlappingMemories!.length, 'memories');
+                      setExpandedOverlapId(memory.id);
+                      return;
+                    }
+                    
+                    // If double-clicking on an expanded overlap window, play that single memory
+                    if (isInExpandedOverlap) {
+                      console.log('[v0] 🎵 Playing memory from expanded overlap:', memory.id);
+                      setExpandedOverlapId(null); // Collapse
+                      onMemoryClick?.(memory.id); // Play single memory, not playlist
+                      return;
+                    }
+                  }}
                   onClick={() => {
                     console.log('=== MEMORY CLICK HANDLER ===');
                     console.log('[v0] Memory clicked:', {
@@ -289,16 +378,24 @@ export default function MemoryGlobe({
                       isInExpandedCluster: isInExpandedCluster,
                       isClusterCenter: isClusterCenter,
                       expandedClusterId: expandedClusterId,
+                      hasOverlaps: hasOverlaps,
+                      isInExpandedOverlap: isInExpandedOverlap,
                       lat: lat,
                       lon: lon
                     });
                     
-                    // Check for screen-space overlaps first (most accurate)
-                    const overlappingMemories = screenOverlaps.get(memory.id);
-                    if (overlappingMemories && overlappingMemories.length > 1) {
-                      console.log('[v0] 🎵 Screen overlap detected:', overlappingMemories.length, 'memories');
+                    // If clicking on an expanded overlap, collapse it (single click = collapse)
+                    if (isInExpandedOverlap) {
+                      console.log('[v0] 🔄 Collapsing expanded overlap');
+                      setExpandedOverlapId(null);
+                      return;
+                    }
+                    
+                    // Check for screen-space overlaps - show playlist if not expanded
+                    if (hasOverlaps && !isInExpandedOverlap) {
+                      console.log('[v0] 🎵 Screen overlap detected:', overlappingMemories!.length, 'memories - showing playlist');
                       // Pass all overlapping memories for playlist
-                      onMemoryClick?.(memory.id, overlappingMemories);
+                      onMemoryClick?.(memory.id, overlappingMemories!);
                       return;
                     }
                     

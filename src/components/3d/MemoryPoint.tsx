@@ -11,6 +11,7 @@ interface MemoryPointProps {
   windowVariant: 1 | 2;
   location?: string;
   onClick?: () => void;
+  onDoubleClick?: () => void; // Separate handler for double-click
   highlighted?: boolean;
   cameraDistance?: number; // Optional camera distance for scaling
 }
@@ -20,6 +21,7 @@ export default function MemoryPoint({
   windowVariant,
   location,
   onClick,
+  onDoubleClick,
   highlighted = false,
   cameraDistance = 18, // Default camera distance
 }: MemoryPointProps) {
@@ -73,17 +75,24 @@ export default function MemoryPoint({
       console.log('[v0] MemoryPoint: Double-click detected (manual) on:', location);
       lastClickTimeRef.current = 0; // Reset
       
-      // Trigger the onClick handler (which handles cluster expansion or playback)
-      if (onClick) {
-        console.log('[v0] MemoryPoint: Calling onClick handler');
+      // Trigger the onDoubleClick handler if provided
+      if (onDoubleClick) {
+        console.log('[v0] MemoryPoint: Calling onDoubleClick handler');
+        onDoubleClick();
+      } else if (onClick) {
+        // Fallback to onClick if no onDoubleClick handler
+        console.log('[v0] MemoryPoint: Calling onClick handler (fallback)');
         onClick();
       }
     } else {
       // Single click - wait to see if there's a second click
       lastClickTimeRef.current = now;
       clickTimeoutRef.current = setTimeout(() => {
-        // Single click after timeout - do nothing, let OrbitControls handle rotation
-        console.log('[v0] MemoryPoint: Single click (ignored) on:', location);
+        // Single click after timeout - trigger onClick handler
+        console.log('[v0] MemoryPoint: Single click detected on:', location);
+        if (onClick) {
+          onClick();
+        }
         clickTimeoutRef.current = null;
       }, 300);
     }
