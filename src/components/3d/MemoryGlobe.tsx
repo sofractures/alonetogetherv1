@@ -348,15 +348,23 @@ export default function MemoryGlobe({
             const activeMemory = expandedGroup.find(m => m.id === activeMemoryId) || centerMemory;
             
             if (centerPos && activeMemory.location) {
-              const centerPosition3D = latLngToPosition(centerPos.lat, centerPos.lon, 4.5);
-              // Position label at base of spiral - below the lowest window
-              // Windows are at radius 4.5, each window is ~1.5 units tall, so lowest edge is at ~-0.75
-              // Position text just below that at -1.2 (smaller offset for smaller text)
+              // Calculate position below the spiral
+              // Windows are arranged in a circle with 15-degree radius spread
+              // Each window is ~1.5 units tall, so the lowest window edge is at the bottom of the circle
+              // Position text well below the spiral - use a position that's clearly under all windows
+              const centerLat = centerPos.lat;
+              const centerLon = centerPos.lon;
+              
+              // Calculate a position below the center (south of the center point)
+              // Use a larger offset to ensure it's clearly below the spiral
+              const labelLat = centerLat - 0.2; // Move south (negative latitude = south)
+              const labelPosition3D = latLngToPosition(labelLat, centerLon, 4.5);
+              
               return (
                 <group renderOrder={1000}>
-                  <Billboard position={centerPosition3D} follow={true} lockX={false} lockY={false} lockZ={false}>
+                  <Billboard position={labelPosition3D} follow={true} lockX={false} lockY={false} lockZ={false}>
                     <Text
-                      position={[0, -1.2, 0]}
+                      position={[0, 0, 0]}
                       fontSize={0.2}
                       color="#ffffff"
                       anchorX="center"
