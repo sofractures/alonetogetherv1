@@ -312,19 +312,29 @@ export default function MemoryGlobe({
         }}
         gl={{ antialias: true, alpha: true }}
         dpr={[1, 2]}
-        onClick={() => {
-          // If spiral is expanded and click didn't hit a memory window, collapse it
-          // Memory windows stop propagation, so if we get here, it's a background click
-          if (expandedOverlapId) {
-            console.log('[v0] Background click detected - collapsing spiral');
-            setExpandedOverlapId(null);
-            setHoveredMemoryInSpiral(null);
-          }
-        }}
       >
         <Suspense fallback={null}>
           {/* Camera distance tracker (must be inside Canvas) */}
           <CameraDistanceTracker onDistanceChange={setCamDistance} />
+          
+          {/* Background click detector - transparent mesh that covers the scene */}
+          {expandedOverlapId && (
+            <mesh
+              position={[0, 0, 0]}
+              onClick={(e) => {
+                // Only collapse if clicking on the background (not on a memory window)
+                // Memory windows stop propagation, so if we get here, it's a background click
+                e.stopPropagation();
+                console.log('[v0] Background click detected - collapsing spiral');
+                setExpandedOverlapId(null);
+                setHoveredMemoryInSpiral(null);
+              }}
+            >
+              {/* Large invisible sphere that covers the scene */}
+              <sphereGeometry args={[100, 32, 32]} />
+              <meshBasicMaterial transparent opacity={0} />
+            </mesh>
+          )}
           
           {/* Screen-space overlap detector (must be inside Canvas) */}
           {/* Disable overlap detection when expanded to prevent flickering */}
