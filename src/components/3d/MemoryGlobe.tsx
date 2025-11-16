@@ -313,7 +313,7 @@ export default function MemoryGlobe({
         }}
         gl={{ antialias: true, alpha: true }}
         dpr={[1, 2]}
-        onPointerMissed={(e) => {
+        onPointerMissed={() => {
           // Handle clicks that don't hit any object (background clicks)
           if (expandedOverlapId) {
             console.log('[v0] Pointer missed - background click detected, collapsing spiral');
