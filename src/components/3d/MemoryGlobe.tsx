@@ -312,6 +312,15 @@ export default function MemoryGlobe({
         }}
         gl={{ antialias: true, alpha: true }}
         dpr={[1, 2]}
+        onClick={(e) => {
+          // If spiral is expanded and click didn't hit a memory window, collapse it
+          // Memory windows stop propagation, so if we get here, it's a background click
+          if (expandedOverlapId) {
+            console.log('[v0] Background click detected - collapsing spiral');
+            setExpandedOverlapId(null);
+            setHoveredMemoryInSpiral(null);
+          }
+        }}
       >
         <Suspense fallback={null}>
           {/* Camera distance tracker (must be inside Canvas) */}
