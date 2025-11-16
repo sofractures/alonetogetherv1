@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { getAudioController, onRecordingStartFadeOutBackground, onRecordingStopResumeBackground } from "@/lib/audio-context";
 import { useMemoryStore } from "@/store/memoryStore";
 import { getBrowserLocation, getIPLocation, LocationData } from "@/lib/location";
+import { MemoryForMap } from "@/types/memory";
 
 export default function Home() {
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
@@ -22,6 +23,8 @@ export default function Home() {
   const [highlightMemoryId, setHighlightMemoryId] = useState<string | null>(null);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [pendingLocation, setPendingLocation] = useState<LocationData | null>(null);
+  const [selectedMemoryPlaylist, setSelectedMemoryPlaylist] = useState<MemoryForMap[] | undefined>(undefined);
+  const [spiralOverlapId, setSpiralOverlapId] = useState<string | null>(null); // Track which spiral is open
   
   // Memory store
   const { memories, fetchMemories, selectMemory, selectedMemory, isLoading, error } = useMemoryStore();
@@ -264,10 +267,18 @@ export default function Home() {
           memories={memories} 
           autoRotate={!hasStartedExploring}
           highlightId={highlightMemoryId || undefined}
-          onMemoryClick={(id) => {
-            console.log('[v0] Opening modal for memory:', id);
+          restoreSpiralId={spiralOverlapId && !isMemoryPlayerOpen ? spiralOverlapId : null}
+          onMemoryClick={(id, overlappingMemories, keepSpiralOpen) => {
+            console.log('[v0] Opening modal for memory:', id, 'with playlist:', overlappingMemories?.length || 0, 'keepSpiralOpen:', keepSpiralOpen);
             selectMemory(id);
+            setSelectedMemoryPlaylist(overlappingMemories);
             setIsMemoryPlayerOpen(true);
+            // If keepSpiralOpen is true, we're in spiral mode - track the spiral state
+            // The spiral state is already tracked in MemoryGlobe, we just need to know it exists
+          }}
+          onSpiralStateChange={(isOpen, overlapId) => {
+            console.log('[v0] Spiral state changed:', isOpen, 'overlapId:', overlapId);
+            setSpiralOverlapId(isOpen ? overlapId : null);
           }}
         />
       </div>
@@ -430,11 +441,13 @@ export default function Home() {
       {/* Memory Player Modal */}
       <MemoryPlayer
         memory={selectedMemory}
+        memories={selectedMemoryPlaylist}
         isOpen={isMemoryPlayerOpen}
         onClose={() => {
           console.log('[v0] Closing memory player modal');
           setIsMemoryPlayerOpen(false);
           selectMemory(null);
+          setSelectedMemoryPlaylist(undefined);
         }}
       />
       

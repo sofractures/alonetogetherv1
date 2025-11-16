@@ -105,6 +105,7 @@ export async function GET() {
           : undefined,
         audioUrl: m.audio_url,
         name: m.display_name,
+        createdAt: m.created_at, // Include creation timestamp for sorting
       }));
     
     console.log('[v0] API: Returning', memoriesForMap.length, 'memories for map');
