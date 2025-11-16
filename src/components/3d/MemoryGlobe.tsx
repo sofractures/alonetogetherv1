@@ -247,16 +247,6 @@ export default function MemoryGlobe({
   
   return (
     <>
-      {/* Dark overlay when spiral is expanded */}
-      {expandedOverlapId && (
-        <div 
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 pointer-events-none"
-          style={{
-            transition: 'opacity 0.3s ease-in-out'
-          }}
-        />
-      )}
-      
       <div 
         className="absolute inset-0 w-full h-full" 
         style={{ 
@@ -270,6 +260,16 @@ export default function MemoryGlobe({
           bottom: 0
         }}
       >
+        {/* Dark overlay when spiral is expanded - behind canvas but visible */}
+        {expandedOverlapId && (
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-none"
+            style={{
+              transition: 'opacity 0.3s ease-in-out',
+              zIndex: 1
+            }}
+          />
+        )}
         <Canvas
         style={{ 
           display: 'block', 
@@ -277,7 +277,8 @@ export default function MemoryGlobe({
           height: '100%',
           position: 'absolute',
           top: 0,
-          left: 0
+          left: 0,
+          zIndex: 2 // Ensure canvas is above overlay
         }}
         gl={{ antialias: true, alpha: true }}
         dpr={[1, 2]}
