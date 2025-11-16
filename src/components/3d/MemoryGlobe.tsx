@@ -367,19 +367,13 @@ export default function MemoryGlobe({
                   }
                 }
                 
-                // Get the 3D position of the lowest window
-                const lowestWindow3D = latLngToPosition(lowestPosition.lat, lowestPosition.lon, 4.5);
-                
                 // Calculate position below the bottom edge of the window
-                // Windows are ~1.5 units tall, so bottom edge is at ~-0.75 from center
-                // We need to position text below that bottom edge
+                // Windows are billboards ~1.5 units tall, so bottom edge is at ~-0.75 from center
+                // We need to position text below that bottom edge on the globe surface
                 // On a globe, moving "down" means moving south (decreasing latitude)
-                // Calculate the distance needed: window height (1.5) + spacing (0.5) = ~2.0 units
-                // Convert to degrees: ~2.0 units on globe radius 4.5 ≈ 0.025 degrees
-                // But we want more spacing, so use a larger offset
-                const windowHeightDegrees = 0.05; // Approximate window height in degrees
-                const spacingDegrees = 0.03; // Additional spacing below window
-                const textLatOffset = -(windowHeightDegrees + spacingDegrees); // Move south
+                // Use a larger offset to ensure text is clearly below the window's bottom edge
+                // 0.1 degrees ≈ 11km, which should be enough to clear the window height
+                const textLatOffset = -0.15; // Move south to position below window bottom edge
                 
                 const textLat = lowestPosition.lat + textLatOffset;
                 const textLon = lowestPosition.lon;
