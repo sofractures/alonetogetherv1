@@ -57,17 +57,10 @@ export default function MemoryPoint({
   const scale = baseScale * distanceScale;
   const opacity = highlighted ? 1 : hovered ? 1 : 0.85;
 
-  const handleClick = () => {
-    // Don't stop propagation on single click - let OrbitControls handle it
-    // Only handle double-click for opening modal
-    console.log('[v0] Single click on memory:', location);
-  };
-
-  const handleDoubleClick = (e: ThreeEvent<MouseEvent>) => {
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
-    console.log('[v0] Double click on memory:', location);
-    
-    // Trigger the onClick handler (which opens modal)
+    console.log('[v0] MemoryPoint: Single click detected on:', location);
+    // Call the onClick handler (which handles spiral opening or playback)
     onClick?.();
   };
 
@@ -92,7 +85,6 @@ export default function MemoryPoint({
           ref={meshRef}
           scale={scale}
           onClick={handleClick}
-          onDoubleClick={handleDoubleClick}
           onPointerOver={handlePointerOver}
           onPointerOut={handlePointerOut}
         >

@@ -531,7 +531,9 @@ export default function MemoryGlobe({
                       console.log('[v0] 🎵 Playing memory from expanded spiral:', memory.id, '- keeping spiral open');
                       // Don't collapse spiral - keep it open
                       setHoveredMemoryInSpiral(null); // Reset hover state
-                      onMemoryClick?.(memory.id, undefined, true); // Play the selected memory, keepSpiralOpen=true
+                      // Pass overlapping memories for playlist if available
+                      const overlappingForPlaylist = overlappingMemories && overlappingMemories.length > 1 ? overlappingMemories : undefined;
+                      onMemoryClick?.(memory.id, overlappingForPlaylist, true); // Play the selected memory, keepSpiralOpen=true
                       return;
                     }
                     
