@@ -116,7 +116,7 @@ export default function PinModal({
         </h2>
         
         <p className="text-gray-300 text-sm mb-6">
-          Your story will appear as a glowing window that anyone can discover. Plus, you'll get your personalized song to keep forever.
+          Your story will appear as a glowing window that anyone can discover. Plus, you&apos;ll get your personalized song to keep forever.
         </p>
 
         <div className="space-y-4">
@@ -134,7 +134,7 @@ export default function PinModal({
               disabled={isSubmitting || isGeocoding}
               required
             />
-            <p className="text-gray-400 text-xs mt-1">We'll send you a link to your song</p>
+            <p className="text-gray-400 text-xs mt-1">We&apos;ll send you a link to your song</p>
           </div>
 
           {/* Name Input - Optional */}

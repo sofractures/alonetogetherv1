@@ -47,7 +47,7 @@ export default function PlaybackModal({
         </h2>
         
         <p className="text-gray-300 text-sm mb-6">
-          This is <strong>YOUR unique version</strong> of "Alone Together" - your voice woven into the song.
+          This is <strong>YOUR unique version</strong> of &quot;Alone Together&quot; - your voice woven into the song.
         </p>
 
         <div className="mb-6">

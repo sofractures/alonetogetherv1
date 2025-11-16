@@ -12,7 +12,6 @@ interface CelebrationScreenProps {
 
 export default function CelebrationScreen({
   isOpen,
-  audioUrl,
   email,
   location,
   onDownload,
@@ -52,10 +51,10 @@ export default function CelebrationScreen({
         <div className="bg-purple-900/30 border border-purple-400/30 rounded-lg p-6 mb-6">
           <div className="text-3xl mb-3">🎁</div>
           <h3 className="text-xl font-semibold text-white mb-2">
-            Here's Your Copy to Keep
+            Here&apos;s Your Copy to Keep
           </h3>
           <p className="text-gray-300 text-sm mb-4">
-            This is your unique version - your voice woven into the song. It's yours forever.
+            This is your unique version - your voice woven into the song. It&apos;s yours forever.
           </p>
           
           <button
@@ -66,7 +65,7 @@ export default function CelebrationScreen({
           </button>
           
           <p className="text-gray-400 text-xs">
-            We've also sent it to <strong className="text-gray-300">{email}</strong>
+            We&apos;ve also sent it to <strong className="text-gray-300">{email}</strong>
           </p>
         </div>
 
