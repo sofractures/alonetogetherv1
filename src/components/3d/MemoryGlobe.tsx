@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useRef, useState } from 'react';
+import { Suspense, useMemo, useRef, useState, useEffect } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, Environment, PerspectiveCamera, Text, Billboard } from '@react-three/drei';
 import { Vector3 } from 'three';
@@ -12,7 +12,7 @@ import { clusterAndSpreadMemories } from '@/lib/clustering';
 interface MemoryGlobeProps {
   memories?: MemoryForMap[];
   autoRotate?: boolean;
-  onMemoryClick?: (memoryId: string, overlappingMemories?: MemoryForMap[]) => void;
+  onMemoryClick?: (memoryId: string, overlappingMemories?: MemoryForMap[], keepSpiralOpen?: boolean) => void;
   highlightId?: string;
 }
 
@@ -123,7 +123,8 @@ export default function MemoryGlobe({
   memories = [], 
   autoRotate = false,
   onMemoryClick,
-  highlightId
+  highlightId,
+  onSpiralStateChange
 }: MemoryGlobeProps) {
   // Track camera distance to scale spread dynamically
   const [camDistance, setCamDistance] = useState<number>(18); // Start zoomed out further (default camera distance)
@@ -319,6 +320,7 @@ export default function MemoryGlobe({
             console.log('[v0] Pointer missed - background click detected, collapsing spiral');
             setExpandedOverlapId(null);
             setHoveredMemoryInSpiral(null);
+            onSpiralStateChange?.(false, null);
           }
         }}
       >
@@ -337,6 +339,7 @@ export default function MemoryGlobe({
                 console.log('[v0] Background click detected on transparent mesh - collapsing spiral');
                 setExpandedOverlapId(null);
                 setHoveredMemoryInSpiral(null);
+                onSpiralStateChange?.(false, null);
               }}
               onPointerDown={(e) => {
                 // Also handle pointer down events for better mobile support
@@ -510,11 +513,12 @@ export default function MemoryGlobe({
                     });
                     
                     // If clicking on a window in expanded overlap (spiral mode), play that memory
+                    // Don't collapse spiral - let it stay open so user returns to it after closing popup
                     if (isInExpandedOverlap) {
-                      console.log('[v0] 🎵 Playing memory from expanded spiral:', memory.id);
-                      setExpandedOverlapId(null); // Collapse spiral
+                      console.log('[v0] 🎵 Playing memory from expanded spiral:', memory.id, '- keeping spiral open');
+                      // Don't collapse spiral - keep it open
                       setHoveredMemoryInSpiral(null); // Reset hover state
-                      onMemoryClick?.(memory.id); // Play the selected memory
+                      onMemoryClick?.(memory.id, undefined, true); // Play the selected memory, keepSpiralOpen=true
                       return;
                     }
                     
@@ -522,6 +526,7 @@ export default function MemoryGlobe({
                     if (hasOverlaps && !isInExpandedOverlap) {
                       console.log('[v0] 🌀🌀🌀 OPENING spiral for overlap group:', memory.id, 'with', overlappingMemories!.length, 'memories');
                       setExpandedOverlapId(memory.id);
+                      onSpiralStateChange?.(true, memory.id);
                       return;
                     }
                     
