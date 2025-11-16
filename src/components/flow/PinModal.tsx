@@ -91,6 +91,7 @@ export default function PinModal({
     }
 
     setIsSubmitting(true);
+    // Explicitly pass null to indicate user skipped location (don't auto-detect)
     onPin({ email, location: null, name: name.trim() || undefined });
   };
 
@@ -152,75 +153,108 @@ export default function PinModal({
             />
           </div>
 
-          {/* Location Section */}
-          <div>
-            <label className="block text-gray-300 text-sm mb-2">Location</label>
-            
-            {!useManual ? (
-              <div className="space-y-2">
-                <button
-                  onClick={handleUseCurrentLocation}
-                  disabled={!isValidEmail(email) || isSubmitting || isGeocoding}
-                  className="w-full px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  📍 Use Current Location
-                </button>
-                <button
-                  onClick={() => setUseManual(true)}
-                  disabled={isSubmitting || isGeocoding}
-                  className="w-full px-4 py-2 rounded border border-purple-400/40 text-purple-200 hover:bg-purple-800/30 transition-colors disabled:opacity-50"
-                >
-                  Set Custom Location
-                </button>
-                <button
-                  onClick={handleSkipLocation}
-                  disabled={!isValidEmail(email) || isSubmitting || isGeocoding}
-                  className="w-full px-4 py-2 rounded text-gray-400 hover:text-gray-200 transition-colors text-sm disabled:opacity-50"
-                >
-                  Skip (No Location)
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div>
-                  <input
-                    type="text"
-                    value={manualCity}
-                    onChange={(e) => setManualCity(e.target.value)}
-                    placeholder="City (e.g., London)"
-                    className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-600 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
-                    disabled={isGeocoding || isSubmitting}
-                  />
-                </div>
-                <div>
-                  <input
-                    type="text"
-                    value={manualCountry}
-                    onChange={(e) => setManualCountry(e.target.value)}
-                    placeholder="Country (e.g., United Kingdom)"
-                    className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-600 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
-                    disabled={isGeocoding || isSubmitting}
-                  />
-                </div>
-                <div className="flex gap-2">
+          {/* Location Section - Only show if location not already provided */}
+          {!initialLocation && (
+            <div>
+              <label className="block text-gray-300 text-sm mb-2">Location</label>
+              
+              {!useManual ? (
+                <div className="space-y-2">
                   <button
-                    onClick={handleManualSubmit}
-                    disabled={isGeocoding || isSubmitting || !isValidEmail(email) || (!manualCity.trim() && !manualCountry.trim())}
-                    className="flex-1 px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleUseCurrentLocation}
+                    disabled={!isValidEmail(email) || isSubmitting || isGeocoding}
+                    className="w-full px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isGeocoding ? 'Finding location...' : 'Pin My Memory'}
+                    📍 Use Current Location
                   </button>
                   <button
-                    onClick={() => setUseManual(false)}
-                    disabled={isGeocoding || isSubmitting}
-                    className="px-4 py-2 rounded border border-gray-600 text-gray-300 hover:bg-gray-800 transition-colors disabled:opacity-50"
+                    onClick={() => setUseManual(true)}
+                    disabled={isSubmitting || isGeocoding}
+                    className="w-full px-4 py-2 rounded border border-purple-400/40 text-purple-200 hover:bg-purple-800/30 transition-colors disabled:opacity-50"
                   >
-                    Back
+                    Set Custom Location
+                  </button>
+                  <button
+                    onClick={handleSkipLocation}
+                    disabled={!isValidEmail(email) || isSubmitting || isGeocoding}
+                    className="w-full px-4 py-2 rounded text-gray-400 hover:text-gray-200 transition-colors text-sm disabled:opacity-50"
+                  >
+                    Skip (No Location)
                   </button>
                 </div>
-              </div>
-            )}
-          </div>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <input
+                      type="text"
+                      value={manualCity}
+                      onChange={(e) => setManualCity(e.target.value)}
+                      placeholder="City (e.g., London)"
+                      className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-600 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                      disabled={isGeocoding || isSubmitting}
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      value={manualCountry}
+                      onChange={(e) => setManualCountry(e.target.value)}
+                      placeholder="Country (e.g., United Kingdom)"
+                      className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-600 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                      disabled={isGeocoding || isSubmitting}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleManualSubmit}
+                      disabled={isGeocoding || isSubmitting || !isValidEmail(email) || (!manualCity.trim() && !manualCountry.trim())}
+                      className="flex-1 px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isGeocoding ? 'Finding location...' : 'Pin My Memory'}
+                    </button>
+                    <button
+                      onClick={() => setUseManual(false)}
+                      disabled={isGeocoding || isSubmitting}
+                      className="px-4 py-2 rounded border border-gray-600 text-gray-300 hover:bg-gray-800 transition-colors disabled:opacity-50"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Show location info if already provided */}
+          {initialLocation && (initialLocation.city || initialLocation.country) && (
+            <div className="bg-purple-900/20 border border-purple-400/20 rounded p-3">
+              <p className="text-gray-300 text-sm">
+                📍 Location: <strong>{initialLocation.city || ''}{initialLocation.city && initialLocation.country ? ', ' : ''}{initialLocation.country || ''}</strong>
+              </p>
+            </div>
+          )}
+          
+          {/* Pin button when location is already provided */}
+          {initialLocation && (
+            <button
+              onClick={() => {
+                if (!isValidEmail(email)) {
+                  alert('Please enter a valid email address.');
+                  return;
+                }
+                setIsSubmitting(true);
+                onPin({ 
+                  email, 
+                  location: initialLocation, 
+                  name: name.trim() || undefined 
+                });
+              }}
+              disabled={!isValidEmail(email) || isSubmitting}
+              className="w-full px-6 py-3 rounded bg-purple-600 text-white hover:bg-purple-700 transition-colors font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? 'Pinning...' : 'Pin My Memory'}
+            </button>
+          )}
 
           {/* Benefits */}
           <div className="pt-4 border-t border-gray-700">

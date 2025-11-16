@@ -286,18 +286,9 @@ export default function Home() {
     setUserName(data.name || null);
     setFlowState('pinning-processing');
     
-    // Get location if not provided
-    let location = data.location;
-    if (!location) {
-      try {
-        location = await getBrowserLocation();
-        if (!location) {
-          location = await getIPLocation();
-        }
-      } catch (error) {
-        console.warn('Location fetch error:', error);
-      }
-    }
+    // Use the location that was provided (or null if skipped)
+    // Don't auto-detect location if user explicitly skipped it
+    const location = data.location;
     
     // Update the existing memory record with email, name, and location
     if (pinnedMemoryId) {
@@ -329,7 +320,14 @@ export default function Home() {
           throw new Error(result.error || 'Failed to update memory');
         }
         
-        setPinnedLocation(location ? `${location.city || ''}${location.city && location.country ? ', ' : ''}${location.country || ''}`.trim() : null);
+        // Set the location string for display in celebration screen
+        // Use the location that was actually entered
+        if (location) {
+          const locationStr = `${location.city || ''}${location.city && location.country ? ', ' : ''}${location.country || ''}`.trim();
+          setPinnedLocation(locationStr || null);
+        } else {
+          setPinnedLocation(null);
+        }
         
         // Refresh memories to show the updated pin
         await fetchMemories();
@@ -526,8 +524,8 @@ export default function Home() {
                       Re-record
                     </button>
                     <button 
-                      onClick={() => setShowLocationSelector(true)} 
-                      disabled={isUploading || isProcessing} 
+                      onClick={() => proceedWithUpload(null)} 
+                      disabled={isUploading || isProcessing || flowState !== 'idle'} 
                       className="px-4 py-2 rounded bg-purple-600 text-white disabled:opacity-60"
                     >
                       {isUploading ? 'Uploading…' : isProcessing ? 'Processing…' : 'Accept & Upload'}
