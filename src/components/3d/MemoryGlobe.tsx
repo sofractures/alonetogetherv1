@@ -367,12 +367,8 @@ export default function MemoryGlobe({
                   }
                 }
                 
-                // Get the 3D position of the lowest window
-                const lowestWindow3D = latLngToPosition(lowestPosition.lat, lowestPosition.lon, 4.5);
-                
                 // Calculate position below the lowest window
                 // Move south (decrease latitude) to position text below on the globe
-                const fixedRadiusDegrees = 15.0;
                 const textLatOffset = -0.25; // Move further south (negative = south)
                 const textLat = lowestPosition.lat + textLatOffset;
                 const textLon = lowestPosition.lon;
