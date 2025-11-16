@@ -348,21 +348,43 @@ export default function MemoryGlobe({
             const activeMemory = expandedGroup.find(m => m.id === activeMemoryId) || centerMemory;
             
             if (centerPos && activeMemory.location) {
-              // Calculate position below the spiral
-              // Windows are arranged in a circle with 15-degree radius spread
-              // Each window is ~1.5 units tall, so the lowest window edge is at the bottom of the circle
-              // Position text well below the spiral - use a position that's clearly under all windows
+              // Calculate the position of the lowest window in the spiral
+              // Windows are arranged in a circle, so find the one at the bottom (270 degrees / -90 degrees)
+              const fixedRadiusDegrees = 15.0;
               const centerLat = centerPos.lat;
               const centerLon = centerPos.lon;
               
-              // Calculate a position below the center (south of the center point)
-              // Use a larger offset to ensure it's clearly below the spiral
-              const labelLat = centerLat - 0.2; // Move south (negative latitude = south)
-              const labelPosition3D = latLngToPosition(labelLat, centerLon, 4.5);
+              // Find the angle that corresponds to the bottom of the circle (south)
+              // In a circle, the bottom is at 270 degrees (or -90 degrees)
+              const bottomAngle = (3 * Math.PI) / 2; // 270 degrees in radians
+              
+              // Calculate the lat/lon offset for the bottom window
+              const latOffset = fixedRadiusDegrees * Math.cos(bottomAngle);
+              const lonOffset = fixedRadiusDegrees * Math.sin(bottomAngle) / Math.cos(centerLat * Math.PI / 180);
+              
+              // Position of the bottom window
+              const bottomWindowLat = centerLat + latOffset;
+              const bottomWindowLon = centerLon + lonOffset;
+              
+              // Convert to 3D position
+              const bottomWindowPosition3D = latLngToPosition(bottomWindowLat, bottomWindowLon, 4.5);
+              
+              // Position text below the bottom window
+              // Each window is ~1.5 units tall, so the bottom edge is at ~-0.75 from window center
+              // Position text further below that
+              const textOffsetY = -1.5; // Offset below the window
+              
+              // Calculate text position: move down from the bottom window position
+              // We need to move in the direction opposite to the window's position vector
+              const textPosition3D: [number, number, number] = [
+                bottomWindowPosition3D[0],
+                bottomWindowPosition3D[1] + textOffsetY, // Move down in Y (screen space)
+                bottomWindowPosition3D[2]
+              ];
               
               return (
                 <group renderOrder={1000}>
-                  <Billboard position={labelPosition3D} follow={true} lockX={false} lockY={false} lockZ={false}>
+                  <Billboard position={textPosition3D} follow={true} lockX={false} lockY={false} lockZ={false}>
                     <Text
                       position={[0, 0, 0]}
                       fontSize={0.2}
