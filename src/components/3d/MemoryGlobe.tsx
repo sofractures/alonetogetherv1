@@ -14,6 +14,8 @@ interface MemoryGlobeProps {
   autoRotate?: boolean;
   onMemoryClick?: (memoryId: string, overlappingMemories?: MemoryForMap[], keepSpiralOpen?: boolean) => void;
   highlightId?: string;
+  onSpiralStateChange?: (isOpen: boolean, overlapId: string | null) => void; // Callback to notify parent of spiral state
+  restoreSpiralId?: string | null; // If provided, restore this spiral
 }
 
 // Convert lat/lng to 3D spherical coordinates
@@ -298,6 +300,7 @@ export default function MemoryGlobe({
               console.log('[v0] Clicked on overlay - collapsing expansion');
               setExpandedOverlapId(null);
               setHoveredMemoryInSpiral(null); // Reset hover state
+              onSpiralStateChange?.(false, null);
             }}
           />
         )}
