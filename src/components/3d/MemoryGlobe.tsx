@@ -167,6 +167,8 @@ export default function MemoryGlobe({
     if (expandedOverlapId && screenOverlaps.has(expandedOverlapId)) {
       const overlappingMemories = screenOverlaps.get(expandedOverlapId)!;
       
+      console.log('[v0] Expanding overlap group:', expandedOverlapId, 'with', overlappingMemories.length, 'memories');
+      
       // Sort by creation time (oldest first) for consistent ordering
       const sortedMemories = [...overlappingMemories].sort((a, b) => {
         const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -174,11 +176,23 @@ export default function MemoryGlobe({
         return timeA - timeB;
       });
       
-      // Find the center position (use first memory's position)
+      // Find the center position - try to find it in the result positions first
       const centerMemory = sortedMemories[0];
-      const centerPos = result.positions.find(p => p.memory.id === centerMemory.id);
+      let centerPos = result.positions.find(p => p.memory.id === centerMemory.id);
+      
+      // If not found in result positions, use the original memory's lat/lon
+      if (!centerPos) {
+        console.log('[v0] Center position not found in result, using original memory coordinates');
+        centerPos = {
+          memory: centerMemory,
+          lat: centerMemory.latitude,
+          lon: centerMemory.longitude
+        };
+      }
       
       if (centerPos) {
+        console.log('[v0] Center position:', centerPos.lat, centerPos.lon, 'for', sortedMemories.length, 'memories');
+        
         // Remove expanded memories from result
         const filteredPositions = result.positions.filter(
           p => !sortedMemories.some(m => m.id === p.memory.id)
@@ -200,18 +214,27 @@ export default function MemoryGlobe({
           const latOffset = fixedRadiusDegrees * Math.cos(angle);
           const lonOffset = fixedRadiusDegrees * Math.sin(angle) / Math.cos(centerPos.lat * Math.PI / 180);
           
+          const finalLat = centerPos.lat + latOffset;
+          const finalLon = centerPos.lon + lonOffset;
+          
+          console.log('[v0] Circle position', i, ':', finalLat.toFixed(4), finalLon.toFixed(4), 'angle:', (angle * 180 / Math.PI).toFixed(1));
+          
           circlePositions.push({
             memory,
-            lat: centerPos.lat + latOffset,
-            lon: centerPos.lon + lonOffset,
+            lat: finalLat,
+            lon: finalLon,
           });
         }
+        
+        console.log('[v0] Created', circlePositions.length, 'circle positions, filtered', filteredPositions.length, 'other positions');
         
         // Combine filtered positions with circle positions
         return {
           positions: [...filteredPositions, ...circlePositions],
           clusters: result.clusters
         };
+      } else {
+        console.error('[v0] Could not find center position for expansion!');
       }
     }
     
