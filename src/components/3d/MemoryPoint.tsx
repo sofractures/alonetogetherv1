@@ -14,6 +14,7 @@ interface MemoryPointProps {
   onDoubleClick?: () => void; // Separate handler for double-click
   highlighted?: boolean;
   cameraDistance?: number; // Optional camera distance for scaling
+  showLabelAlways?: boolean; // If true, always show location label (for expanded overlaps)
 }
 
 export default function MemoryPoint({
@@ -24,6 +25,7 @@ export default function MemoryPoint({
   onDoubleClick,
   highlighted = false,
   cameraDistance = 18, // Default camera distance
+  showLabelAlways = false, // Default to only show on hover
 }: MemoryPointProps) {
   const meshRef = useRef<Mesh>(null);
   const [hovered, setHovered] = useState(false);
@@ -130,14 +132,14 @@ export default function MemoryPoint({
             side={2} // DoubleSide - render both sides
           />
         </mesh>
-        {hovered && location && (
+        {(hovered || showLabelAlways || highlighted) && location && (
           <Text
             position={[0, -1, 0]}
             fontSize={0.2}
-            color="#a78bfa"
+            color={highlighted ? '#f59e0b' : (hovered ? '#a78bfa' : '#ffffff')}
             anchorX="center"
             anchorY="middle"
-            outlineWidth={0.02}
+            outlineWidth={0.03}
             outlineColor="#000000"
           >
             {location}

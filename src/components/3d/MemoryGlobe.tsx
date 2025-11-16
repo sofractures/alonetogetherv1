@@ -2,7 +2,7 @@
 
 import { Suspense, useMemo, useRef, useState } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { OrbitControls, Environment, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, Environment, PerspectiveCamera, Text } from '@react-three/drei';
 import { Vector3 } from 'three';
 import BuildingCube from './BuildingCube';
 import MemoryPoint from './MemoryPoint';
