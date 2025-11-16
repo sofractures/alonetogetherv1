@@ -184,9 +184,7 @@ export default function MemoryGlobe({
         );
         
         // Calculate spiral radius based on camera distance and globe size
-        // Globe radius is 4.5 units, so we want to spread across a significant portion
         // Scale with camera distance: when zoomed in (closer), spread more dramatically
-        const globeRadius = 4.5;
         const minDist = 6;
         const maxDist = 30;
         
