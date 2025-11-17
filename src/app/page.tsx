@@ -406,38 +406,41 @@ export default function Home() {
               }}
             />
             <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl border border-purple-400/30 bg-gray-900/80 backdrop-blur p-5">
-              <div className="text-sm text-gray-300 mb-1">Record your memory</div>
-              <div className="text-lg font-semibold text-white mb-4">Share a time when you felt a part of something bigger than you</div>
-
-              {!pendingBlob && (
-                <AudioRecorder onComplete={onRecorderComplete} onStartRecording={onRecordingStartFadeOutBackground} />
-              )}
-
-              {pendingBlob && !processedAudioUrl && (
-                <div>
-                  <div className="text-gray-300 text-sm mb-2">Preview your recording</div>
-                  {pendingUrl && <audio src={pendingUrl} controls className="w-full" />}
-                  {uploadError && <div className="text-red-300 text-sm mt-2">{uploadError}</div>}
-                  <div className="flex gap-2 mt-4 items-center">
-                    <button onClick={() => { setPendingBlob(null); setPendingUrl(null); }} className="px-4 py-2 rounded border border-purple-400/40 text-purple-200">
-                      Re-record
-                    </button>
-                    <button 
-                      onClick={() => proceedWithUpload(null)} 
-                      disabled={isUploading || isProcessing || flowState !== 'idle'} 
-                      className="px-4 py-2 rounded bg-purple-600 text-white disabled:opacity-60"
-                    >
-                      {isUploading ? 'Uploading…' : isProcessing ? 'Processing…' : 'Accept & Upload'}
-                    </button>
-                    <button onClick={closeOverlay} disabled={isUploading || isProcessing} className="ml-auto px-4 py-2 rounded border border-gray-500/40 text-gray-200 disabled:opacity-60">Close</button>
-                  </div>
-                </div>
-              )}
-
-              {isProcessing && !processedAudioUrl && (
-                <div className="mt-4 p-4 rounded bg-purple-900/30 border border-purple-400/30 text-purple-100">
+              {isProcessing && !processedAudioUrl ? (
+                // Simple processing view - hide everything else
+                <div className="p-4 rounded bg-purple-900/30 border border-purple-400/30 text-purple-100 text-center">
                   Processing… we are creating your song.
                 </div>
+              ) : (
+                <>
+                  <div className="text-sm text-gray-300 mb-1">Prompt:</div>
+                  <div className="text-lg font-semibold text-white mb-4">Share a time when you felt a part of something bigger than you</div>
+
+                  {!pendingBlob && (
+                    <AudioRecorder onComplete={onRecorderComplete} onStartRecording={onRecordingStartFadeOutBackground} />
+                  )}
+
+                  {pendingBlob && !processedAudioUrl && (
+                    <div>
+                      <div className="text-gray-300 text-sm mb-2">Preview your recording</div>
+                      {pendingUrl && <audio src={pendingUrl} controls className="w-full" />}
+                      {uploadError && <div className="text-red-300 text-sm mt-2">{uploadError}</div>}
+                      <div className="flex gap-2 mt-4 items-center">
+                        <button onClick={() => { setPendingBlob(null); setPendingUrl(null); }} className="px-4 py-2 rounded border border-purple-400/40 text-purple-200">
+                          Re-record
+                        </button>
+                        <button 
+                          onClick={() => proceedWithUpload(null)} 
+                          disabled={isUploading || isProcessing || flowState !== 'idle'} 
+                          className="px-4 py-2 rounded bg-purple-600 text-white disabled:opacity-60"
+                        >
+                          {isUploading ? 'Uploading…' : isProcessing ? 'Processing…' : 'Accept & Upload'}
+                        </button>
+                        <button onClick={closeOverlay} disabled={isUploading || isProcessing} className="ml-auto px-4 py-2 rounded border border-gray-500/40 text-gray-200 disabled:opacity-60">Close</button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
               {/* Old flow - only show if not in new flow */}
