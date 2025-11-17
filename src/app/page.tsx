@@ -6,6 +6,7 @@ import LocationSelector from "@/components/location/LocationSelector";
 import PlaybackModal from "@/components/flow/PlaybackModal";
 import PinModal from "@/components/flow/PinModal";
 import CelebrationScreen from "@/components/flow/CelebrationScreen";
+import { WindowConstellation } from "@/components/ui/WindowConstellation";
 import { useState, useEffect } from "react";
 import { getAudioController, onRecordingStartFadeOutBackground, onRecordingStopResumeBackground } from "@/lib/audio-context";
 import { useMemoryStore } from "@/store/memoryStore";
@@ -371,22 +372,9 @@ export default function Home() {
         className="relative z-10 flex flex-col items-center justify-center min-h-screen"
         style={{ pointerEvents: (isWelcomeOpen || isOverlayOpen || (!hasStartedExploring && !isWelcomeOpen && !isOverlayOpen)) ? 'auto' : 'none' }}
       >
-        {/* Title and Start button - only show on initial landing, before user starts exploring */}
+        {/* Animated Title - only show on initial landing, before user starts exploring */}
         {!hasStartedExploring && !isWelcomeOpen && !isOverlayOpen && (
-          <div className="text-center">
-            <h1 className="text-6xl font-bold text-white mb-4 drop-shadow-lg">
-              Alone Together
-            </h1>
-            <p className="text-xl text-gray-200 mb-8 max-w-2xl mx-auto drop-shadow">
-              Each window holds a memory. Add yours to the building.
-            </p>
-            <button 
-              onClick={handleStart} 
-              className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200 shadow-lg"
-            >
-              Start
-            </button>
-          </div>
+          <WindowConstellation onStart={handleStart} />
         )}
         {isWelcomeOpen && (
           <div className="fixed inset-0 z-40 flex items-center justify-center">
