@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 interface WindowConstellationProps {
   onStart: () => void;
@@ -11,6 +11,14 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
 
   const text = "ALONE TOGETHER";
   const baseSpacing = 1.1;
+
+  // Memoize random positions so they don't change on re-render
+  const randomPositions = useMemo(() => {
+    return text.split("").map(() => ({
+      x: (Math.random() - 0.5) * 200,
+      y: (Math.random() - 0.5) * 200,
+    }));
+  }, []);
 
   useEffect(() => {
     // Animation duration is 3500ms, add 500ms buffer for completion
@@ -23,9 +31,9 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
       {/* Scattered Letters */}
       <div className="absolute inset-0 flex items-center justify-center">
         {text.split("").map((letter, index) => {
-          // Generate random start position (using vw/vh for scattered effect)
-          const randomX = (Math.random() - 0.5) * 200;
-          const randomY = (Math.random() - 0.5) * 200;
+          // Use memoized random start position
+          const randomX = randomPositions[index].x;
+          const randomY = randomPositions[index].y;
 
           // Final position using ch units for proper letter spacing
           const finalX = (index - text.length / 2) * baseSpacing;
