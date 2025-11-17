@@ -407,7 +407,7 @@ export default function Home() {
       >
         <MemoryGlobe 
           memories={memories} 
-          autoRotate={!hasStartedExploring}
+          autoRotate={true}
           highlightId={highlightMemoryId || undefined}
           restoreSpiralId={spiralOverlapId && !isMemoryPlayerOpen ? spiralOverlapId : null}
           onMemoryClick={(id, overlappingMemories, keepSpiralOpen) => {
