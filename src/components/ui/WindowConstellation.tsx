@@ -104,13 +104,15 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
           return (
             <span
               key={index}
-              className="absolute text-6xl md:text-8xl font-bold text-white transition-all duration-300 ease-out"
+              className="absolute text-6xl md:text-8xl font-bold text-white"
               style={{
                 transform: isAnimating
                   ? `translate(${randomX}vw, ${randomY}vh)`
                   : finalTransform,
                 opacity: finalOpacity,
-                transitionDelay: isAnimating ? `${index * 50}ms` : '0ms',
+                transition: isAnimating 
+                  ? `all 2500ms ease-out ${index * 50}ms`
+                  : 'all 600ms ease-out',
               }}
             >
               {letter === " " ? "\u00A0" : letter}
