@@ -386,7 +386,7 @@ export default function Home() {
           <div className="fixed inset-0 z-40 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/60" onClick={() => setIsWelcomeOpen(false)} />
             <div className="relative z-10 w-full max-w-xl mx-4 rounded-xl border border-purple-400/30 bg-gray-900/80 backdrop-blur p-6 text-center">
-              <h2 className="text-white text-2xl font-semibold mb-2">Welcome to aLone Together</h2>
+              <h2 className="text-white text-2xl font-semibold mb-2">Welcome to Alone Together</h2>
               <p className="text-gray-300 mb-6">Record your memory to create your own personal song, or explore others on the map.</p>
               <div className="flex gap-3 justify-center">
                 <button onClick={() => { setIsWelcomeOpen(false); setIsOverlayOpen(true); }} className="px-5 py-2 rounded bg-purple-600 text-white">Create</button>
