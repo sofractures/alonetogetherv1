@@ -336,10 +336,10 @@ export default function Home() {
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden">
+    <div className="relative w-full h-screen overflow-hidden bg-black">
       {/* 3D Scene - Always visible in background */}
       <div 
-        className="absolute inset-0"
+        className="absolute inset-0 bg-black"
         style={{ 
           pointerEvents: hasStartedExploring ? 'auto' : 'none',
           zIndex: 0,
