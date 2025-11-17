@@ -248,7 +248,7 @@ export default function MemoryGlobe({
   return (
     <>
       <div 
-        className="absolute inset-0 w-full h-full" 
+        className="absolute inset-0 w-full h-full bg-black" 
         style={{ 
           pointerEvents: 'auto', 
           touchAction: 'none',
