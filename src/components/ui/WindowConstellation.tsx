@@ -16,7 +16,8 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
   const hoverSpacing = 0.65;
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsAnimating(false), 3000);
+    // Animation duration is 3500ms, add 500ms buffer for completion
+    const timer = setTimeout(() => setIsAnimating(false), 4000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -111,7 +112,7 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
                   : finalTransform,
                 opacity: finalOpacity,
                 transition: isAnimating 
-                  ? `all 2500ms ease-out ${index * 50}ms`
+                  ? `all 3500ms cubic-bezier(0.25, 0.1, 0.25, 1) ${index * 40}ms`
                   : 'all 600ms ease-out',
               }}
             >
@@ -127,7 +128,7 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
         className={`absolute bottom-32 px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-all duration-1000 shadow-lg ${
           isAnimating ? "opacity-0 translate-y-8" : "opacity-100 translate-y-0"
         }`}
-        style={{ transitionDelay: "2500ms" }}
+        style={{ transitionDelay: "3500ms" }}
       >
         Start Exploring
       </button>
