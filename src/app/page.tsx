@@ -44,12 +44,12 @@ export default function Home() {
   // New flow state management
   const [flowState, setFlowState] = useState<FlowState>('idle');
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string | null>(null);
+  const [_userName, setUserName] = useState<string | null>(null);
   const [pinnedMemoryId, setPinnedMemoryId] = useState<string | null>(null);
   const [pinnedLocation, setPinnedLocation] = useState<string | null>(null);
   
   // Memory store
-  const { memories, fetchMemories, selectMemory, selectedMemory, isLoading, error } = useMemoryStore();
+  const { memories, fetchMemories, selectMemory, selectedMemory } = useMemoryStore();
 
   // Fetch memories on mount
   useEffect(() => {
@@ -358,7 +358,7 @@ export default function Home() {
             autoRotate={true}
             highlightId={highlightMemoryId || undefined}
             restoreSpiralId={spiralOverlapId && !isMemoryPlayerOpen ? spiralOverlapId : null}
-            onMemoryClick={(id, overlappingMemories, keepSpiralOpen) => {
+            onMemoryClick={(id, overlappingMemories) => {
               selectMemory(id);
               setSelectedMemoryPlaylist(overlappingMemories);
               setIsMemoryPlayerOpen(true);

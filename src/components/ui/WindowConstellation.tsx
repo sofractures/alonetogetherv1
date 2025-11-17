@@ -78,7 +78,7 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
 
           // Calculate hover effect
           let finalTransform = `translate(${(index - text.length / 2) * baseSpacing}ch, 0)`;
-          let finalOpacity = isAnimating ? 0.1 : 1;
+          const finalOpacity = isAnimating ? 0.1 : 1;
           
           if (!isAnimating && mousePos) {
             const nearestIndices = getNearestIndices(mousePos.x, mousePos.y);
