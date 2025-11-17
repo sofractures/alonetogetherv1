@@ -133,7 +133,7 @@ export function clusterAndSpreadMemories(
   explodeRadiusDegrees: number = 3 // Angular spread in degrees when exploded (visible on globe)
 ): {
   positions: Array<{ memory: MemoryForMap; lat: number; lon: number }>;
-  clusters: Map<string, MemoryForMap[]>; // cluster center ID -> memories in cluster
+  clusters: Map<string, MemoryForMap[]>;
 } {
   const clusters = groupByProximity(memories, thresholdMeters);
   const results: Array<{ memory: MemoryForMap; lat: number; lon: number }> = [];

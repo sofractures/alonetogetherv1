@@ -11,7 +11,6 @@ interface MemoryPointProps {
   windowVariant: 1 | 2;
   location?: string;
   onClick?: () => void;
-  onDoubleClick?: () => void; // Separate handler for double-click
   highlighted?: boolean;
   cameraDistance?: number; // Optional camera distance for scaling
   showLabelAlways?: boolean; // If true, always show location label (for expanded overlaps)
@@ -24,7 +23,6 @@ export default function MemoryPoint({
   windowVariant,
   location,
   onClick,
-  onDoubleClick,
   highlighted = false,
   cameraDistance = 18, // Default camera distance
   showLabelAlways = false, // Default to only show on hover
@@ -33,8 +31,6 @@ export default function MemoryPoint({
 }: MemoryPointProps) {
   const meshRef = useRef<Mesh>(null);
   const [hovered, setHovered] = useState(false);
-  const lastClickTimeRef = useRef<number>(0);
-  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Load the appropriate window texture
   const texture = useTexture(
@@ -65,43 +61,10 @@ export default function MemoryPoint({
   const opacity = highlighted ? 1 : hovered ? 1 : 0.85;
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation(); // Stop propagation to prevent OrbitControls from rotating
-    
-    const now = Date.now();
-    const timeSinceLastClick = now - lastClickTimeRef.current;
-    
-    // Clear any pending single-click timeout
-    if (clickTimeoutRef.current) {
-      clearTimeout(clickTimeoutRef.current);
-      clickTimeoutRef.current = null;
-    }
-    
-    // If clicked within 300ms of last click, treat as double-click
-    if (timeSinceLastClick < 300) {
-      console.log('[v0] MemoryPoint: Double-click detected (manual) on:', location);
-      lastClickTimeRef.current = 0; // Reset
-      
-      // Trigger the onDoubleClick handler if provided
-      if (onDoubleClick) {
-        console.log('[v0] MemoryPoint: Calling onDoubleClick handler');
-        onDoubleClick();
-      } else if (onClick) {
-        // Fallback to onClick if no onDoubleClick handler
-        console.log('[v0] MemoryPoint: Calling onClick handler (fallback)');
-        onClick();
-      }
-    } else {
-      // Single click - wait to see if there's a second click
-      lastClickTimeRef.current = now;
-      clickTimeoutRef.current = setTimeout(() => {
-        // Single click after timeout - trigger onClick handler
-        console.log('[v0] MemoryPoint: Single click detected on:', location);
-        if (onClick) {
-          onClick();
-        }
-        clickTimeoutRef.current = null;
-      }, 300);
-    }
+    e.stopPropagation();
+    console.log('[v0] MemoryPoint: Single click detected on:', location);
+    // Call the onClick handler (which handles spiral opening or playback)
+    onClick?.();
   };
 
   const handlePointerOver = (e: ThreeEvent<PointerEvent>) => {

@@ -3,11 +3,24 @@ import AudioRecorder from "@/components/audio/AudioRecorder";
 import MemoryGlobe from "@/components/3d/MemoryGlobe";
 import MemoryPlayer from "@/components/audio/MemoryPlayer";
 import LocationSelector from "@/components/location/LocationSelector";
+import PlaybackModal from "@/components/flow/PlaybackModal";
+import PinModal from "@/components/flow/PinModal";
+import CelebrationScreen from "@/components/flow/CelebrationScreen";
 import { useState, useEffect } from "react";
 import { getAudioController, onRecordingStartFadeOutBackground, onRecordingStopResumeBackground } from "@/lib/audio-context";
 import { useMemoryStore } from "@/store/memoryStore";
 import { getBrowserLocation, getIPLocation, LocationData } from "@/lib/location";
 import { MemoryForMap } from "@/types/memory";
+
+type FlowState = 
+  | 'idle'
+  | 'recording'
+  | 'processing'
+  | 'playback'      // Show playback modal
+  | 'pinning'       // Show pin modal
+  | 'pinning-processing' // "Pinning your memory..."
+  | 'celebrating'   // Show celebration screen
+  | 'complete';     // On globe view
 
 export default function Home() {
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
@@ -23,8 +36,16 @@ export default function Home() {
   const [highlightMemoryId, setHighlightMemoryId] = useState<string | null>(null);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [pendingLocation, setPendingLocation] = useState<LocationData | null>(null);
-  const [selectedMemoryPlaylist, setSelectedMemoryPlaylist] = useState<MemoryForMap[] | undefined>(undefined);
+  // Spiral state management
   const [spiralOverlapId, setSpiralOverlapId] = useState<string | null>(null); // Track which spiral is open
+  const [selectedMemoryPlaylist, setSelectedMemoryPlaylist] = useState<MemoryForMap[] | undefined>(undefined);
+  
+  // New flow state management
+  const [flowState, setFlowState] = useState<FlowState>('idle');
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [pinnedMemoryId, setPinnedMemoryId] = useState<string | null>(null);
+  const [pinnedLocation, setPinnedLocation] = useState<string | null>(null);
   
   // Memory store
   const { memories, fetchMemories, selectMemory, selectedMemory, isLoading, error } = useMemoryStore();
@@ -85,6 +106,7 @@ export default function Home() {
   const onRecorderComplete = (blob: Blob, url: string) => {
     setPendingBlob(blob);
     setPendingUrl(url);
+    setFlowState('idle'); // Reset flow state when new recording starts
   };
 
   const handleLocationSelected = async (location: LocationData | null) => {
@@ -107,7 +129,7 @@ export default function Home() {
     await proceedWithUpload(location);
   };
 
-  const proceedWithUpload = async (location: LocationData | null) => {
+  const proceedWithUpload = async (location: LocationData | null, email?: string, name?: string) => {
     if (!pendingBlob) return;
     
     try {
@@ -117,7 +139,7 @@ export default function Home() {
       setIsUploading(true);
       setUploadError(null);
       
-      // Build multipart form data with file and optional location
+      // Build multipart form data with file, location, email, and name
       const form = new FormData();
       form.append("file", pendingBlob, "recording.webm");
       if (location) {
@@ -125,6 +147,12 @@ export default function Home() {
         if (location.name) {
           form.append("display_name", location.name);
         }
+      }
+      if (email) {
+        form.append("email", email);
+      }
+      if (name) {
+        form.append("user_name", name);
       }
       
       const res = await fetch("/api/memory/record", { method: "POST", body: form });
@@ -138,6 +166,7 @@ export default function Home() {
         location: location
       });
       setPendingLocation(null); // Clear pending location after use
+      setPinnedMemoryId(data.memoryId); // Store memory ID for later use
       
       if (!data.memoryId) {
         console.error('[v0] WARNING: Memory record was not created! memoryId is null');
@@ -146,6 +175,7 @@ export default function Home() {
       
       // Begin processing step
       setIsProcessing(true);
+      setFlowState('processing');
       try {
         const pres = await fetch('/api/process-audio', {
           method: 'POST',
@@ -161,11 +191,12 @@ export default function Home() {
         // Processing complete - store the processed audio URL for playback
         if (pdata.signedUrl) {
           setProcessedAudioUrl(pdata.signedUrl);
+          setFlowState('playback'); // Move to playback modal
           
           console.log('[v0] Processing complete for memoryId:', data.memoryId);
           console.log('[v0] Processed audio URL:', pdata.signedUrl);
           console.log('[v0] Processed path:', pdata.processedPath);
-          console.log('[v0] Your song is ready! Starting memory refresh to show new window...');
+          console.log('[v0] Your song is ready! Moving to playback modal...');
           
           // Immediately start refreshing memories so the new window appears while user sees "Your song is ready"
           // Refresh memories multiple times with increasing delays to catch DB updates
@@ -248,6 +279,116 @@ export default function Home() {
       setIsUploading(false);
     }
   };
+
+  // New flow handlers
+  const handleAddToGlobe = () => {
+    setFlowState('pinning');
+  };
+
+  const handlePinMemory = async (data: { email: string; location: LocationData | null; name?: string }) => {
+    setUserEmail(data.email);
+    setUserName(data.name || null);
+    setFlowState('pinning-processing');
+    
+    // Use the location that was provided (or null if skipped)
+    // Don't auto-detect location if user explicitly skipped it
+    const location = data.location;
+    
+    // Update the existing memory record with email, name, and location
+    if (pinnedMemoryId) {
+      try {
+        const updateBody: {
+          email: string;
+          user_name?: string;
+          location?: LocationData;
+        } = {
+          email: data.email,
+        };
+        
+        if (data.name) {
+          updateBody.user_name = data.name;
+        }
+        if (location) {
+          updateBody.location = location;
+        }
+        
+        const res = await fetch(`/api/memory/${pinnedMemoryId}/update`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updateBody),
+        });
+        
+        const result = await res.json();
+        
+        if (!res.ok) {
+          throw new Error(result.error || 'Failed to update memory');
+        }
+        
+        // Set the location string for display in celebration screen
+        // Use the location that was actually entered
+        if (location) {
+          const locationStr = `${location.city || ''}${location.city && location.country ? ', ' : ''}${location.country || ''}`.trim();
+          setPinnedLocation(locationStr || null);
+        } else {
+          setPinnedLocation(null);
+        }
+        
+        // Refresh memories to show the updated pin
+        await fetchMemories();
+        
+        // Move to celebration screen
+        setFlowState('celebrating');
+      } catch (error) {
+        console.error('Error pinning memory:', error);
+        setUploadError('Failed to pin memory. Please try again.');
+        setFlowState('pinning');
+      }
+    } else {
+      // If we don't have a memory ID yet, create it now with all the data
+      await proceedWithUpload(location, data.email, data.name);
+    }
+  };
+
+  const handleDownload = () => {
+    if (processedAudioUrl) {
+      const link = document.createElement('a');
+      link.href = processedAudioUrl;
+      link.download = `alone-together-${pinnedMemoryId || 'memory'}.mp3`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  const handleExploreGlobe = () => {
+    setFlowState('complete');
+    setIsOverlayOpen(false);
+    setHasStartedExploring(true);
+    
+    // Highlight the new memory
+    if (pinnedMemoryId) {
+      setHighlightMemoryId(pinnedMemoryId);
+      setTimeout(() => setHighlightMemoryId(null), 6000);
+    }
+    
+    // Refresh memories one more time
+    fetchMemories();
+  };
+
+  const handleCreateAnother = () => {
+    // Reset everything for a new recording
+    setFlowState('idle');
+    setPendingBlob(null);
+    setPendingUrl(null);
+    setProcessedAudioUrl(null);
+    setUserEmail(null);
+    setUserName(null);
+    setPinnedMemoryId(null);
+    setPinnedLocation(null);
+    setIsOverlayOpen(false);
+    setIsWelcomeOpen(true);
+  };
+
   return (
     <div className="relative w-full h-screen overflow-hidden">
       {/* 3D Scene - Always visible in background */}
@@ -265,7 +406,7 @@ export default function Home() {
       >
         <MemoryGlobe 
           memories={memories} 
-          autoRotate={!hasStartedExploring}
+          autoRotate={true}
           highlightId={highlightMemoryId || undefined}
           restoreSpiralId={spiralOverlapId && !isMemoryPlayerOpen ? spiralOverlapId : null}
           onMemoryClick={(id, overlappingMemories, keepSpiralOpen) => {
@@ -395,8 +536,8 @@ export default function Home() {
                       Re-record
                     </button>
                     <button 
-                      onClick={() => setShowLocationSelector(true)} 
-                      disabled={isUploading || isProcessing} 
+                      onClick={() => proceedWithUpload(null)} 
+                      disabled={isUploading || isProcessing || flowState !== 'idle'} 
                       className="px-4 py-2 rounded bg-purple-600 text-white disabled:opacity-60"
                     >
                       {isUploading ? 'Uploading…' : isProcessing ? 'Processing…' : 'Accept & Upload'}
@@ -412,7 +553,8 @@ export default function Home() {
                 </div>
               )}
 
-              {processedAudioUrl && (
+              {/* Old flow - only show if not in new flow */}
+              {processedAudioUrl && flowState === 'idle' && (
                 <div className="mt-4 p-4 rounded bg-purple-900/30 border border-purple-400/30">
                   <div className="text-purple-100 font-semibold mb-3">Your song is ready!</div>
                   <audio src={processedAudioUrl} controls className="w-full mb-4" />
@@ -433,6 +575,14 @@ export default function Home() {
                   </div>
                 </div>
               )}
+              
+              {/* Pinning processing state */}
+              {flowState === 'pinning-processing' && (
+                <div className="mt-4 p-4 rounded bg-purple-900/30 border border-purple-400/30 text-center">
+                  <div className="text-purple-100 font-semibold mb-2">Pinning your memory...</div>
+                  <div className="text-gray-400 text-sm">Adding your window to the globe</div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -447,11 +597,12 @@ export default function Home() {
           console.log('[v0] Closing memory player modal');
           setIsMemoryPlayerOpen(false);
           selectMemory(null);
-          setSelectedMemoryPlaylist(undefined);
+          setSelectedMemoryPlaylist(undefined); // Reset playlist on close
+          // If spiral was open, it will be restored by MemoryGlobe's useEffect
         }}
       />
       
-      {/* Location Selector Modal */}
+      {/* Location Selector Modal (old flow) */}
       {showLocationSelector && (
         <LocationSelector
           onLocationSelected={handleLocationSelected}
@@ -459,6 +610,41 @@ export default function Home() {
           initialLocation={pendingLocation}
         />
       )}
+
+      {/* New Flow Modals */}
+      
+      {/* Playback Modal - Step 7 */}
+      <PlaybackModal
+        audioUrl={processedAudioUrl || ''}
+        isOpen={flowState === 'playback' && !!processedAudioUrl}
+        onAddToGlobe={handleAddToGlobe}
+        onClose={() => {
+          // Allow closing to go back, but encourage adding to globe
+          if (confirm('Are you sure? You can add your memory to the globe and get your download link.')) {
+            setFlowState('idle');
+          }
+        }}
+      />
+
+      {/* Pin Modal - Step 8 */}
+      <PinModal
+        isOpen={flowState === 'pinning'}
+        onPin={handlePinMemory}
+        onCancel={() => {
+          setFlowState('playback'); // Go back to playback
+        }}
+        initialLocation={pendingLocation}
+      />
+
+      {/* Celebration Screen - Step 10 */}
+      <CelebrationScreen
+        isOpen={flowState === 'celebrating'}
+        email={userEmail || ''}
+        location={pinnedLocation || undefined}
+        onDownload={handleDownload}
+        onExploreGlobe={handleExploreGlobe}
+        onCreateAnother={handleCreateAnother}
+      />
     </div>
   );
 }

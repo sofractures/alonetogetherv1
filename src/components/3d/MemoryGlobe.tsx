@@ -20,7 +20,7 @@ interface MemoryGlobeProps {
 
 // Convert lat/lng to 3D spherical coordinates
 // Uses standard spherical coordinate conversion for globe mapping
-function latLngToPosition(lat: number, lng: number, radius: number = 4.5): [number, number, number] {
+function latLngToPosition(lat: number, lng: number, radius: number = 4.0): [number, number, number] {
   // Convert to radians
   const phi = (90 - lat) * (Math.PI / 180); // Latitude: 90° = north pole, -90° = south pole
   const theta = (lng + 180) * (Math.PI / 180); // Longitude: -180° to 180° -> 0° to 360°
@@ -78,7 +78,7 @@ function OverlapDetector({
     
     // Project all positions to screen space
     for (const { memory, lat, lon } of positions) {
-      const worldPos = latLngToPosition(lat, lon, 4.5);
+      const worldPos = latLngToPosition(lat, lon, 4.0);
       const vector = new Vector3(...worldPos);
       vector.project(camera);
       
@@ -123,14 +123,14 @@ function OverlapDetector({
 
 export default function MemoryGlobe({ 
   memories = [], 
-  autoRotate = false,
+  autoRotate = true, // Default to slow, contemplative auto-rotation
   onMemoryClick,
   highlightId,
   onSpiralStateChange,
   restoreSpiralId
 }: MemoryGlobeProps) {
   // Track camera distance to scale spread dynamically
-  const [camDistance, setCamDistance] = useState<number>(18); // Start zoomed out further (default camera distance)
+  const [camDistance, setCamDistance] = useState<number>(12); // Comfortable scale - globe fills ~50% of screen
   // Track which cluster is expanded (spiderfied)
   const [expandedClusterId, setExpandedClusterId] = useState<string | null>(null);
   // Track screen-space overlaps for playlist feature
@@ -262,7 +262,7 @@ export default function MemoryGlobe({
     for (const [clusterId, clusterMembers] of result.clusters.entries()) {
       if (clusterMembers.length > 1) {
         console.log('[v0] MemoryGlobe: Cluster', clusterId, 'has', clusterMembers.length, 'members:', 
-          clusterMembers.map(m => ({ id: m.id, location: m.location, lat: m.latitude, lon: m.longitude })));
+          clusterMembers.map((m: MemoryForMap) => ({ id: m.id, location: m.location, lat: m.latitude, lon: m.longitude })));
       }
     }
     
@@ -380,7 +380,7 @@ export default function MemoryGlobe({
           <pointLight position={[-10, -10, -5]} intensity={0.6} color="#a78bfa" />
           
           {/* Camera */}
-          <PerspectiveCamera makeDefault position={[0, 0, 18]} fov={60} />
+          <PerspectiveCamera makeDefault position={[0, 0, 12]} fov={50} />
           
           {/* Central Building Cube */}
           <BuildingCube autoRotate={autoRotate} rotationSpeed={0.2} />
@@ -405,10 +405,10 @@ export default function MemoryGlobe({
               if (expandedPositions.length > 0) {
                 // Find the window with the lowest Y coordinate in 3D space
                 let lowestPosition = expandedPositions[0];
-                let lowestY = latLngToPosition(lowestPosition.lat, lowestPosition.lon, 4.5)[1];
+                let lowestY = latLngToPosition(lowestPosition.lat, lowestPosition.lon, 4.0)[1];
                 
                 for (const pos of expandedPositions) {
-                  const pos3D = latLngToPosition(pos.lat, pos.lon, 4.5);
+                  const pos3D = latLngToPosition(pos.lat, pos.lon, 4.0);
                   if (pos3D[1] < lowestY) {
                     lowestY = pos3D[1];
                     lowestPosition = pos;
@@ -416,7 +416,7 @@ export default function MemoryGlobe({
                 }
                 
                 // Get the 3D position of the lowest window
-                const lowestWindow3D = latLngToPosition(lowestPosition.lat, lowestPosition.lon, 4.5);
+                const lowestWindow3D = latLngToPosition(lowestPosition.lat, lowestPosition.lon, 4.0);
                 
                 // Position text below the bottom edge of the window
                 // Windows are billboards ~1.5 units tall, so bottom edge is at ~-0.75 from center
@@ -451,7 +451,7 @@ export default function MemoryGlobe({
           {/* Memory Windows */}
           {clusteredMemories.length > 0 ? (
             clusteredMemories.map(({ memory, lat, lon }) => {
-              const position = latLngToPosition(lat, lon, 4.5);
+              const position = latLngToPosition(lat, lon, 4.0);
               
               // Log position changes for expanded clusters
               if (expandedClusterId) {
@@ -525,13 +525,14 @@ export default function MemoryGlobe({
                       lon: lon
                     });
                     
-                    // If clicking on a window in expanded overlap (spiral mode), play that memory
+                    // If clicking on a window in expanded overlap (spiral mode), play that SINGLE memory
                     // Don't collapse spiral - let it stay open so user returns to it after closing popup
                     if (isInExpandedOverlap) {
-                      console.log('[v0] 🎵 Playing memory from expanded spiral:', memory.id, '- keeping spiral open');
+                      console.log('[v0] 🎵 Playing SINGLE memory from expanded spiral:', memory.id, '- keeping spiral open');
                       // Don't collapse spiral - keep it open
                       setHoveredMemoryInSpiral(null); // Reset hover state
-                      onMemoryClick?.(memory.id, undefined, true); // Play the selected memory, keepSpiralOpen=true
+                      // Play just this single memory (no playlist) - user clicked on a specific window
+                      onMemoryClick?.(memory.id, undefined, true); // Play the selected memory, keepSpiralOpen=true, no playlist
                       return;
                     }
                     
@@ -615,4 +616,3 @@ export default function MemoryGlobe({
     </>
   );
 }
-

@@ -72,7 +72,7 @@ export default function MemoryPlayer({ memory, memories, isOpen, onClose }: Memo
           setIsLoadingAudio(false);
         });
     }
-  }, [isOpen, currentMemory, currentTrackIndex]);
+  }, [isOpen, currentMemory, currentTrackIndex, playlist.length]);
 
   useEffect(() => {
     if (isOpen && audioRef.current && audioUrl) {
