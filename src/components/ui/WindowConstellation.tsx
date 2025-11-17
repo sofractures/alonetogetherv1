@@ -57,7 +57,7 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
         }`}
         style={{ transitionDelay: "2500ms" }}
       >
-        Start Exploring
+        Start
       </button>
     </div>
   );
