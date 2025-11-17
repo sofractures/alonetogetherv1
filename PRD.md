@@ -22,11 +22,13 @@ Transform a static music release into a living, breathing architectural space of
 2. **Introduction** → Brief explanation: "Each window holds a memory. Add yours to the building."
 3. **Prompt Selection** → User presented with memory prompt
 4. **Recording** → User records 30-60 second voice memory
-5. **Processing** → Real-time audio processing with visual feedback
-6. **Playback** → User listens to their personalized song version
-7. **Save & Share** → Download option and location permission request
-8. **Window Creation** → Watch as their memory becomes a new window floating around the building
-9. **Explore** → Click other windows to hear stories from around the world
+5. **Processing** → Real-time audio processing with visual feedback ("Creating your song...")
+6. **Playback Modal** → User listens to their personalized song version ("Your Song is Ready!")
+7. **Pin Modal** → Email capture (required) + optional name + location (use current, custom, or skip)
+8. **Pinning Processing** → "Pinning your memory..." status
+9. **Celebration Screen** → "Your Memory is Live!" with download offer and location display
+10. **Window Creation** → Watch as their memory becomes a new window floating around the building
+11. **Explore** → Click other windows to hear stories from around the world
 
 ### User Personas
 
@@ -116,22 +118,31 @@ ffmpeg -i user_voice.wav -i assets/instrumental.mp3 \
 - Gentle floating animation (sine wave on Y-axis)
 
 Browsing Dense Locations:
-- Intelligent clustering groups memories within ~120 meters
-- Zoom-dependent spread increases separation as the user zooms in (40m → 120m based on camera distance)
-- Explode-on-click (implemented): clicking a dense cluster fans out its members in a golden-angle spiral pattern around the city center (300m radius) for precise selection
-- Cluster automatically collapses when user rotates/zooms (clicking away) or selects a memory
+- Intelligent clustering groups memories within ~300 meters
+- Zoom-dependent spread increases separation as the user zooms in (200m → 2000m exponential curve based on camera distance)
+- Explode-on-click (implemented): clicking a dense cluster fans out its members in a circular spiral pattern (15 degree fixed radius) for maximum visibility and ease of use
+- Single-click interaction: click cluster to open spiral, click window in spiral to play that single memory
+- Cluster automatically collapses when user clicks background or selects a memory
+- Spiral state restoration: when closing memory player, returns to spiral (not main globe) for continued exploration
+- Location label at base of spiral shows hovered/highlighted memory location
+- Dark overlay when spiral is active for better navigation clarity
+- Playlist feature: clicking overlapped windows (before spiral opens) shows playlist of all memories at that location with city names
 - Mobile/large-cluster fallback (planned): a compact drawer lists all memories at that location (name, time), allowing quick selection without precise tapping
 
 ### 3.4 Memory Exploration Experience
 
 **3D Building Navigation:**
 - **Orbit Controls:** Drag to rotate around the building, seeing different faces and windows
-- **Zoom:** Scroll/pinch to move closer to individual windows or pull back for full view
+- **Auto-Rotation:** Globe slowly drifts and rotates on its own (0.5 speed) - contemplative, dreamlike, never stopping. Users can grab and spin faster, but when released, it returns to gentle cosmic rotation.
+- **Zoom:** Scroll/pinch to move closer to individual windows or pull back for full view (4-25 units range)
 - **Window Interaction:** 
   - Hover: Window glows with purple light (#a78bfa), scales to 130%, shows location label
   - Click: Opens memory player modal with full audio playback
+  - Single-click on cluster: Opens spiral expansion
+  - Single-click on window in spiral: Plays that single memory
 - **Floating Animation:** Each window gently bobs up and down independently
 - **Density Management:** Automatic spiral clustering when windows from same city would overlap
+- **Dynamic Scaling:** Windows get smaller when zoomed in (allows spread to be visible in tight clusters)
 
 **Individual Memory Player Modal:**
 - Clean card overlay with backdrop blur
@@ -234,14 +245,17 @@ Browsing Dense Locations:
 - Smooth slide-in animation from bottom
 
 ### 3D Spatial Parameters
-- **Globe Radius:** 4-6 units from center for optimal viewing
-- **Window Size:** 1x1 units (adjustable based on total count)
+- **Globe Radius:** 4.0 units from center (comfortable scale, fills ~50% of screen)
+- **Window Size:** 1.5x1.5 units (scales dynamically based on camera distance)
 - **Minimum Angular Distance:** 0.3 radians between windows
-- **Spiral Offset:** 0.15 units for clustering resolution
+- **Spiral Offset:** 15 degrees fixed radius for maximum visibility when expanded
 - **Camera Distance:** 
-  - Minimum: 6 units (closest zoom)
-  - Maximum: 20 units (full building view)
+  - Position: [0, 0, 12] (comfortable viewing distance)
+  - Field of View: 50 degrees (optimal for ~50% screen fill)
+  - Minimum: 4 units (closest zoom)
+  - Maximum: 25 units (full building view)
 - **Orbit Damping:** 0.05 for smooth rotation
+- **Auto-Rotation:** Enabled by default, 0.5 speed (slow, contemplative)
 - **Performance:** No hard limit on windows (spacing algorithm handles density)
 
 ### Responsive Design
@@ -254,9 +268,9 @@ Browsing Dense Locations:
 ## 6. Privacy & Safety
 
 ### Data Collection
-- **Required:** Audio recording, general location (city level)
-- **Optional:** Email (for download link), social handle
-- **Anonymous:** No mandatory personal information
+- **Required:** Audio recording, email (required to pin memory and get download)
+- **Optional:** Name (for display), general location (city level)
+- **Anonymous:** Name is optional - users can stay anonymous
 
 ### Content Moderation
 - Automated screening for explicit content

@@ -200,18 +200,27 @@
   - [x] Set up Three.js scene with proper lighting
   - [x] Position BuildingCube at center (0,0,0)
   - [x] Implement lat/lng to 3D position conversion
-  - [x] Add intelligent clustering for overlapping locations (120m threshold)
-- [x] Add zoom-dependent spread for overlapping locations (dynamic spread radius based on camera distance: 40m → 120m)
-- [x] Implement explode-on-click (spiderfy) for clusters: clicking a cluster expands it into a 3D ring (300m radius) for easy selection
+  - [x] Add intelligent clustering for overlapping locations (300m threshold)
+- [x] Add zoom-dependent spread for overlapping locations (dynamic spread radius based on camera distance: 200m → 2000m exponential curve)
+- [x] Implement explode-on-click (spiderfy) for clusters: clicking a cluster expands it into a circular spiral (15 degree fixed radius) for maximum visibility
   - [x] Configure OrbitControls:
     ```javascript
-    minDistance: 6
-    maxDistance: 20
+    minDistance: 4
+    maxDistance: 25
     enablePan: false
     dampingFactor: 0.05
+    autoRotate: true (default)
+    autoRotateSpeed: 0.5 (slow, contemplative)
     ```
+  - [x] Camera settings: position [0, 0, 12], fov 50 (globe fills ~50% of screen)
+  - [x] Globe radius: 4.0 units (reduced from 4.5 for comfortable scale)
   - [x] Add touch controls for mobile
   - [x] Implement zoom limits
+  - [x] Dynamic window scaling: windows get smaller when zoomed in (allows spread to be visible)
+- [x] **Globe Auto-Rotation:**
+  - [x] Slow, continuous auto-rotation (0.5 speed) for contemplative feel
+  - [x] Users can grab and spin faster, returns to gentle rotation when released
+  - [x] Always enabled (even after user starts exploring)
 - [ ] Test with mock data (various location densities)
 - [ ] Optimize for 100+ windows
 
@@ -225,9 +234,17 @@
 ### Cluster Browsing
 - [x] Spiderfy explode-on-click: fan out cluster members around city center with ring layout
   - [x] Golden-angle spiral placement for even distribution
-  - [x] Expand cluster on click (300m radius when exploded)
-  - [x] Collapse on outside click (rotate/zoom) or after memory selection
-  - [x] Single-click interaction (changed from double-click)
+  - [x] Expand cluster on single click (15 degree fixed radius for maximum visibility)
+  - [x] Collapse on background click or after memory selection
+  - [x] Single-click interaction: click cluster to open spiral, click window in spiral to play
+  - [x] Spiral state restoration: returns to spiral (not main globe) when closing memory player
+  - [x] Location label at base of spiral showing hovered/highlighted memory location
+  - [x] Dark overlay when spiral is active for better navigation clarity
+  - [x] Individual window labels hidden in spiral mode (only center label shows)
+- [x] Playlist feature for overlapping memories (before spiral opens)
+  - [x] Screen-space overlap detection
+  - [x] Clicking overlapped window shows playlist of all memories at that location
+  - [x] Playlist displays city/location name for each song
 - [ ] Mobile/large-cluster drawer fallback listing (name, location, play/next/prev)
   - [ ] Open drawer when cluster size > N or on small screens
   - [ ] Optional "Show on map" highlight for selected memory
@@ -301,11 +318,19 @@
   - [x] Native HTML5 audio player with controls
   - [x] Download button for processed MP3
 - [x] Create `components/audio/MemoryPlayer.tsx` (for 3D window playback):
+  - [x] Load audio from signed URL API endpoint
+  - [x] Native HTML5 audio player with controls
+  - [x] Download button for processed MP3
+  - [x] **Playlist support:** Display multiple overlapping memories as playlist
+  - [x] **Playlist navigation:** Previous/Next buttons and auto-advance
+  - [x] **Location display:** Shows city/location name for each song in playlist
+  - [x] Background music control: fades out when memory plays, resumes on close
   - [ ] Custom audio player UI with progress bar and scrubbing
   - [ ] Volume control
   - [ ] Share functionality
   - [ ] Full memory details display
 - [x] Integrate with 3D window click events
+- [x] Single-click flow: click cluster → opens spiral, click window in spiral → plays single song
 - [ ] Add keyboard controls for playback
 
 ---
@@ -382,7 +407,7 @@
 - [x] Home overlays on top of always-on 3D scene
   - [x] Title + Start button (keep 3D explore visible in background)
   - [x] Start button begins background song
-- [ ] Recording overlay (full-screen mobile, centered desktop)
+- [x] Recording overlay (full-screen mobile, centered desktop)
   - [x] Static instruction and prompt:
         "Share a time when you felt a part of something bigger than you"
   - [x] Pause/mute background audio on open; resume on close/finish
@@ -392,13 +417,30 @@
 - [x] Processing status UI (in recording overlay)
   - [x] Show in-overlay processing status: "Processing… we are creating your song."
   - [x] Prevent closing overlay while uploading/processing
-  - [x] After processing completes, show playback UI with processed audio
-  - [x] Display audio player with controls and download button
-  - [x] 3D map will display new memory automatically when implemented
-- [x] Playback overlay after processing completes (integrated into recording overlay)
-- [x] Pin memory automatically on globe
-- [ ] Location permission
-- [ ] Smooth transitions between states
+  - [x] After processing completes, transition to playback modal
+- [x] **New Flow: Playback Modal** (`components/flow/PlaybackModal.tsx`)
+  - [x] Listen to processed personalized song
+  - [x] "Add to Globe" button to proceed to pinning
+- [x] **New Flow: Pin Modal** (`components/flow/PinModal.tsx`)
+  - [x] Email capture (required) - needed to pin and get download
+  - [x] Optional name field for display
+  - [x] Location entry: use current, custom (city/country), or skip
+  - [x] Forward geocoding for city/country to coordinates
+  - [x] Streamlined UI: hides location section if already provided
+- [x] **New Flow: Celebration Screen** (`components/flow/CelebrationScreen.tsx`)
+  - [x] "Your Memory is Live!" success message
+  - [x] Shows pinned location
+  - [x] Download offer: "Here's your copy to keep"
+  - [x] "Explore the Globe" and "Create Another Memory" buttons
+- [x] **API: Memory Update Endpoint** (`/api/memory/[id]/update`)
+  - [x] Updates existing memory record with email, name, and location
+  - [x] Used after audio processing completes
+- [x] **Database: Email & User Name Columns**
+  - [x] Migration script: `migrations/add_email_to_memories.sql`
+  - [x] Added `email TEXT` and `user_name TEXT` columns to `memories` table
+- [x] Pin memory to globe with location and email
+- [x] Smooth transitions between flow states
+- [ ] Location permission UI flow
 - [ ] Error/retry screens
 - [ ] Abandoned session recovery
 
