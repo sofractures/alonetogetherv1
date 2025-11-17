@@ -23,11 +23,12 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
       {/* Scattered Letters */}
       <div className="absolute inset-0 flex items-center justify-center">
         {text.split("").map((letter, index) => {
-          // Generate random start position
+          // Generate random start position (using vw/vh for scattered effect)
           const randomX = (Math.random() - 0.5) * 200;
           const randomY = (Math.random() - 0.5) * 200;
 
-          const finalTransform = `translate(${(index - text.length / 2) * baseSpacing}ch, 0)`;
+          // Final position using ch units for proper letter spacing
+          const finalX = (index - text.length / 2) * baseSpacing;
           const finalOpacity = isAnimating ? 0.1 : 1;
 
           return (
@@ -37,10 +38,10 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
               style={{
                 transform: isAnimating
                   ? `translate(${randomX}vw, ${randomY}vh)`
-                  : finalTransform,
+                  : `translate(${finalX}ch, 0)`,
                 opacity: finalOpacity,
                 transition: isAnimating 
-                  ? `all 3500ms cubic-bezier(0.25, 0.1, 0.25, 1) ${index * 40}ms`
+                  ? `transform 3500ms cubic-bezier(0.25, 0.1, 0.25, 1) ${index * 40}ms, opacity 3500ms cubic-bezier(0.25, 0.1, 0.25, 1) ${index * 40}ms`
                   : 'none',
               }}
             >
