@@ -21,8 +21,12 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
   }, []);
 
   useEffect(() => {
-    // Animation duration is 3500ms, add 500ms buffer for completion
-    const timer = setTimeout(() => setIsAnimating(false), 4000);
+    // Animation duration is 3500ms, longest delay is 14 * 40ms = 560ms
+    // Total animation time: 3500ms + 560ms = 4060ms
+    // Add buffer: 4500ms to ensure all letters complete
+    const timer = setTimeout(() => {
+      setIsAnimating(false);
+    }, 4500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -42,15 +46,17 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
           return (
             <span
               key={index}
-              className="absolute text-6xl md:text-8xl font-bold text-white"
+              className={`absolute text-6xl md:text-8xl font-bold text-white ${
+                isAnimating 
+                  ? 'transition-all duration-[3500ms] ease-[cubic-bezier(0.25,0.1,0.25,1)]' 
+                  : ''
+              }`}
               style={{
                 transform: isAnimating
                   ? `translate(${randomX}vw, ${randomY}vh)`
                   : `translate(${finalX}ch, 0)`,
                 opacity: finalOpacity,
-                transition: isAnimating 
-                  ? `transform 3500ms cubic-bezier(0.25, 0.1, 0.25, 1) ${index * 40}ms, opacity 3500ms cubic-bezier(0.25, 0.1, 0.25, 1) ${index * 40}ms`
-                  : 'none',
+                transitionDelay: isAnimating ? `${index * 40}ms` : undefined,
               }}
             >
               {letter === " " ? "\u00A0" : letter}
