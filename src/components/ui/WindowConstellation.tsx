@@ -38,7 +38,7 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
               style={{
                 transform: isAnimating
                   ? `translate(${randomX}vw, ${randomY}vh)`
-                  : `translate(${(index - text.length / 2) * 0.9}ch, 0)`,
+                  : `translate(${(index - (text.length - 1) / 2) * 1}ch, 0)`,
                 opacity: isAnimating ? 0.1 : 1,
                 transitionDelay: `${index * 50}ms`,
               }}
