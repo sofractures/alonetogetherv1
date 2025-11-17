@@ -6,6 +6,7 @@ import LocationSelector from "@/components/location/LocationSelector";
 import PlaybackModal from "@/components/flow/PlaybackModal";
 import PinModal from "@/components/flow/PinModal";
 import CelebrationScreen from "@/components/flow/CelebrationScreen";
+import { WindowConstellation } from "@/components/ui/WindowConstellation";
 import { useState, useEffect } from "react";
 import { getAudioController, onRecordingStartFadeOutBackground, onRecordingStopResumeBackground } from "@/lib/audio-context";
 import { useMemoryStore } from "@/store/memoryStore";
@@ -43,12 +44,12 @@ export default function Home() {
   // New flow state management
   const [flowState, setFlowState] = useState<FlowState>('idle');
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string | null>(null);
+  const [_userName, setUserName] = useState<string | null>(null);
   const [pinnedMemoryId, setPinnedMemoryId] = useState<string | null>(null);
   const [pinnedLocation, setPinnedLocation] = useState<string | null>(null);
   
   // Memory store
-  const { memories, fetchMemories, selectMemory, selectedMemory, isLoading, error } = useMemoryStore();
+  const { memories, fetchMemories, selectMemory, selectedMemory } = useMemoryStore();
 
   // Fetch memories on mount
   useEffect(() => {
@@ -60,7 +61,8 @@ export default function Home() {
     c.setSrc("/assets/fullsong.mp3");
     c.setVolume(0.5);
     await c.play();
-    // Open welcome modal; do not pause audio yet
+    // Show globe and welcome modal after title animation
+    setHasStartedExploring(true);
     setIsWelcomeOpen(true);
   };
 
@@ -337,62 +339,54 @@ export default function Home() {
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black">
-      {/* 3D Scene - Always visible in background */}
-      <div 
-        className="absolute inset-0 bg-black"
-        style={{ 
-          pointerEvents: hasStartedExploring ? 'auto' : 'none',
-          zIndex: 0,
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0
-        }}
-      >
-        <MemoryGlobe 
-          memories={memories} 
-          autoRotate={true}
-          highlightId={highlightMemoryId || undefined}
-          restoreSpiralId={spiralOverlapId && !isMemoryPlayerOpen ? spiralOverlapId : null}
-          onMemoryClick={(id, overlappingMemories, keepSpiralOpen) => {
-            selectMemory(id);
-            setSelectedMemoryPlaylist(overlappingMemories);
-            setIsMemoryPlayerOpen(true);
+      {/* 3D Scene - Only visible after user clicks "Start Exploring" */}
+      {hasStartedExploring && (
+        <div 
+          className="absolute inset-0 bg-black"
+          style={{ 
+            pointerEvents: 'auto',
+            zIndex: 0,
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0
           }}
-          onSpiralStateChange={(isOpen, overlapId) => {
-            setSpiralOverlapId(isOpen ? overlapId : null);
-          }}
-        />
-      </div>
+        >
+          <MemoryGlobe 
+            memories={memories} 
+            autoRotate={true}
+            highlightId={highlightMemoryId || undefined}
+            restoreSpiralId={spiralOverlapId && !isMemoryPlayerOpen ? spiralOverlapId : null}
+            onMemoryClick={(id, overlappingMemories) => {
+              selectMemory(id);
+              setSelectedMemoryPlaylist(overlappingMemories);
+              setIsMemoryPlayerOpen(true);
+            }}
+            onSpiralStateChange={(isOpen, overlapId) => {
+              setSpiralOverlapId(isOpen ? overlapId : null);
+            }}
+          />
+        </div>
+      )}
+      
+      {/* Animated Title Screen - shown on initial load */}
+      {!hasStartedExploring && (
+        <div className="absolute inset-0 z-20 bg-black">
+          <WindowConstellation onStart={handleStart} />
+        </div>
+      )}
       
       {/* Content overlays */}
       <div 
         className="relative z-10 flex flex-col items-center justify-center min-h-screen"
-        style={{ pointerEvents: (isWelcomeOpen || isOverlayOpen || (!hasStartedExploring && !isWelcomeOpen && !isOverlayOpen)) ? 'auto' : 'none' }}
+        style={{ pointerEvents: (isWelcomeOpen || isOverlayOpen) ? 'auto' : 'none' }}
       >
-        {/* Title and Start button - only show on initial landing, before user starts exploring */}
-        {!hasStartedExploring && !isWelcomeOpen && !isOverlayOpen && (
-          <div className="text-center">
-            <h1 className="text-6xl font-bold text-white mb-4 drop-shadow-lg">
-              Alone Together
-            </h1>
-            <p className="text-xl text-gray-200 mb-8 max-w-2xl mx-auto drop-shadow">
-              Each window holds a memory. Add yours to the building.
-            </p>
-            <button 
-              onClick={handleStart} 
-              className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200 shadow-lg"
-            >
-              Start
-            </button>
-          </div>
-        )}
         {isWelcomeOpen && (
           <div className="fixed inset-0 z-40 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/60" onClick={() => setIsWelcomeOpen(false)} />
             <div className="relative z-10 w-full max-w-xl mx-4 rounded-xl border border-purple-400/30 bg-gray-900/80 backdrop-blur p-6 text-center">
-              <h2 className="text-white text-2xl font-semibold mb-2">Welcome to aLone Together</h2>
+              <h2 className="text-white text-2xl font-semibold mb-2">Welcome to Alone Together</h2>
               <p className="text-gray-300 mb-6">Record your memory to create your own personal song, or explore others on the map.</p>
               <div className="flex gap-3 justify-center">
                 <button onClick={() => { setIsWelcomeOpen(false); setIsOverlayOpen(true); }} className="px-5 py-2 rounded bg-purple-600 text-white">Create</button>
