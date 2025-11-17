@@ -62,21 +62,17 @@ export default function MemoryPoint({
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
-    console.log('[v0] MemoryPoint: Single click detected on:', location);
-    // Call the onClick handler (which handles spiral opening or playback)
     onClick?.();
   };
 
   const handlePointerOver = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
-    console.log('[v0] Hover start:', location);
     setHovered(true);
     onHoverChange?.(true);
   };
 
   const handlePointerOut = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
-    console.log('[v0] Hover end:', location);
     setHovered(false);
     onHoverChange?.(false);
   };
