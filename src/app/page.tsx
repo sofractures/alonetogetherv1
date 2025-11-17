@@ -36,6 +36,9 @@ export default function Home() {
   const [highlightMemoryId, setHighlightMemoryId] = useState<string | null>(null);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [pendingLocation, setPendingLocation] = useState<LocationData | null>(null);
+  // Spiral state management
+  const [spiralOverlapId, setSpiralOverlapId] = useState<string | null>(null); // Track which spiral is open
+  const [selectedMemoryPlaylist, setSelectedMemoryPlaylist] = useState<MemoryForMap[] | undefined>(undefined);
   
   // New flow state management
   const [flowState, setFlowState] = useState<FlowState>('idle');
@@ -43,10 +46,6 @@ export default function Home() {
   const [userName, setUserName] = useState<string | null>(null);
   const [pinnedMemoryId, setPinnedMemoryId] = useState<string | null>(null);
   const [pinnedLocation, setPinnedLocation] = useState<string | null>(null);
-  
-  // Spiral state management
-  const [spiralOverlapId, setSpiralOverlapId] = useState<string | null>(null);
-  const [selectedMemoryPlaylist, setSelectedMemoryPlaylist] = useState<MemoryForMap[] | undefined>(undefined);
   
   // Memory store
   const { memories, fetchMemories, selectMemory, selectedMemory, isLoading, error } = useMemoryStore();
