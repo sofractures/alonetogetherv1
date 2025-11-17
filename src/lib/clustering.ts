@@ -174,6 +174,5 @@ export function clusterAndSpreadMemories(
     positions: results,
     clusters: clusters
   };
->>>>>>> main
 }
 
