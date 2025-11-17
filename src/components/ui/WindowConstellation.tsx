@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 
 interface WindowConstellationProps {
   onStart: () => void;
@@ -8,6 +8,8 @@ interface WindowConstellationProps {
 
 export function WindowConstellation({ onStart }: WindowConstellationProps) {
   const [isAnimating, setIsAnimating] = useState(true);
+  const [startTransition, setStartTransition] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const text = "ALONE TOGETHER";
   const baseSpacing = 1.1;
@@ -21,17 +23,24 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
   }, []);
 
   useEffect(() => {
+    // Use requestAnimationFrame to ensure initial render is complete
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setStartTransition(true);
+      });
+    });
+
     // Animation duration is 3500ms, longest delay is 14 * 40ms = 560ms
     // Total animation time: 3500ms + 560ms = 4060ms
-    // Add buffer: 4500ms to ensure all letters complete
+    // Add buffer: 4600ms to ensure all letters complete
     const timer = setTimeout(() => {
       setIsAnimating(false);
-    }, 4500);
+    }, 4600);
     return () => clearTimeout(timer);
   }, []);
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+    <div ref={containerRef} className="relative w-full h-full flex items-center justify-center overflow-hidden">
       {/* Scattered Letters */}
       <div className="absolute inset-0 flex items-center justify-center">
         {text.split("").map((letter, index) => {
@@ -43,20 +52,23 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
           const finalX = (index - text.length / 2) * baseSpacing;
           const finalOpacity = isAnimating ? 0.1 : 1;
 
+          // Only apply transition when startTransition is true and isAnimating is true
+          const shouldTransition = startTransition && isAnimating;
+
           return (
             <span
               key={index}
               className={`absolute text-6xl md:text-8xl font-bold text-white ${
-                isAnimating 
+                shouldTransition
                   ? 'transition-all duration-[3500ms] ease-[cubic-bezier(0.25,0.1,0.25,1)]' 
                   : ''
               }`}
               style={{
-                transform: isAnimating
-                  ? `translate(${randomX}vw, ${randomY}vh)`
-                  : `translate(${finalX}ch, 0)`,
+                transform: shouldTransition
+                  ? `translate(${finalX}ch, 0)`
+                  : `translate(${randomX}vw, ${randomY}vh)`,
                 opacity: finalOpacity,
-                transitionDelay: isAnimating ? `${index * 40}ms` : undefined,
+                transitionDelay: shouldTransition ? `${index * 40}ms` : undefined,
               }}
             >
               {letter === " " ? "\u00A0" : letter}
