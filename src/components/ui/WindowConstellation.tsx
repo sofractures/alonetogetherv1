@@ -38,7 +38,7 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
               style={{
                 transform: isAnimating
                   ? `translate(${randomX}vw, ${randomY}vh)`
-                  : `translate(${(index - text.length / 2) * 0.65}ch, 0)`,
+                  : `translate(${(index - text.length / 2) * 0.9}ch, 0)`,
                 opacity: isAnimating ? 0.1 : 1,
                 transitionDelay: `${index * 50}ms`,
               }}
@@ -52,7 +52,7 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
       {/* Start Button - appears after animation */}
       <button
         onClick={onStart}
-        className={`absolute bottom-32 px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-all duration-1000 shadow-lg ${
+        className={`absolute bottom-20 px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-all duration-1000 shadow-lg ${
           isAnimating ? "opacity-0 translate-y-8" : "opacity-100 translate-y-0"
         }`}
         style={{ transitionDelay: "2500ms" }}
