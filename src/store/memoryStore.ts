@@ -31,18 +31,6 @@ export const useMemoryStore = create<MemoryStore>((set, get) => ({
       }
 
       const fetchedMemories = data.memories || [];
-      console.log('[v0] MemoryStore: Fetched', fetchedMemories.length, 'memories');
-      if (fetchedMemories.length > 0) {
-        console.log('[v0] MemoryStore: Memory details:', fetchedMemories.map((m: MemoryForMap) => ({
-          id: m.id,
-          location: m.location,
-          hasAudio: !!m.audioUrl,
-          lat: m.latitude,
-          lng: m.longitude
-        })));
-      } else {
-        console.warn('[v0] MemoryStore: No memories returned from API');
-      }
       set({ 
         memories: fetchedMemories,
         isLoading: false,
@@ -65,16 +53,6 @@ export const useMemoryStore = create<MemoryStore>((set, get) => ({
     }
     
     const memory = get().memories.find(m => m.id === id);
-    if (memory) {
-      console.log('[v0] MemoryStore: Selected memory:', {
-        id: memory.id,
-        location: memory.location,
-        hasAudio: !!memory.audioUrl,
-        audioUrl: memory.audioUrl
-      });
-    } else {
-      console.warn('[v0] MemoryStore: Memory not found for ID:', id, 'Available IDs:', get().memories.map(m => m.id));
-    }
     set({ selectedMemory: memory || null });
   },
 

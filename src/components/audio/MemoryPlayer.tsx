@@ -36,42 +36,31 @@ export default function MemoryPlayer({ memory, memories, isOpen, onClose }: Memo
       return;
     }
 
-    console.log('[v0] MemoryPlayer: Opening modal for memory:', {
-      id: currentMemory.id,
-      location: currentMemory.location,
-      audioUrl: currentMemory.audioUrl,
-      hasAudioUrl: !!currentMemory.audioUrl,
-      playlistLength: playlist.length,
-      currentTrack: currentTrackIndex + 1
-    });
-
-    // If audioUrl is already a full URL, use it directly
-    if (currentMemory.audioUrl?.startsWith('http')) {
-      console.log('[v0] MemoryPlayer: Using direct URL:', currentMemory.audioUrl);
-      setAudioUrl(currentMemory.audioUrl);
-      return;
-    }
-
-    // Otherwise, fetch signed URL from API
-    if (currentMemory.audioUrl) {
-      console.log('[v0] MemoryPlayer: Fetching signed URL for memory ID:', currentMemory.id, 'audioUrl path:', currentMemory.audioUrl);
-      setIsLoadingAudio(true);
-      fetch(`/api/memory/${currentMemory.id}/audio`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.url) {
-            setAudioUrl(data.url);
-          } else {
-            console.error('[v0] MemoryPlayer: No URL in response:', data);
-          }
-        })
-        .catch(error => {
-          console.error('[v0] MemoryPlayer: Error fetching audio URL:', error);
-        })
-        .finally(() => {
-          setIsLoadingAudio(false);
-        });
-    }
+        // If audioUrl is already a full URL, use it directly
+        if (currentMemory.audioUrl?.startsWith('http')) {
+          setAudioUrl(currentMemory.audioUrl);
+          return;
+        }
+        
+        // Otherwise, fetch signed URL from API
+        if (currentMemory.audioUrl) {
+          setIsLoadingAudio(true);
+          fetch(`/api/memory/${currentMemory.id}/audio`)
+            .then(res => res.json())
+            .then(data => {
+              if (data.url) {
+                setAudioUrl(data.url);
+              } else {
+                console.error('[v0] MemoryPlayer: No URL in response');
+              }
+            })
+            .catch(error => {
+              console.error('[v0] MemoryPlayer: Error fetching audio URL:', error);
+            })
+            .finally(() => {
+              setIsLoadingAudio(false);
+            });
+        }
   }, [isOpen, currentMemory, currentTrackIndex, playlist.length]);
 
   useEffect(() => {

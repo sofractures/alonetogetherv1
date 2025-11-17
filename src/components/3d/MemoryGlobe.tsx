@@ -143,7 +143,6 @@ export default function MemoryGlobe({
   // Restore spiral when restoreSpiralId changes
   useEffect(() => {
     if (restoreSpiralId && restoreSpiralId !== expandedOverlapId) {
-      console.log('[v0] Restoring spiral:', restoreSpiralId);
       setExpandedOverlapId(restoreSpiralId);
       onSpiralStateChange?.(true, restoreSpiralId);
     }
@@ -167,7 +166,6 @@ export default function MemoryGlobe({
     const t = 1 - normalizedDist; // Invert so closer = higher spread
     const spreadRadiusMeters = 200 + (t * t * t) * 1800; // 200m → 2000m (exponential curve for visible spread)
     
-    console.log('[v0] MemoryGlobe: Camera distance:', camDistance.toFixed(2), 'Spread radius:', spreadRadiusMeters.toFixed(0), 'm');
     const result = clusterAndSpreadMemories(
       memories, 
       thresholdMeters, 
@@ -182,8 +180,6 @@ export default function MemoryGlobe({
     if (expandedOverlapId && screenOverlaps.has(expandedOverlapId)) {
       const overlappingMemories = screenOverlaps.get(expandedOverlapId)!;
       
-      console.log('[v0] Expanding overlap group:', expandedOverlapId, 'with', overlappingMemories.length, 'memories');
-      
       // Sort by creation time (oldest first) for consistent ordering
       const sortedMemories = [...overlappingMemories].sort((a, b) => {
         const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -197,7 +193,6 @@ export default function MemoryGlobe({
       
       // If not found in result positions, use the original memory's lat/lon
       if (!centerPos) {
-        console.log('[v0] Center position not found in result, using original memory coordinates');
         centerPos = {
           memory: centerMemory,
           lat: centerMemory.latitude,
@@ -206,8 +201,6 @@ export default function MemoryGlobe({
       }
       
       if (centerPos) {
-        console.log('[v0] Center position:', centerPos.lat, centerPos.lon, 'for', sortedMemories.length, 'memories');
-        
         // Remove expanded memories from result
         const filteredPositions = result.positions.filter(
           p => !sortedMemories.some(m => m.id === p.memory.id)
@@ -232,16 +225,12 @@ export default function MemoryGlobe({
           const finalLat = centerPos.lat + latOffset;
           const finalLon = centerPos.lon + lonOffset;
           
-          console.log('[v0] Circle position', i, ':', finalLat.toFixed(4), finalLon.toFixed(4), 'angle:', (angle * 180 / Math.PI).toFixed(1));
-          
           circlePositions.push({
             memory,
             lat: finalLat,
             lon: finalLon,
           });
         }
-        
-        console.log('[v0] Created', circlePositions.length, 'circle positions, filtered', filteredPositions.length, 'other positions');
         
         // Combine filtered positions with circle positions
         return {
@@ -253,35 +242,8 @@ export default function MemoryGlobe({
       }
     }
     
-    // Log cluster information for debugging
-    console.log('[v0] MemoryGlobe: Clustered', memories.length, 'memories into', 
-      new Set(result.positions.map(c => `${c.lat.toFixed(6)},${c.lon.toFixed(6)}`)).size, 
-      'unique positions. Expanded cluster:', expandedClusterId);
-    
-    // Log all clusters and their sizes
-    for (const [clusterId, clusterMembers] of result.clusters.entries()) {
-      if (clusterMembers.length > 1) {
-        console.log('[v0] MemoryGlobe: Cluster', clusterId, 'has', clusterMembers.length, 'members:', 
-          clusterMembers.map((m: MemoryForMap) => ({ id: m.id, location: m.location, lat: m.latitude, lon: m.longitude })));
-      }
-    }
-    
     return result;
   }, [memories, camDistance, expandedClusterId, expandedOverlapId, screenOverlaps]);
-
-  // Debug: Log memories count and details
-  console.log('[v0] MemoryGlobe: Rendering with', memories.length, 'memories');
-  if (memories.length > 0) {
-    console.log('[v0] MemoryGlobe: Memory details:', memories.map(m => ({
-      id: m.id,
-      location: m.location,
-      lat: m.latitude,
-      lng: m.longitude,
-      hasAudio: !!m.audioUrl
-    })));
-  } else {
-    console.warn('[v0] MemoryGlobe: NO MEMORIES TO RENDER!');
-  }
   
   return (
     <>
@@ -307,7 +269,6 @@ export default function MemoryGlobe({
               zIndex: 1
             }}
             onClick={() => {
-              console.log('[v0] Clicked on overlay - collapsing expansion');
               setExpandedOverlapId(null);
               setHoveredMemoryInSpiral(null); // Reset hover state
               onSpiralStateChange?.(false, null);
@@ -330,7 +291,6 @@ export default function MemoryGlobe({
         onPointerMissed={() => {
           // Handle clicks that don't hit any object (background clicks)
           if (expandedOverlapId) {
-            console.log('[v0] Pointer missed - background click detected, collapsing spiral');
             setExpandedOverlapId(null);
             setHoveredMemoryInSpiral(null);
             onSpiralStateChange?.(false, null);
@@ -349,7 +309,6 @@ export default function MemoryGlobe({
                 // Only collapse if clicking on the background (not on a memory window)
                 // Memory windows stop propagation, so if we get here, it's a background click
                 e.stopPropagation();
-                console.log('[v0] Background click detected on transparent mesh - collapsing spiral');
                 setExpandedOverlapId(null);
                 setHoveredMemoryInSpiral(null);
                 onSpiralStateChange?.(false, null);
@@ -453,21 +412,6 @@ export default function MemoryGlobe({
             clusteredMemories.map(({ memory, lat, lon }) => {
               const position = latLngToPosition(lat, lon, 4.0);
               
-              // Log position changes for expanded clusters
-              if (expandedClusterId) {
-                const isInExpanded = clusters.get(expandedClusterId)?.some((m: MemoryForMap) => m.id === memory.id);
-                if (isInExpanded) {
-                  console.log('[v0] Expanded cluster memory position:', {
-                    id: memory.id,
-                    originalLat: memory.latitude,
-                    originalLon: memory.longitude,
-                    spreadLat: lat,
-                    spreadLon: lon,
-                    position: position
-                  });
-                }
-              }
-              
               // Find which cluster this memory belongs to
               let clusterId: string | null = null;
               let clusterSize = 1;
@@ -510,26 +454,9 @@ export default function MemoryGlobe({
                     }
                   }}
                   onClick={() => {
-                    console.log('=== MEMORY CLICK HANDLER ===');
-                    console.log('[v0] Memory clicked:', {
-                      memoryId: memory.id,
-                      location: memory.location,
-                      clusterId: clusterId,
-                      clusterSize: clusterSize,
-                      isInExpandedCluster: isInExpandedCluster,
-                      isClusterCenter: isClusterCenter,
-                      expandedClusterId: expandedClusterId,
-                      hasOverlaps: hasOverlaps,
-                      isInExpandedOverlap: isInExpandedOverlap,
-                      lat: lat,
-                      lon: lon
-                    });
-                    
                     // If clicking on a window in expanded overlap (spiral mode), play that SINGLE memory
                     // Don't collapse spiral - let it stay open so user returns to it after closing popup
                     if (isInExpandedOverlap) {
-                      console.log('[v0] 🎵 Playing SINGLE memory from expanded spiral:', memory.id, '- keeping spiral open');
-                      // Don't collapse spiral - keep it open
                       setHoveredMemoryInSpiral(null); // Reset hover state
                       // Play just this single memory (no playlist) - user clicked on a specific window
                       onMemoryClick?.(memory.id, undefined, true); // Play the selected memory, keepSpiralOpen=true, no playlist
@@ -538,7 +465,6 @@ export default function MemoryGlobe({
                     
                     // If clicking on an overlapped window that's not expanded, open spiral
                     if (hasOverlaps && !isInExpandedOverlap) {
-                      console.log('[v0] 🌀🌀🌀 OPENING spiral for overlap group:', memory.id, 'with', overlappingMemories!.length, 'memories');
                       setExpandedOverlapId(memory.id);
                       onSpiralStateChange?.(true, memory.id);
                       return;
@@ -546,7 +472,6 @@ export default function MemoryGlobe({
                     
                     // If clicking on a memory in an expanded cluster, play it and collapse
                     if (isInExpandedCluster) {
-                      console.log('[v0] 🟢 Playing memory from expanded cluster:', memory.id);
                       setExpandedClusterId(null); // Collapse
                       onMemoryClick?.(memory.id);
                     }
@@ -555,30 +480,21 @@ export default function MemoryGlobe({
                     else if (clusterSize > 1) {
                       if (isClusterCenter) {
                         // Play the center memory directly as fallback
-                        console.log('[v0] 🟡 Playing cluster center memory directly:', memory.id);
                         onMemoryClick?.(memory.id);
                       } else {
                         // Expand the cluster
-                        console.log('[v0] 🔵🔵🔵 EXPANDING cluster:', clusterId, 'with', clusterSize, 'members');
                         setExpandedClusterId(clusterId);
                       }
                     }
                     // If clicking on a single memory (not in cluster), play it directly
                     else {
-                      console.log('[v0] 🟡 Playing single memory (not in cluster):', memory.id, 'clusterSize:', clusterSize);
                       onMemoryClick?.(memory.id);
                     }
                   }}
                 />
               );
             })
-          ) : (
-            // Debug indicator when no memories - red cube at top
-            <mesh position={[0, 3, 0]}>
-              <boxGeometry args={[0.3, 0.3, 0.3]} />
-              <meshStandardMaterial color="red" />
-            </mesh>
-          )}
+          ) : null}
           
           {/* Environment for better lighting */}
           <Environment preset="night" />

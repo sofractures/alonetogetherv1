@@ -49,28 +49,11 @@ export default function Home() {
   
   // Memory store
   const { memories, fetchMemories, selectMemory, selectedMemory, isLoading, error } = useMemoryStore();
-  const [showDebug, setShowDebug] = useState(false);
 
   // Fetch memories on mount
   useEffect(() => {
     fetchMemories();
   }, [fetchMemories]);
-  
-  // Debug: Log memories
-  useEffect(() => {
-    console.log('Page: Current memories count:', memories.length, memories);
-  }, [memories]);
-  
-  // Toggle debug panel with 'D' key
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key === 'd' || e.key === 'D') {
-        setShowDebug(prev => !prev);
-      }
-    };
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, []);
 
   const handleStart = async () => {
     const c = getAudioController();
@@ -90,10 +73,8 @@ export default function Home() {
     // If we just finished processing, mark as exploring (window should already be visible from earlier refresh)
     if (processedAudioUrl) {
       setHasStartedExploring(true); // Hide title/Start button overlay
-      console.log('[v0] Closing overlay after processing - window should already be visible');
       // Final refresh to ensure everything is up to date
       setTimeout(() => {
-        console.log('[v0] Final refresh after closing overlay...');
         fetchMemories();
       }, 500);
     }
@@ -159,18 +140,11 @@ export default function Home() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Upload failed");
       
-      console.log('[v0] Memory record created:', {
-        memoryId: data.memoryId,
-        path: data.path,
-        hasLocation: !!location,
-        location: location
-      });
       setPendingLocation(null); // Clear pending location after use
       setPinnedMemoryId(data.memoryId); // Store memory ID for later use
       
       if (!data.memoryId) {
         console.error('[v0] WARNING: Memory record was not created! memoryId is null');
-        console.error('[v0] This means the memory cannot be updated with audio_url after processing');
       }
       
       // Begin processing step
@@ -193,42 +167,22 @@ export default function Home() {
           setProcessedAudioUrl(pdata.signedUrl);
           setFlowState('playback'); // Move to playback modal
           
-          console.log('[v0] Processing complete for memoryId:', data.memoryId);
-          console.log('[v0] Processed audio URL:', pdata.signedUrl);
-          console.log('[v0] Processed path:', pdata.processedPath);
-          console.log('[v0] Your song is ready! Moving to playback modal...');
-          
-          // Immediately start refreshing memories so the new window appears while user sees "Your song is ready"
+          // Immediately start refreshing memories so the new window appears
           // Refresh memories multiple times with increasing delays to catch DB updates
           fetchMemories().then(() => {
-            console.log('[v0] Initial fetch complete. Checking if new memory is in store...');
             const currentMemories = useMemoryStore.getState().memories;
             const newMemory = currentMemories.find(m => m.id === data.memoryId);
             if (newMemory) {
-              console.log('[v0] ✅ New memory found in store:', {
-                id: newMemory.id,
-                location: newMemory.location,
-                hasAudio: !!newMemory.audioUrl,
-                audioUrl: newMemory.audioUrl
-              });
-              // Highlight and preselect the newly created memory
               setHighlightMemoryId(newMemory.id);
               selectMemory(newMemory.id);
-              // Don't auto-open player - let user click Done first to go to globe
-              // They can then double-click the highlighted window to play
-              // Remove highlight after a few seconds
               setTimeout(() => setHighlightMemoryId(null), 6000);
-            } else {
-              console.warn('[v0] ⚠️ New memory NOT found in store. Available IDs:', currentMemories.map(m => m.id));
             }
           });
           
           setTimeout(() => {
-            console.log('[v0] Refresh 1: 1 second delay');
             fetchMemories().then(() => {
               const mems = useMemoryStore.getState().memories;
               const found = mems.find(m => m.id === data.memoryId);
-              console.log('[v0] After 1s refresh:', found ? '✅ Found' : '❌ Not found');
               if (found) {
                 setHighlightMemoryId(found.id);
                 selectMemory(found.id);
@@ -238,11 +192,9 @@ export default function Home() {
           }, 1000);
           
           setTimeout(() => {
-            console.log('[v0] Refresh 2: 3 second delay');
             fetchMemories().then(() => {
               const mems = useMemoryStore.getState().memories;
               const found = mems.find(m => m.id === data.memoryId);
-              console.log('[v0] After 3s refresh:', found ? '✅ Found' : '❌ Not found');
               if (found) {
                 setHighlightMemoryId(found.id);
                 selectMemory(found.id);
@@ -252,16 +204,10 @@ export default function Home() {
           }, 3000);
           
           setTimeout(() => {
-            console.log('[v0] Refresh 3: 5 second delay');
             fetchMemories().then(() => {
               const mems = useMemoryStore.getState().memories;
               const found = mems.find(m => m.id === data.memoryId);
-              console.log('[v0] After 5s refresh:', found ? '✅ Found' : '❌ Not found');
-              if (!found) {
-                console.error('[v0] ❌ CRITICAL: New memory still not found after 5 seconds!');
-                console.error('[v0] Expected memoryId:', data.memoryId);
-                console.error('[v0] Available memories:', mems.map(m => ({ id: m.id, location: m.location, hasAudio: !!m.audioUrl })));
-              } else {
+              if (found) {
                 setHighlightMemoryId(found.id);
                 selectMemory(found.id);
                 setTimeout(() => setHighlightMemoryId(null), 6000);
@@ -410,68 +356,15 @@ export default function Home() {
           highlightId={highlightMemoryId || undefined}
           restoreSpiralId={spiralOverlapId && !isMemoryPlayerOpen ? spiralOverlapId : null}
           onMemoryClick={(id, overlappingMemories, keepSpiralOpen) => {
-            console.log('[v0] Opening modal for memory:', id, 'with playlist:', overlappingMemories?.length || 0, 'keepSpiralOpen:', keepSpiralOpen);
             selectMemory(id);
             setSelectedMemoryPlaylist(overlappingMemories);
             setIsMemoryPlayerOpen(true);
-            // If keepSpiralOpen is true, we're in spiral mode - track the spiral state
-            // The spiral state is already tracked in MemoryGlobe, we just need to know it exists
           }}
           onSpiralStateChange={(isOpen, overlapId) => {
-            console.log('[v0] Spiral state changed:', isOpen, 'overlapId:', overlapId);
             setSpiralOverlapId(isOpen ? overlapId : null);
           }}
         />
       </div>
-      
-      {/* Debug Panel Toggle Button */}
-      <button
-        onClick={() => setShowDebug(!showDebug)}
-        className="fixed top-4 right-4 z-50 bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-xs font-mono shadow-lg"
-        title="Press 'D' or click to toggle debug panel"
-      >
-        {showDebug ? 'Hide Debug' : 'Show Debug (D)'}
-      </button>
-      
-      {/* Debug Panel - Toggle with 'D' key or button */}
-      {showDebug && (
-        <div className="fixed top-16 right-4 z-50 bg-black/90 text-white p-4 rounded-lg text-xs font-mono max-w-md max-h-96 overflow-auto shadow-xl border border-purple-400/30">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="font-bold text-purple-300">Debug Info</h3>
-            <button onClick={() => setShowDebug(false)} className="text-gray-400 hover:text-white">✕</button>
-          </div>
-          <div className="space-y-1">
-            <div>Memories: {memories.length}</div>
-            <div>Loading: {isLoading ? 'Yes' : 'No'}</div>
-            <div className={error ? 'text-red-400' : ''}>
-              Error: {error || 'None'}
-            </div>
-            {error && (
-              <div className="mt-2 pt-2 border-t border-gray-600 text-red-300 text-xs break-all">
-                <div className="font-bold">API Error Details:</div>
-                <div>{error}</div>
-              </div>
-            )}
-            <div>Has Started Exploring: {hasStartedExploring ? 'Yes' : 'No'}</div>
-            <div>Processing: {isProcessing ? 'Yes' : 'No'}</div>
-            <div>Processed Audio: {processedAudioUrl ? 'Yes' : 'No'}</div>
-            <div className="mt-2 pt-2 border-t border-gray-600">
-              <div className="font-bold mb-1">Memory Details:</div>
-              {memories.length > 0 ? (
-                memories.map((m) => (
-                  <div key={m.id} className="ml-2 text-xs">
-                    • {m.location || 'No location'} (ID: {m.id.substring(0, 8)}...)
-                    <br />
-                    &nbsp;&nbsp;Lat: {m.latitude}, Lng: {m.longitude}, Audio: {m.audioUrl ? 'Yes' : 'No'}
-                  </div>
-                ))
-              ) : (
-                <div className="text-yellow-400">No memories found</div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
       
       {/* Content overlays */}
       <div 
@@ -594,7 +487,6 @@ export default function Home() {
         memories={selectedMemoryPlaylist}
         isOpen={isMemoryPlayerOpen}
         onClose={() => {
-          console.log('[v0] Closing memory player modal');
           setIsMemoryPlayerOpen(false);
           selectMemory(null);
           setSelectedMemoryPlaylist(undefined); // Reset playlist on close
