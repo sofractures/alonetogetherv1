@@ -61,7 +61,8 @@ export default function Home() {
     c.setSrc("/assets/fullsong.mp3");
     c.setVolume(0.5);
     await c.play();
-    // Open welcome modal; do not pause audio yet
+    // Show globe and welcome modal after title animation
+    setHasStartedExploring(true);
     setIsWelcomeOpen(true);
   };
 
@@ -338,44 +339,49 @@ export default function Home() {
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black">
-      {/* 3D Scene - Always visible in background */}
-      <div 
-        className="absolute inset-0 bg-black"
-        style={{ 
-          pointerEvents: hasStartedExploring ? 'auto' : 'none',
-          zIndex: 0,
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0
-        }}
-      >
-        <MemoryGlobe 
-          memories={memories} 
-          autoRotate={true}
-          highlightId={highlightMemoryId || undefined}
-          restoreSpiralId={spiralOverlapId && !isMemoryPlayerOpen ? spiralOverlapId : null}
-          onMemoryClick={(id, overlappingMemories, keepSpiralOpen) => {
-            selectMemory(id);
-            setSelectedMemoryPlaylist(overlappingMemories);
-            setIsMemoryPlayerOpen(true);
+      {/* 3D Scene - Only visible after user clicks "Start Exploring" */}
+      {hasStartedExploring && (
+        <div 
+          className="absolute inset-0 bg-black"
+          style={{ 
+            pointerEvents: 'auto',
+            zIndex: 0,
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0
           }}
-          onSpiralStateChange={(isOpen, overlapId) => {
-            setSpiralOverlapId(isOpen ? overlapId : null);
-          }}
-        />
-      </div>
+        >
+          <MemoryGlobe 
+            memories={memories} 
+            autoRotate={true}
+            highlightId={highlightMemoryId || undefined}
+            restoreSpiralId={spiralOverlapId && !isMemoryPlayerOpen ? spiralOverlapId : null}
+            onMemoryClick={(id, overlappingMemories, keepSpiralOpen) => {
+              selectMemory(id);
+              setSelectedMemoryPlaylist(overlappingMemories);
+              setIsMemoryPlayerOpen(true);
+            }}
+            onSpiralStateChange={(isOpen, overlapId) => {
+              setSpiralOverlapId(isOpen ? overlapId : null);
+            }}
+          />
+        </div>
+      )}
+      
+      {/* Animated Title Screen - shown on initial load */}
+      {!hasStartedExploring && (
+        <div className="absolute inset-0 z-20 bg-black">
+          <WindowConstellation onStart={handleStart} />
+        </div>
+      )}
       
       {/* Content overlays */}
       <div 
         className="relative z-10 flex flex-col items-center justify-center min-h-screen"
-        style={{ pointerEvents: (isWelcomeOpen || isOverlayOpen || (!hasStartedExploring && !isWelcomeOpen && !isOverlayOpen)) ? 'auto' : 'none' }}
+        style={{ pointerEvents: (isWelcomeOpen || isOverlayOpen) ? 'auto' : 'none' }}
       >
-        {/* Animated Title - only show on initial landing, before user starts exploring */}
-        {!hasStartedExploring && !isWelcomeOpen && !isOverlayOpen && (
-          <WindowConstellation onStart={handleStart} />
-        )}
         {isWelcomeOpen && (
           <div className="fixed inset-0 z-40 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/60" onClick={() => setIsWelcomeOpen(false)} />
