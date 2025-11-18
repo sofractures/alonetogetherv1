@@ -21,8 +21,11 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsAnimating(false), 3000);
-    return () => clearTimeout(timer);
+    // Start title animation immediately (no delay) so it runs simultaneously with skyline
+    // Use requestAnimationFrame to ensure initial render happens first
+    requestAnimationFrame(() => {
+      setIsAnimating(false);
+    });
   }, []);
 
   return (
@@ -57,7 +60,7 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
         className={`absolute bottom-20 px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-all duration-1000 shadow-lg z-10 ${
           isAnimating ? "opacity-0 translate-y-8" : "opacity-100 translate-y-0"
         }`}
-        style={{ transitionDelay: "2500ms" }}
+        style={{ transitionDelay: "3000ms" }}
       >
         Start
       </button>
