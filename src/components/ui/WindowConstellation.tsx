@@ -67,7 +67,7 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
         <MemorySkyline
           memories={memoriesText}
           className="w-full"
-          isAnimating={isAnimating}
+          isAnimating={true}
         />
       </div>
     </div>
