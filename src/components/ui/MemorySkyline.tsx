@@ -8,24 +8,19 @@ interface MemorySkylineProps {
   isAnimating?: boolean;
 }
 
+const brickColors = ["#a68361", "#79504a", "#a2736c", "#b1827e"];
+
 export function MemorySkyline({
   memories,
   className = "",
-  isAnimating = true,
 }: MemorySkylineProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (!isAnimating) {
-      setMounted(true);
-      return;
-    }
-
-    const timer = setTimeout(() => setMounted(true), 100);
-    return () => clearTimeout(timer);
-  }, [isAnimating]);
-
-  const brickColors = ["#a68361", "#79504a", "#a2736c", "#b1827e"];
+    // Start animation immediately when component mounts (synchronized with title animation)
+    // No delay - both animations should start at the same time
+    setMounted(true);
+  }, []);
 
   const buildings = useMemo(() => {
     const allChars = memories.split("");
