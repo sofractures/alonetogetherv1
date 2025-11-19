@@ -39,7 +39,6 @@ export default function Home() {
   const [pendingLocation, setPendingLocation] = useState<LocationData | null>(null);
   // Spiral state management
   const [spiralOverlapId, setSpiralOverlapId] = useState<string | null>(null); // Track which spiral is open
-  const [selectedMemoryPlaylist, setSelectedMemoryPlaylist] = useState<MemoryForMap[] | undefined>(undefined);
   
   // New flow state management
   const [flowState, setFlowState] = useState<FlowState>('idle');
@@ -236,6 +235,10 @@ export default function Home() {
   const handlePinMemory = async (data: { email: string; location: LocationData | null; name?: string }) => {
     setUserEmail(data.email);
     setUserName(data.name || null);
+    // Store user email in localStorage for download permission checks
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('userEmail', data.email);
+    }
     setFlowState('pinning-processing');
     
     // Use the location that was provided (or null if skipped)
@@ -358,9 +361,8 @@ export default function Home() {
             autoRotate={true}
             highlightId={highlightMemoryId || undefined}
             restoreSpiralId={spiralOverlapId && !isMemoryPlayerOpen ? spiralOverlapId : null}
-            onMemoryClick={(id, overlappingMemories) => {
+            onMemoryClick={(id) => {
               selectMemory(id);
-              setSelectedMemoryPlaylist(overlappingMemories);
               setIsMemoryPlayerOpen(true);
             }}
             onSpiralStateChange={(isOpen, overlapId) => {
@@ -481,12 +483,10 @@ export default function Home() {
       {/* Memory Player Modal */}
       <MemoryPlayer
         memory={selectedMemory}
-        memories={selectedMemoryPlaylist}
         isOpen={isMemoryPlayerOpen}
         onClose={() => {
           setIsMemoryPlayerOpen(false);
           selectMemory(null);
-          setSelectedMemoryPlaylist(undefined); // Reset playlist on close
           // If spiral was open, it will be restored by MemoryGlobe's useEffect
         }}
       />

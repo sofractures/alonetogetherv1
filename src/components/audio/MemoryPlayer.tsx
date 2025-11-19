@@ -6,28 +6,30 @@ import { onMemoryPlaybackStartMuteBackground, onMemoryPlaybackStopUnmuteBackgrou
 
 interface MemoryPlayerProps {
   memory: MemoryForMap | null;
-  memories?: MemoryForMap[]; // Optional: playlist of overlapping memories
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function MemoryPlayer({ memory, memories, isOpen, onClose }: MemoryPlayerProps) {
+export default function MemoryPlayer({ memory, isOpen, onClose }: MemoryPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   
-  // Use playlist if provided, otherwise single memory
-  const playlist = memories && memories.length > 1 ? memories : (memory ? [memory] : []);
-  const currentMemory = playlist[currentTrackIndex] || memory;
-  const title = currentMemory?.name || currentMemory?.location || 'Memory';
-
-  // Reset track index when playlist changes
+  // Get user email from localStorage on mount
   useEffect(() => {
-    if (playlist.length > 0) {
-      setCurrentTrackIndex(0);
+    if (typeof window !== 'undefined') {
+      const storedEmail = localStorage.getItem('userEmail');
+      setUserEmail(storedEmail);
     }
-  }, [playlist.length]);
+  }, []);
+  
+  const currentMemory = memory;
+  const title = currentMemory?.name || currentMemory?.location || 'Memory';
+  
+  // Check if current memory belongs to the user
+  const isUserMemory = userEmail && currentMemory?.email && 
+    userEmail.toLowerCase() === currentMemory.email.toLowerCase();
 
   // Fetch signed URL when modal opens and memory is available
   useEffect(() => {
@@ -61,7 +63,7 @@ export default function MemoryPlayer({ memory, memories, isOpen, onClose }: Memo
               setIsLoadingAudio(false);
             });
         }
-  }, [isOpen, currentMemory, currentTrackIndex, playlist.length]);
+  }, [isOpen, currentMemory]);
 
   useEffect(() => {
     if (isOpen && audioRef.current && audioUrl) {
@@ -82,18 +84,6 @@ export default function MemoryPlayer({ memory, memories, isOpen, onClose }: Memo
 
   if (!isOpen || !currentMemory) return null;
 
-  const handleNextTrack = () => {
-    if (playlist.length > 1) {
-      setCurrentTrackIndex((prev) => (prev + 1) % playlist.length);
-    }
-  };
-
-  const handlePrevTrack = () => {
-    if (playlist.length > 1) {
-      setCurrentTrackIndex((prev) => (prev - 1 + playlist.length) % playlist.length);
-    }
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-labelledby="memory-player-title" aria-describedby="memory-player-description">
       <div 
@@ -109,52 +99,21 @@ export default function MemoryPlayer({ memory, memories, isOpen, onClose }: Memo
           ✕
         </button>
         
-        <h2 id="memory-player-title" className="text-2xl font-semibold text-white mb-2">
-          {playlist.length > 1 ? `Playlist (${currentTrackIndex + 1}/${playlist.length})` : title}
-        </h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 id="memory-player-title" className="text-2xl font-semibold text-white">
+            {title}
+          </h2>
+          {isUserMemory && (
+            <span className="px-2 py-1 rounded text-xs bg-purple-600/30 text-purple-200 border border-purple-400/30">
+              Your Memory
+            </span>
+          )}
+        </div>
         
         {currentMemory.location && (
           <p id="memory-player-description" className="text-gray-300 text-sm mb-4">
             📍 {currentMemory.location}
-            {playlist.length > 1 && (
-              <span className="ml-2 text-purple-300">
-                ({playlist.length} memories at this location)
-              </span>
-            )}
           </p>
-        )}
-
-        {/* Playlist view for overlapping memories */}
-        {playlist.length > 1 && (
-          <div className="mb-4 max-h-48 overflow-y-auto border border-purple-400/20 rounded p-2">
-            <p className="text-sm text-purple-200 mb-2 font-semibold">All memories at this location:</p>
-            <div className="space-y-1">
-              {playlist.map((mem, idx) => (
-                <button
-                  key={mem.id}
-                  onClick={() => setCurrentTrackIndex(idx)}
-                  className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
-                    idx === currentTrackIndex
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span>
-                      {idx + 1}. {mem.name || `Memory ${idx + 1}`}
-                    </span>
-                    {mem.location && (
-                      <span className={`text-xs ml-2 ${
-                        idx === currentTrackIndex ? 'text-purple-200' : 'text-gray-400'
-                      }`}>
-                        📍 {mem.location}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
         )}
 
         {isLoadingAudio ? (
@@ -167,36 +126,22 @@ export default function MemoryPlayer({ memory, memories, isOpen, onClose }: Memo
               controls
               className="w-full"
               autoPlay
-              onEnded={() => {
-                // Auto-advance to next track in playlist
-                if (playlist.length > 1) {
-                  handleNextTrack();
-                }
-              }}
             />
-            {playlist.length > 1 && (
-              <div className="flex gap-2 mt-3 justify-center">
-                <button
-                  onClick={handlePrevTrack}
-                  className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600 transition-colors"
-                >
-                  ← Previous
-                </button>
-                <button
-                  onClick={handleNextTrack}
-                  className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600 transition-colors"
-                >
-                  Next →
-                </button>
-              </div>
+            {/* Only show download button if this is the user's memory */}
+            {isUserMemory && (
+              <a
+                href={audioUrl}
+                download={`memory-${currentMemory.id}.mp3`}
+                className="mt-4 inline-block px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 transition-colors"
+              >
+                ⬇ Download Your Song
+              </a>
             )}
-            <a
-              href={audioUrl}
-              download={`memory-${currentMemory.id}.mp3`}
-              className="mt-4 inline-block px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 transition-colors"
-            >
-              Download
-            </a>
+            {!isUserMemory && (
+              <p className="mt-4 text-sm text-gray-400 italic">
+                You can listen to everyone&apos;s memories, but downloads are only available for your own songs.
+              </p>
+            )}
           </div>
         ) : (
           <p className="text-gray-400 mt-4">Audio not available</p>

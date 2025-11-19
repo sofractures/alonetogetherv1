@@ -18,8 +18,13 @@ Transform a static music release into a living, breathing architectural space of
 ## 2. User Journey
 
 ### User Flow
-1. **Landing** → User sees 3D building with floating windows, slowly rotating to reveal existing memories
-2. **Introduction** → Brief explanation: "Each window holds a memory. Add yours to the building."
+1. **Landing** → Animated title screen with memory skyline:
+   - "ALONE TOGETHER" letters scatter across screen, then drift together to form centered title
+   - Memory skyline grows from bottom showing text-based building blocks
+   - Both animations run simultaneously (2.5-2.8 seconds)
+   - Start button appears after animations complete
+   - Clicking Start transitions to 3D globe view with welcome modal
+2. **Introduction** → Welcome modal offers: "Record your memory" or "Explore the globe"
 3. **Prompt Selection** → User presented with memory prompt
 4. **Recording** → User records 30-60 second voice memory
 5. **Processing** → Real-time audio processing with visual feedback ("Creating your song...")
@@ -231,9 +236,21 @@ Browsing Dense Locations:
 - Billboard rendering: Always faces camera
 - Asset loading: Preloaded with Three.js TextureLoader for performance
 
+**Landing Page Title Screen:**
+- Animated "ALONE TOGETHER" title with scattered-to-centered letter animation
+- Letters start at random positions across screen (low opacity 0.1)
+- Smooth 2.5s transition bringing letters together with 1ch spacing
+- Memory skyline at bottom: text-based building blocks made from memory text
+- Skyline animation: 12-20 buildings growing from bottom (2800ms, staggered 80ms)
+- Brick-colored letters (#a68361, #79504a, #a2736c, #b1827e) with white outlined spaces
+- Monospace font (9px) creating city skyline effect
+- Both animations synchronized to start simultaneously
+- Start button: white background, black text, monospace font, positioned near title
+- Black background for dramatic contrast
+
 **Landing Page Audio:**
-- `fullsong.mp3` plays on site load at 30% volume
-- Mute/unmute toggle in corner
+- `fullsong.mp3` plays when Start button is clicked (user interaction required)
+- Starts at 50% volume
 - Fades out when user begins recording
 - Resumes when returning to exploration
 
@@ -481,11 +498,19 @@ GET /api/assets/[filename] - Serve static assets (windows, audio files)
 └── window2.jpeg        # Memory window variant 2
 
 /components/
-├── memory-globe.tsx     # 3D scene with building and windows
-├── memory-point.tsx     # Individual window component
-├── audio-recorder.tsx   # Recording interface
-├── audio-player.tsx     # Memory playback modal
-└── landing-audio.tsx    # Background music controller
+├── /3d/
+│   ├── MemoryGlobe.tsx     # 3D scene with building and windows
+│   └── MemoryPoint.tsx     # Individual window component
+├── /audio/
+│   ├── AudioRecorder.tsx   # Recording interface
+│   ├── MemoryPlayer.tsx   # Memory playback modal
+│   └── BackgroundAudio.tsx # Background music controller
+└── /ui/
+    ├── WindowConstellation.tsx  # Animated title screen with scattered letters
+    └── MemorySkyline.tsx        # Text-based building skyline visualization
+
+/data/
+└── memories.ts          # Memory text data for skyline visualization
 ```
 
 ### Storage Structure (Supabase Storage)
