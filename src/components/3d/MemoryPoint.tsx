@@ -10,6 +10,7 @@ interface MemoryPointProps {
   position: [number, number, number];
   windowVariant: 1 | 2;
   location?: string;
+  name?: string; // Creator name
   onClick?: () => void;
   highlighted?: boolean;
   cameraDistance?: number; // Optional camera distance for scaling
@@ -22,6 +23,7 @@ export default function MemoryPoint({
   position,
   windowVariant,
   location,
+  name,
   onClick,
   highlighted = false,
   cameraDistance = 18, // Default camera distance
@@ -98,18 +100,39 @@ export default function MemoryPoint({
           />
         </mesh>
         {/* Don't show label in spiral mode - only center label shows */}
-        {!hideLabelInSpiral && (hovered || showLabelAlways || highlighted) && location && (
-          <Text
-            position={[0, -1, 0]}
-            fontSize={0.2}
-            color={highlighted ? '#f59e0b' : (hovered ? '#a78bfa' : '#ffffff')}
-            anchorX="center"
-            anchorY="middle"
-            outlineWidth={0.03}
-            outlineColor="#000000"
-          >
-            {location}
-          </Text>
+        {!hideLabelInSpiral && (hovered || showLabelAlways || highlighted) && (name || location) && (
+          <group position={[0, -1, 0]}>
+            {/* Creator Name - text-[10px], font-medium, text-foreground/90 */}
+            {name && (
+              <Text
+                position={[0, 0.15, 0]}
+                fontSize={0.15}
+                color="#e8e8e8" // Approximate oklch(0.98 0.01 270) at 90% opacity
+                anchorX="center"
+                anchorY="middle"
+                outlineWidth={0.02}
+                outlineColor="#000000"
+                maxWidth={2}
+              >
+                {name}
+              </Text>
+            )}
+            {/* Location - text-[9px], normal weight, text-muted-foreground/80 */}
+            {location && (
+              <Text
+                position={[0, -0.05, 0]}
+                fontSize={0.135}
+                color="#a5a5a5" // Approximate oklch(0.65 0.02 270) at 80% opacity
+                anchorX="center"
+                anchorY="middle"
+                outlineWidth={0.02}
+                outlineColor="#000000"
+                maxWidth={2}
+              >
+                {location}
+              </Text>
+            )}
+          </group>
         )}
       </group>
     </Billboard>

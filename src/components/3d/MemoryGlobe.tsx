@@ -444,6 +444,7 @@ export default function MemoryGlobe({
                   position={position}
                   windowVariant={memory.windowVariant}
                   location={memory.location}
+                  name={memory.name}
                   highlighted={highlightId === memory.id}
                   cameraDistance={camDistance}
                   hideLabelInSpiral={isInExpandedOverlap} // Hide individual labels when in spiral mode

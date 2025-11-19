@@ -377,14 +377,14 @@ export default function Home() {
             <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 uppercase">
               Alone Together
             </h1>
-            <p className="text-sm md:text-base text-gray-300">
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
               Explore audio memories from music fans around the world. Rotate the globe and click on memories to hear their stories.
             </p>
           </div>
 
           {/* Instructions - Bottom Left */}
           <div className="absolute bottom-0 left-0 z-10 p-4 md:p-6 pointer-events-none">
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-muted-foreground">
               Drag to rotate • Scroll to zoom • Click to listen
             </p>
           </div>
