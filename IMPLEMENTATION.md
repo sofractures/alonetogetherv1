@@ -100,7 +100,13 @@
   /lib/
   /hooks/
   /types/
+  /data/
   ```
+- [x] **Memory Skyline Data File** (`src/data/memories.ts`):
+  - [x] Contains sample memory text as continuous string with line breaks
+  - [x] Text flows across all buildings in skyline visualization
+  - [x] Can be replaced with real memories from database in future
+  - [x] Format: Plain text with newlines separating individual memories
 
 ---
 
@@ -405,8 +411,42 @@
 
 ### Complete User Flow
 - [x] Home overlays on top of always-on 3D scene
-  - [x] Title + Start button (keep 3D explore visible in background)
-  - [x] Start button begins background song
+  - [x] **Animated Title Screen** (`components/ui/WindowConstellation.tsx`):
+    - [x] "ALONE TOGETHER" title with scattered letter animation
+    - [x] Letters start scattered across screen at low opacity (0.1)
+    - [x] Letters drift together over 2.5 seconds to form centered title
+    - [x] Final letter spacing: 1ch (subtle overlap for "together" concept)
+    - [x] Smooth ease-out transition with 50ms stagger per letter
+    - [x] Black background for dramatic effect
+  - [x] **Memory Skyline Component** (`components/ui/MemorySkyline.tsx`):
+    - [x] City skyline visualization at bottom of landing page
+    - [x] 12-20 randomly generated buildings with varying heights (5-30 rows)
+    - [x] Building widths: 8-13 columns per building
+    - [x] Text flows continuously across all buildings from `src/data/memories.ts`
+    - [x] Brick color palette for letters: #a68361, #79504a, #a2736c, #b1827e
+    - [x] White outlined boxes for spaces (creating "lit windows" effect)
+    - [x] Monospace font (font-mono), 9px text, 8×10px character cells
+    - [x] Smooth scaleY animation from bottom to top (2800ms duration)
+    - [x] Staggered building animations (80ms delay between buildings)
+    - [x] Synchronized with title animation (both start simultaneously)
+    - [x] Positioned at bottom with z-0 (behind title letters)
+    - [x] Height limited to h-64 (256px) with overflow-hidden
+  - [x] **Start Button**:
+    - [x] White background with black text
+    - [x] Monospace font (matching skyline)
+    - [x] Positioned closer to title (bottom-40)
+    - [x] Appears after title animation completes (3000ms delay)
+  - [x] Start button begins background song and transitions to globe view
+
+**Implementation Notes (Title Screen & Skyline):**
+- **Animation Synchronization:** Both title and skyline animations start simultaneously using `requestAnimationFrame` to ensure initial render completes first
+- **Title Animation:** Letters use `useMemo` for stable random positions (prevents re-render flicker), transition from `vw/vh` units to `ch` units for final positioning
+- **Skyline Animation:** Uses `scaleY` transform with `transformOrigin: bottom` for smooth bottom-to-top growth (hardware-accelerated, no layout recalculations)
+- **Color Assignment:** Brick colors are pre-assigned during building generation (not during render) to prevent color changes on re-render
+- **Text Flow:** Memory text loops continuously across buildings when text runs out
+- **Performance:** Buildings use `useMemo` to prevent regeneration on every render, only recalculates when memories text changes
+- **Future Enhancement:** Can replace static `memories.ts` with real-time data from database for dynamic skyline updates
+
 - [x] Recording overlay (full-screen mobile, centered desktop)
   - [x] Static instruction and prompt:
         "Share a time when you felt a part of something bigger than you"
