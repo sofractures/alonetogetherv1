@@ -236,6 +236,10 @@ export default function Home() {
   const handlePinMemory = async (data: { email: string; location: LocationData | null; name?: string }) => {
     setUserEmail(data.email);
     setUserName(data.name || null);
+    // Store user email in localStorage for download permission checks
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('userEmail', data.email);
+    }
     setFlowState('pinning-processing');
     
     // Use the location that was provided (or null if skipped)

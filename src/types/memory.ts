@@ -12,6 +12,8 @@ export interface Memory {
   play_count: number;
   like_count: number;
   created_at: string;
+  email?: string; // Email of memory creator
+  user_name?: string; // User's display name
 }
 
 export interface MemoryForMap {
@@ -23,5 +25,6 @@ export interface MemoryForMap {
   audioUrl: string;
   name?: string;
   createdAt?: string; // ISO timestamp for sorting by creation time
+  email?: string; // Email of memory creator (for download permission check)
 }
 
