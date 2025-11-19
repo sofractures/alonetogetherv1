@@ -387,18 +387,40 @@ export default function MemoryGlobe({
                 return (
                   <group renderOrder={1000}>
                     <Billboard position={lowestWindow3D} follow={true} lockX={false} lockY={false} lockZ={false}>
-                      <Text
-                        position={[0, windowBottomOffset, 0]}
-                        fontSize={0.2}
-                        color="#ffffff"
-                        anchorX="center"
-                        anchorY="middle"
-                        outlineWidth={0.03}
-                        outlineColor="#000000"
-                        renderOrder={1000}
-                      >
-                        {activeMemory.location}
-                      </Text>
+                      <group position={[0, windowBottomOffset, 0]}>
+                        {/* Creator Name - text-[10px], font-medium, text-foreground/90 */}
+                        {activeMemory.name && (
+                          <Text
+                            position={[0, 0.15, 0]}
+                            fontSize={0.15}
+                            color="#e8e8e8" // Approximate oklch(0.98 0.01 270) at 90% opacity
+                            anchorX="center"
+                            anchorY="middle"
+                            outlineWidth={0.02}
+                            outlineColor="#000000"
+                            maxWidth={2}
+                            renderOrder={1000}
+                          >
+                            {activeMemory.name}
+                          </Text>
+                        )}
+                        {/* Location - text-[9px], normal weight, text-muted-foreground/80 */}
+                        {activeMemory.location && (
+                          <Text
+                            position={[0, -0.05, 0]}
+                            fontSize={0.135}
+                            color="#a5a5a5" // Approximate oklch(0.65 0.02 270) at 80% opacity
+                            anchorX="center"
+                            anchorY="middle"
+                            outlineWidth={0.02}
+                            outlineColor="#000000"
+                            maxWidth={2}
+                            renderOrder={1000}
+                          >
+                            {activeMemory.location}
+                          </Text>
+                        )}
+                      </group>
                     </Billboard>
                   </group>
                 );
