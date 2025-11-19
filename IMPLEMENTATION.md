@@ -247,10 +247,10 @@
   - [x] Location label at base of spiral showing hovered/highlighted memory location
   - [x] Dark overlay when spiral is active for better navigation clarity
   - [x] Individual window labels hidden in spiral mode (only center label shows)
-- [x] Playlist feature for overlapping memories (before spiral opens)
-  - [x] Screen-space overlap detection
-  - [x] Clicking overlapped window shows playlist of all memories at that location
-  - [x] Playlist displays city/location name for each song
+- [x] **Playlist feature removed:** Replaced by spiral navigation for better UX
+  - [x] Spiral navigation handles all cluster interactions visually
+  - [x] Users click cluster to expand spiral, then click individual windows to play
+  - [x] No playlist UI needed - spiral provides better spatial understanding
 - [ ] Mobile/large-cluster drawer fallback listing (name, location, play/next/prev)
   - [ ] Open drawer when cluster size > N or on small screens
   - [ ] Optional "Show on map" highlight for selected memory
@@ -326,17 +326,23 @@
 - [x] Create `components/audio/MemoryPlayer.tsx` (for 3D window playback):
   - [x] Load audio from signed URL API endpoint
   - [x] Native HTML5 audio player with controls
-  - [x] Download button for processed MP3
-  - [x] **Playlist support:** Display multiple overlapping memories as playlist
-  - [x] **Playlist navigation:** Previous/Next buttons and auto-advance
-  - [x] **Location display:** Shows city/location name for each song in playlist
+  - [x] **Download restrictions:** Users can only download their own songs (email-based permission check)
+  - [x] **Visual indicators:** "Your Memory" badge for user-owned memories
+  - [x] **Helpful messaging:** Shows message when viewing others' memories explaining download restrictions
   - [x] Background music control: fades out when memory plays, resumes on close
+  - [x] **Removed playlist view:** Replaced by spiral navigation for cluster browsing
   - [ ] Custom audio player UI with progress bar and scrubbing
   - [ ] Volume control
   - [ ] Share functionality
   - [ ] Full memory details display
 - [x] Integrate with 3D window click events
 - [x] Single-click flow: click cluster → opens spiral, click window in spiral → plays single song
+- [x] **Download Permission System:**
+  - [x] Store user email in localStorage when pinning memory
+  - [x] Add email field to Memory and MemoryForMap types
+  - [x] Include email in API response for memory data
+  - [x] Conditional download button based on email match (case-insensitive)
+  - [x] Celebration screen download still available (user just created it)
 - [ ] Add keyboard controls for playback
 
 ---
