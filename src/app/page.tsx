@@ -374,7 +374,7 @@ export default function Home() {
 
           {/* Header Section - Top Left */}
           <div className="absolute top-0 left-0 z-10 p-4 md:p-6 max-w-2xl pointer-events-none">
-            <h1 className="text-3xl md:text-5xl font-bold text-white mb-2">
+            <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 uppercase">
               Alone Together
             </h1>
             <p className="text-sm md:text-base text-gray-300">
