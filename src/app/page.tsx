@@ -377,9 +377,6 @@ export default function Home() {
             <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 uppercase">
               Alone Together
             </h1>
-            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-              Explore audio memories from music fans around the world. Rotate the globe and click on memories to hear their stories.
-            </p>
           </div>
 
           {/* Instructions - Bottom Left */}
