@@ -12,7 +12,7 @@ import { clusterAndSpreadMemories } from '@/lib/clustering';
 interface MemoryGlobeProps {
   memories?: MemoryForMap[];
   autoRotate?: boolean;
-  onMemoryClick?: (memoryId: string, overlappingMemories?: MemoryForMap[], keepSpiralOpen?: boolean) => void;
+  onMemoryClick?: (memoryId: string) => void;
   highlightId?: string;
   onSpiralStateChange?: (isOpen: boolean, overlapId: string | null) => void; // Callback to notify parent of spiral state
   restoreSpiralId?: string | null; // If provided, restore this spiral
@@ -458,8 +458,8 @@ export default function MemoryGlobe({
                     // Don't collapse spiral - let it stay open so user returns to it after closing popup
                     if (isInExpandedOverlap) {
                       setHoveredMemoryInSpiral(null); // Reset hover state
-                      // Play just this single memory (no playlist) - user clicked on a specific window
-                      onMemoryClick?.(memory.id, undefined, true); // Play the selected memory, keepSpiralOpen=true, no playlist
+                      // Play just this single memory - user clicked on a specific window in spiral
+                      onMemoryClick?.(memory.id);
                       return;
                     }
                     
