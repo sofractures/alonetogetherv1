@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { MemorySkyline } from "./MemorySkyline";
+import { memoriesText } from "@/data/memories";
 
 interface WindowConstellationProps {
   onStart: () => void;
@@ -19,8 +21,11 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsAnimating(false), 3000);
-    return () => clearTimeout(timer);
+    // Start title animation immediately (no delay) so it runs simultaneously with skyline
+    // Use requestAnimationFrame to ensure initial render happens first
+    requestAnimationFrame(() => {
+      setIsAnimating(false);
+    });
   }, []);
 
   return (
@@ -52,13 +57,22 @@ export function WindowConstellation({ onStart }: WindowConstellationProps) {
       {/* Start Button - appears after animation */}
       <button
         onClick={onStart}
-        className={`absolute bottom-20 px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-all duration-1000 shadow-lg ${
+        className={`absolute bottom-40 px-8 py-3 bg-white text-black font-mono font-semibold transition-all duration-1000 z-10 hover:bg-gray-100 ${
           isAnimating ? "opacity-0 translate-y-8" : "opacity-100 translate-y-0"
         }`}
-        style={{ transitionDelay: "2500ms" }}
+        style={{ transitionDelay: "3000ms" }}
       >
         Start
       </button>
+
+      {/* Memory Skyline - appears at bottom */}
+      <div className="absolute bottom-0 left-0 right-0 z-0 h-64 flex items-end overflow-hidden">
+        <MemorySkyline
+          memories={memoriesText}
+          className="w-full"
+          isAnimating={true}
+        />
+      </div>
     </div>
   );
 }
