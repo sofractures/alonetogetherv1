@@ -344,32 +344,51 @@ export default function Home() {
     <div className="relative w-full h-screen overflow-hidden bg-black">
       {/* 3D Scene - Only visible after user clicks "Start Exploring" */}
       {hasStartedExploring && (
-        <div 
-          className="absolute inset-0 bg-black"
-          style={{ 
-            pointerEvents: 'auto',
-            zIndex: 0,
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0
-          }}
-        >
-          <MemoryGlobe 
-            memories={memories} 
-            autoRotate={true}
-            highlightId={highlightMemoryId || undefined}
-            restoreSpiralId={spiralOverlapId && !isMemoryPlayerOpen ? spiralOverlapId : null}
-            onMemoryClick={(id) => {
-              selectMemory(id);
-              setIsMemoryPlayerOpen(true);
+        <>
+          <div 
+            className="absolute inset-0 bg-black"
+            style={{ 
+              pointerEvents: 'auto',
+              zIndex: 0,
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0
             }}
-            onSpiralStateChange={(isOpen, overlapId) => {
-              setSpiralOverlapId(isOpen ? overlapId : null);
-            }}
-          />
-        </div>
+          >
+            <MemoryGlobe 
+              memories={memories} 
+              autoRotate={true}
+              highlightId={highlightMemoryId || undefined}
+              restoreSpiralId={spiralOverlapId && !isMemoryPlayerOpen ? spiralOverlapId : null}
+              onMemoryClick={(id) => {
+                selectMemory(id);
+                setIsMemoryPlayerOpen(true);
+              }}
+              onSpiralStateChange={(isOpen, overlapId) => {
+                setSpiralOverlapId(isOpen ? overlapId : null);
+              }}
+            />
+          </div>
+
+          {/* Header Section - Top Left */}
+          <div className="absolute top-0 left-0 z-10 p-4 md:p-6 max-w-2xl pointer-events-none">
+            <h1 className="text-3xl md:text-5xl font-bold text-white mb-2">
+              Alone Together
+            </h1>
+            <p className="text-sm md:text-base text-gray-300">
+              Explore audio memories from music fans around the world. Rotate the globe and click on memories to hear their stories.
+            </p>
+          </div>
+
+          {/* Instructions - Bottom Left */}
+          <div className="absolute bottom-0 left-0 z-10 p-4 md:p-6 pointer-events-none">
+            <p className="text-xs text-gray-400">
+              Drag to rotate • Scroll to zoom • Click to listen
+            </p>
+          </div>
+        </>
       )}
       
       {/* Animated Title Screen - shown on initial load */}
