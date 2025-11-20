@@ -7,6 +7,7 @@ import PlaybackModal from "@/components/flow/PlaybackModal";
 import PinModal from "@/components/flow/PinModal";
 import CelebrationScreen from "@/components/flow/CelebrationScreen";
 import { WindowConstellation } from "@/components/ui/WindowConstellation";
+import { ExploreMenu } from "@/components/ui/ExploreMenu";
 import { useState, useEffect } from "react";
 import { getAudioController, onRecordingStartFadeOutBackground, onRecordingStopResumeBackground } from "@/lib/audio-context";
 import { useMemoryStore } from "@/store/memoryStore";
@@ -402,6 +403,9 @@ export default function Home() {
               Drag to rotate • Scroll to zoom • Click to listen
             </p>
           </div>
+
+          {/* Menu - Top Right */}
+          <ExploreMenu currentPage="explore" />
         </>
       )}
       
