@@ -21,8 +21,8 @@ export default function CelebrationScreen({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-labelledby="celebration-title">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-      <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl border border-purple-400/30 bg-gray-900/95 backdrop-blur p-8 text-center">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-md" />
+      <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl p-8 text-center">
         {/* Success Animation */}
         <div className="mb-6">
           <div className="text-6xl mb-4">✨</div>
@@ -47,7 +47,7 @@ export default function CelebrationScreen({
         </p>
 
         {/* Download Section */}
-        <div className="bg-purple-900/30 border border-purple-400/30 rounded-lg p-6 mb-6">
+        <div className="bg-white/10 border border-white/20 rounded-lg p-6 mb-6">
           <div className="text-3xl mb-3">🎁</div>
           <h3 className="text-xl font-semibold text-white mb-2">
             Here&apos;s Your Copy to Keep
@@ -58,7 +58,7 @@ export default function CelebrationScreen({
           
           <button
             onClick={onDownload}
-            className="w-full px-6 py-3 rounded bg-purple-600 text-white hover:bg-purple-700 transition-colors font-semibold text-lg mb-3"
+            className="w-full px-6 py-3 rounded bg-white text-black hover:bg-gray-100 transition-colors font-semibold text-lg mb-3"
           >
             ⬇ Download Your Song
           </button>
@@ -72,7 +72,7 @@ export default function CelebrationScreen({
         <div className="space-y-3">
           <button
             onClick={onExploreGlobe}
-            className="w-full px-6 py-3 rounded border border-purple-400/40 text-purple-200 hover:bg-purple-800/30 transition-colors font-semibold"
+            className="w-full px-6 py-3 rounded border border-white/30 text-white hover:bg-white/10 transition-colors font-semibold"
           >
             Explore the Globe
           </button>

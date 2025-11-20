@@ -27,6 +27,10 @@ export default function Home() {
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
   const [hasStartedExploring, setHasStartedExploring] = useState(false);
+  const [showGlobe, setShowGlobe] = useState(false);
+  const [titleScreenVisible, setTitleScreenVisible] = useState(true);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [welcomeModalVisible, setWelcomeModalVisible] = useState(false);
   const [pendingBlob, setPendingBlob] = useState<Blob | null>(null);
   const [pendingUrl, setPendingUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -60,9 +64,20 @@ export default function Home() {
     c.setSrc("/assets/fullsong.mp3");
     c.setVolume(0.5);
     await c.play();
-    // Show globe and welcome modal after title animation
+    // Start globe fade-in immediately (as letters scatter)
     setHasStartedExploring(true);
-    setIsWelcomeOpen(true);
+    setShowGlobe(true);
+  };
+
+  const handleTransitionComplete = () => {
+    // Hide title screen after reverse animation completes
+    setTitleScreenVisible(false);
+    // Show welcome modal container, then fade in
+    setShowWelcomeModal(true);
+    setTimeout(() => {
+      setWelcomeModalVisible(true);
+      setIsWelcomeOpen(true);
+    }, 50); // Small delay to trigger fade-in animation
   };
 
   const closeOverlay = async () => {
@@ -346,7 +361,9 @@ export default function Home() {
       {hasStartedExploring && (
         <>
           <div 
-            className="absolute inset-0 bg-black"
+            className={`absolute inset-0 bg-black transition-opacity duration-[2500ms] ${
+              showGlobe ? "opacity-100" : "opacity-0"
+            }`}
             style={{ 
               pointerEvents: 'auto',
               zIndex: 0,
@@ -374,7 +391,7 @@ export default function Home() {
 
           {/* Header Section - Top Left */}
           <div className="absolute top-0 left-0 z-10 p-4 md:p-6 max-w-2xl pointer-events-none">
-            <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 uppercase">
+            <h1 className="text-3xl md:text-5xl font-bold text-white uppercase">
               Alone Together
             </h1>
           </div>
@@ -389,9 +406,12 @@ export default function Home() {
       )}
       
       {/* Animated Title Screen - shown on initial load */}
-      {!hasStartedExploring && (
+      {titleScreenVisible && (
         <div className="absolute inset-0 z-20 bg-black">
-          <WindowConstellation onStart={handleStart} />
+          <WindowConstellation 
+            onStart={handleStart} 
+            onTransitionComplete={handleTransitionComplete}
+          />
         </div>
       )}
       
@@ -400,15 +420,17 @@ export default function Home() {
         className="relative z-10 flex flex-col items-center justify-center min-h-screen"
         style={{ pointerEvents: (isWelcomeOpen || isOverlayOpen) ? 'auto' : 'none' }}
       >
-        {isWelcomeOpen && (
-          <div className="fixed inset-0 z-40 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/60" onClick={() => setIsWelcomeOpen(false)} />
-            <div className="relative z-10 w-full max-w-xl mx-4 rounded-xl border border-purple-400/30 bg-gray-900/80 backdrop-blur p-6 text-center">
+        {showWelcomeModal && (
+          <div className={`fixed inset-0 z-40 flex items-center justify-center transition-opacity duration-500 ${
+            welcomeModalVisible ? "opacity-100" : "opacity-0"
+          }`}>
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => { setIsWelcomeOpen(false); setShowWelcomeModal(false); setWelcomeModalVisible(false); }} />
+            <div className="relative z-10 w-full max-w-xl mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl p-6 text-center">
               <h2 className="text-white text-2xl font-semibold mb-2">Welcome to Alone Together</h2>
               <p className="text-gray-300 mb-6">Record your memory to create your own personal song, or explore others on the map.</p>
               <div className="flex gap-3 justify-center">
-                <button onClick={() => { setIsWelcomeOpen(false); setIsOverlayOpen(true); }} className="px-5 py-2 rounded bg-purple-600 text-white">Create</button>
-                <button onClick={() => { setIsWelcomeOpen(false); setHasStartedExploring(true); }} className="px-5 py-2 rounded border border-gray-500/40 text-gray-200">Explore</button>
+                <button onClick={() => { setIsWelcomeOpen(false); setShowWelcomeModal(false); setWelcomeModalVisible(false); setIsOverlayOpen(true); }} className="px-5 py-2 rounded bg-white text-black hover:bg-gray-100">Create</button>
+                <button onClick={() => { setIsWelcomeOpen(false); setShowWelcomeModal(false); setWelcomeModalVisible(false); setHasStartedExploring(true); }} className="px-5 py-2 rounded border border-white/30 text-white hover:bg-white/10">Explore</button>
               </div>
             </div>
           </div>
@@ -417,16 +439,16 @@ export default function Home() {
         {isOverlayOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div
-              className="absolute inset-0 bg-black/60"
+              className="absolute inset-0 bg-black/40 backdrop-blur-md"
               onClick={() => {
                 if (isUploading || isProcessing || processedAudioUrl) return;
                 closeOverlay();
               }}
             />
-            <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl border border-purple-400/30 bg-gray-900/80 backdrop-blur p-5">
+            <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl p-5">
               {isProcessing && !processedAudioUrl ? (
                 // Simple processing view - hide everything else
-                <div className="p-4 rounded bg-purple-900/30 border border-purple-400/30 text-purple-100 text-center">
+                <div className="p-4 rounded bg-white/10 border border-white/20 text-white text-center">
                   Processing… we are creating your song.
                 </div>
               ) : (
@@ -444,13 +466,13 @@ export default function Home() {
                       {pendingUrl && <audio src={pendingUrl} controls className="w-full" />}
                       {uploadError && <div className="text-red-300 text-sm mt-2">{uploadError}</div>}
                       <div className="flex gap-2 mt-4 items-center">
-                        <button onClick={() => { setPendingBlob(null); setPendingUrl(null); }} className="px-4 py-2 rounded border border-purple-400/40 text-purple-200">
+                        <button onClick={() => { setPendingBlob(null); setPendingUrl(null); }} className="px-4 py-2 rounded border border-white/30 text-white hover:bg-white/10">
                           Re-record
                         </button>
                         <button 
                           onClick={() => proceedWithUpload(null)} 
                           disabled={isUploading || isProcessing || flowState !== 'idle'} 
-                          className="px-4 py-2 rounded bg-purple-600 text-white disabled:opacity-60"
+                          className="px-4 py-2 rounded bg-white text-black hover:bg-gray-100 disabled:opacity-60"
                         >
                           {isUploading ? 'Uploading…' : isProcessing ? 'Processing…' : 'Accept & Upload'}
                         </button>
@@ -463,20 +485,20 @@ export default function Home() {
 
               {/* Old flow - only show if not in new flow */}
               {processedAudioUrl && flowState === 'idle' && (
-                <div className="mt-4 p-4 rounded bg-purple-900/30 border border-purple-400/30">
-                  <div className="text-purple-100 font-semibold mb-3">Your song is ready!</div>
+                <div className="mt-4 p-4 rounded bg-white/10 border border-white/20">
+                  <div className="text-white font-semibold mb-3">Your song is ready!</div>
                   <audio src={processedAudioUrl} controls className="w-full mb-4" />
                   <div className="flex gap-2 justify-center">
                     <button 
                       onClick={closeOverlay} 
-                      className="px-6 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 transition-colors font-semibold flex-1"
+                      className="px-6 py-2 rounded bg-white text-black hover:bg-gray-100 transition-colors font-semibold flex-1"
                     >
                       Done
                     </button>
                     <a 
                       href={processedAudioUrl} 
                       download="my-song.mp3"
-                      className="px-6 py-2 rounded border border-purple-400/40 text-purple-200 hover:bg-purple-800/30 transition-colors text-center flex-1"
+                      className="px-6 py-2 rounded border border-white/30 text-white hover:bg-white/10 transition-colors text-center flex-1"
                     >
                       Download
                     </a>
@@ -486,8 +508,8 @@ export default function Home() {
               
               {/* Pinning processing state */}
               {flowState === 'pinning-processing' && (
-                <div className="mt-4 p-4 rounded bg-purple-900/30 border border-purple-400/30 text-center">
-                  <div className="text-purple-100 font-semibold mb-2">Pinning your memory...</div>
+                <div className="mt-4 p-4 rounded bg-white/10 border border-white/20 text-center">
+                  <div className="text-white font-semibold mb-2">Pinning your memory...</div>
                   <div className="text-gray-400 text-sm">Adding your window to the globe</div>
                 </div>
               )}

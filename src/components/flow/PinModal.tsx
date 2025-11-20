@@ -100,10 +100,10 @@ export default function PinModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-labelledby="pin-modal-title">
       <div 
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm" 
+        className="absolute inset-0 bg-black/40 backdrop-blur-md" 
         onClick={onCancel}
       />
-      <div className="relative z-10 w-full max-w-md mx-4 rounded-xl border border-purple-400/30 bg-gray-900/95 backdrop-blur p-6 max-h-[90vh] overflow-y-auto">
+      <div className="relative z-10 w-full max-w-md mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl p-6 max-h-[90vh] overflow-y-auto">
         <button
           onClick={onCancel}
           className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
@@ -131,7 +131,7 @@ export default function PinModal({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="your@email.com"
-              className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-600 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+              className="w-full px-3 py-2 rounded bg-gray-900/50 border border-white/20 text-white placeholder-gray-500 focus:outline-none focus:border-white/40"
               disabled={isSubmitting || isGeocoding}
               required
             />
@@ -148,7 +148,7 @@ export default function PinModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Your name (or stay anonymous)"
-              className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-600 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+              className="w-full px-3 py-2 rounded bg-gray-900/50 border border-white/20 text-white placeholder-gray-500 focus:outline-none focus:border-white/40"
               disabled={isSubmitting || isGeocoding}
             />
           </div>
@@ -163,14 +163,14 @@ export default function PinModal({
                   <button
                     onClick={handleUseCurrentLocation}
                     disabled={!isValidEmail(email) || isSubmitting || isGeocoding}
-                    className="w-full px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 rounded bg-white text-black hover:bg-gray-100 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     📍 Use Current Location
                   </button>
                   <button
                     onClick={() => setUseManual(true)}
                     disabled={isSubmitting || isGeocoding}
-                    className="w-full px-4 py-2 rounded border border-purple-400/40 text-purple-200 hover:bg-purple-800/30 transition-colors disabled:opacity-50"
+                    className="w-full px-4 py-2 rounded border border-white/30 text-white hover:bg-white/10 transition-colors disabled:opacity-50"
                   >
                     Set Custom Location
                   </button>
@@ -190,7 +190,7 @@ export default function PinModal({
                       value={manualCity}
                       onChange={(e) => setManualCity(e.target.value)}
                       placeholder="City (e.g., London)"
-                      className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-600 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                      className="w-full px-3 py-2 rounded bg-gray-900/50 border border-white/20 text-white placeholder-gray-500 focus:outline-none focus:border-white/40"
                       disabled={isGeocoding || isSubmitting}
                     />
                   </div>
@@ -200,7 +200,7 @@ export default function PinModal({
                       value={manualCountry}
                       onChange={(e) => setManualCountry(e.target.value)}
                       placeholder="Country (e.g., United Kingdom)"
-                      className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-600 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                      className="w-full px-3 py-2 rounded bg-gray-900/50 border border-white/20 text-white placeholder-gray-500 focus:outline-none focus:border-white/40"
                       disabled={isGeocoding || isSubmitting}
                     />
                   </div>
@@ -208,7 +208,7 @@ export default function PinModal({
                     <button
                       onClick={handleManualSubmit}
                       disabled={isGeocoding || isSubmitting || !isValidEmail(email) || (!manualCity.trim() && !manualCountry.trim())}
-                      className="flex-1 px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 px-4 py-2 rounded bg-white text-black hover:bg-gray-100 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isGeocoding ? 'Finding location...' : 'Pin My Memory'}
                     </button>
@@ -227,7 +227,7 @@ export default function PinModal({
           
           {/* Show location info if already provided */}
           {initialLocation && (initialLocation.city || initialLocation.country) && (
-            <div className="bg-purple-900/20 border border-purple-400/20 rounded p-3">
+            <div className="bg-white/10 border border-white/20 rounded p-3">
               <p className="text-gray-300 text-sm">
                 📍 Location: <strong>{initialLocation.city || ''}{initialLocation.city && initialLocation.country ? ', ' : ''}{initialLocation.country || ''}</strong>
               </p>
@@ -250,14 +250,14 @@ export default function PinModal({
                 });
               }}
               disabled={!isValidEmail(email) || isSubmitting}
-              className="w-full px-6 py-3 rounded bg-purple-600 text-white hover:bg-purple-700 transition-colors font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-6 py-3 rounded bg-white text-black hover:bg-gray-100 transition-colors font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? 'Pinning...' : 'Pin My Memory'}
             </button>
           )}
 
           {/* Benefits */}
-          <div className="pt-4 border-t border-gray-700">
+          <div className="pt-4 border-t border-white/20">
             <p className="text-gray-400 text-sm mb-2">Benefits:</p>
             <ul className="text-gray-300 text-sm space-y-1">
               <li>✓ See your window on the globe</li>

@@ -87,10 +87,10 @@ export default function MemoryPlayer({ memory, isOpen, onClose }: MemoryPlayerPr
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-labelledby="memory-player-title" aria-describedby="memory-player-description">
       <div 
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm" 
+        className="absolute inset-0 bg-black/40 backdrop-blur-md" 
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl border border-purple-400/30 bg-gray-900/95 backdrop-blur p-6">
+      <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl p-6">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
@@ -104,7 +104,7 @@ export default function MemoryPlayer({ memory, isOpen, onClose }: MemoryPlayerPr
             {title}
           </h2>
           {isUserMemory && (
-            <span className="px-2 py-1 rounded text-xs bg-purple-600/30 text-purple-200 border border-purple-400/30">
+            <span className="px-2 py-1 rounded text-xs bg-white/20 text-white border border-white/30">
               Your Memory
             </span>
           )}
@@ -132,7 +132,7 @@ export default function MemoryPlayer({ memory, isOpen, onClose }: MemoryPlayerPr
               <a
                 href={audioUrl}
                 download={`memory-${currentMemory.id}.mp3`}
-                className="mt-4 inline-block px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 transition-colors"
+                className="mt-4 inline-block px-4 py-2 rounded bg-white text-black hover:bg-gray-100 transition-colors"
               >
                 ⬇ Download Your Song
               </a>

@@ -28,10 +28,10 @@ export default function PlaybackModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-labelledby="playback-modal-title">
       <div 
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm" 
+        className="absolute inset-0 bg-black/40 backdrop-blur-md" 
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl border border-purple-400/30 bg-gray-900/95 backdrop-blur p-6">
+      <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl p-6">
         {onClose && (
           <button
             onClick={onClose}
@@ -63,7 +63,7 @@ export default function PlaybackModal({
         <div className="space-y-3">
           <button
             onClick={onAddToGlobe}
-            className="w-full px-6 py-3 rounded bg-purple-600 text-white hover:bg-purple-700 transition-colors font-semibold text-lg"
+            className="w-full px-6 py-3 rounded bg-white text-black hover:bg-gray-100 transition-colors font-semibold text-lg"
           >
             Add to Globe
           </button>
