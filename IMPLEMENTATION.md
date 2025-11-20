@@ -247,6 +247,10 @@
   - [x] Location label at base of spiral showing hovered/highlighted memory location
   - [x] Dark overlay when spiral is active for better navigation clarity
   - [x] Individual window labels hidden in spiral mode (only center label shows)
+  - [x] **Window Label Styling:**
+    - [x] Creator name: Geist Sans, 10px, font-medium, text-foreground/90
+    - [x] Location: Geist Sans, 9px, normal weight, text-muted-foreground/80
+    - [x] Spiral center label uses same styling as individual window labels
 - [x] **Playlist feature removed:** Replaced by spiral navigation for better UX
   - [x] Spiral navigation handles all cluster interactions visually
   - [x] Users click cluster to expand spiral, then click individual windows to play
@@ -442,7 +446,15 @@
     - [x] Monospace font (matching skyline)
     - [x] Positioned closer to title (bottom-40)
     - [x] Appears after title animation completes (3000ms delay)
+    - [x] Disappears immediately when clicked (removed from DOM)
   - [x] Start button begins background song and transitions to globe view
+  - [x] **Letter Scatter Reverse Transition**:
+    - [x] Letters scatter back out when "Start" is clicked
+    - [x] Globe fades in behind as letters fade out
+    - [x] Smooth 2500ms transition synchronized with globe fade-in
+  - [x] **Welcome Modal Fade-in**:
+    - [x] Welcome modal fades in smoothly after transition completes
+    - [x] 500ms opacity transition for elegant appearance
 
 **Implementation Notes (Title Screen & Skyline):**
 - **Animation Synchronization:** Both title and skyline animations start simultaneously using `requestAnimationFrame` to ensure initial render completes first
@@ -478,6 +490,13 @@
   - [x] Shows pinned location
   - [x] Download offer: "Here's your copy to keep"
   - [x] "Explore the Globe" and "Create Another Memory" buttons
+  - [x] **Modal Styling Updates**:
+    - [x] Black background (`bg-black/80`) with visible blurred globe behind
+    - [x] Backdrop: `bg-black/40` with `backdrop-blur-md` (globe visible)
+    - [x] White borders (`border-white/20`) instead of purple
+    - [x] White buttons with black text for primary actions
+    - [x] Consistent Geist Sans font throughout all modals
+    - [x] Updated: PlaybackModal, PinModal, CelebrationScreen, MemoryPlayer, Welcome modal, Recording overlay
 - [x] **API: Memory Update Endpoint** (`/api/memory/[id]/update`)
   - [x] Updates existing memory record with email, name, and location
   - [x] Used after audio processing completes
@@ -486,6 +505,15 @@
   - [x] Added `email TEXT` and `user_name TEXT` columns to `memories` table
 - [x] Pin memory to globe with location and email
 - [x] Smooth transitions between flow states
+- [x] **Explore Page Text Placement**:
+  - [x] Header section (top left) with "ALONE TOGETHER" title (uppercase, bold, white)
+  - [x] Instructions section (bottom left): "Drag to rotate • Scroll to zoom • Click to listen"
+  - [x] Both sections only appear after landing animation completes
+  - [x] Header has `max-w-2xl` constraint
+  - [x] Uses `text-foreground` for title and `text-muted-foreground` for instructions
+  - [x] Both sections have `z-10` to appear above 3D globe
+  - [x] Removed subtitle from explore page header (title only)
+  - [x] Consistent font styles (Geist Sans) applied to all text elements
 - [ ] Location permission UI flow
 - [ ] Error/retry screens
 - [ ] Abandoned session recovery
