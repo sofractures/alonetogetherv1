@@ -4,19 +4,28 @@ import { useRouter } from "next/navigation";
 
 interface ExploreMenuProps {
   currentPage?: "explore" | "skyline";
+  onCreate?: () => void;
 }
 
-export function ExploreMenu({ currentPage = "explore" }: ExploreMenuProps) {
+export function ExploreMenu({ currentPage = "explore", onCreate }: ExploreMenuProps) {
   const router = useRouter();
 
   return (
     <div className="absolute top-0 right-0 z-20 p-4 md:p-6">
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-3 items-end">
         {currentPage === "explore" ? (
           <>
+            {onCreate && (
+              <button
+                onClick={onCreate}
+                className="text-white hover:text-gray-300 transition-colors text-sm font-sans"
+              >
+                Create
+              </button>
+            )}
             <button
               onClick={() => router.push("/skyline")}
-              className="px-4 py-2 rounded border border-white/20 bg-black/80 backdrop-blur-xl text-white hover:bg-white/10 transition-colors text-sm font-sans"
+              className="text-white hover:text-gray-300 transition-colors text-sm font-sans"
             >
               Skyline
             </button>
@@ -26,7 +35,7 @@ export function ExploreMenu({ currentPage = "explore" }: ExploreMenuProps) {
                 // Future: Could open a playlist or audio player
                 // For now, this could be a placeholder or removed
               }}
-              className="px-4 py-2 rounded border border-white/20 bg-black/80 backdrop-blur-xl text-white hover:bg-white/10 transition-colors text-sm font-sans"
+              className="text-white hover:text-gray-300 transition-colors text-sm font-sans"
             >
               Listen
             </button>
@@ -34,7 +43,7 @@ export function ExploreMenu({ currentPage = "explore" }: ExploreMenuProps) {
         ) : (
           <button
             onClick={() => router.push("/")}
-            className="px-4 py-2 rounded border border-white/20 bg-black/80 backdrop-blur-xl text-white hover:bg-white/10 transition-colors text-sm font-sans"
+            className="text-white hover:text-gray-300 transition-colors text-sm font-sans"
           >
             Explore
           </button>

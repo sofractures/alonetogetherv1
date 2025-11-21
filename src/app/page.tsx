@@ -405,7 +405,10 @@ export default function Home() {
           </div>
 
           {/* Menu - Top Right */}
-          <ExploreMenu currentPage="explore" />
+          <ExploreMenu 
+            currentPage="explore" 
+            onCreate={() => setIsOverlayOpen(true)}
+          />
         </>
       )}
       
