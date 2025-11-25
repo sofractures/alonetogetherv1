@@ -367,7 +367,7 @@ export default function Home() {
           playsInline
           className="fixed inset-0 w-full h-full object-cover"
           style={{
-            opacity: 0.4, // Slightly more subtle for globe view
+            opacity: 0.6, // Increased visibility
             zIndex: 0,
             pointerEvents: 'none',
           }}
@@ -378,7 +378,7 @@ export default function Home() {
       
       {/* Dark overlay for better contrast */}
       {hasStartedExploring && (
-        <div className="fixed inset-0 bg-black/40 z-[1]" style={{ pointerEvents: 'none' }} />
+        <div className="fixed inset-0 bg-black/20 z-[1]" style={{ pointerEvents: 'none' }} />
       )}
 
       {/* 3D Scene - Only visible after user clicks "Start Exploring" */}
