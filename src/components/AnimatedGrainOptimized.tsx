@@ -25,16 +25,70 @@ export default function AnimatedGrainOptimized({
   const animationRef = useRef<number | undefined>(undefined);
   const [isAnimating] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [canvasReady, setCanvasReady] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     console.log('🎨 AnimatedGrain mounted - should be visible now!');
   }, []);
 
+  // Use callback ref to detect when canvas is actually in DOM
+  const canvasCallbackRef = (canvas: HTMLCanvasElement | null) => {
+    canvasRef.current = canvas;
+    if (canvas && !canvasReady) {
+      console.log('✅ Canvas element is now in DOM!');
+      setCanvasReady(true);
+    }
+  };
+
   useEffect(() => {
+    if (!mounted) return;
+
+    // Wait for portal to render - check for canvas in DOM
+    const checkCanvas = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) {
+        // Try to find canvas in document.body
+        const bodyCanvas = document.body.querySelector('canvas[style*="z-index: 999999"]') as HTMLCanvasElement;
+        if (bodyCanvas) {
+          console.log('✅ Found canvas in document.body, setting ref');
+          canvasRef.current = bodyCanvas;
+          setCanvasReady(true);
+          return true;
+        }
+        return false;
+      }
+      return true;
+    };
+
+    // Try immediately
+    if (checkCanvas()) {
+      // Canvas found, proceed
+    } else {
+      // Wait a frame for portal to render
+      requestAnimationFrame(() => {
+        if (!checkCanvas()) {
+          // Try one more time after a short delay
+          setTimeout(() => {
+            checkCanvas();
+          }, 100);
+        }
+      });
+    }
+  }, [mounted]);
+
+  useEffect(() => {
+    // Wait for canvas to be ready
+    if (!mounted || !canvasReady) {
+      if (mounted && !canvasReady) {
+        console.log('⏳ Waiting for canvas to be ready...');
+      }
+      return;
+    }
+
     const canvas = canvasRef.current;
     if (!canvas) {
-      console.warn('⚠️ Canvas ref is null');
+      console.warn('⚠️ Canvas ref is null after ready state');
       return;
     }
 
@@ -111,11 +165,11 @@ export default function AnimatedGrainOptimized({
       }
       console.log('⏹️ Animation stopped');
     };
-  }, [fps, isAnimating, opacity, blendMode]);
+  }, [fps, isAnimating, opacity, blendMode, mounted, canvasReady]);
 
   const grainElement = (
     <canvas
-      ref={canvasRef}
+      ref={canvasCallbackRef}
       className={`fixed top-0 left-0 w-full h-full pointer-events-none ${className}`}
       style={{
         position: 'fixed',
