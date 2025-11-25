@@ -358,6 +358,29 @@ export default function Home() {
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black">
+      {/* Video Background - Always visible when exploring */}
+      {hasStartedExploring && (
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="fixed inset-0 w-full h-full object-cover"
+          style={{
+            opacity: 0.4, // Slightly more subtle for globe view
+            zIndex: 0,
+            pointerEvents: 'none',
+          }}
+        >
+          <source src="/assets/video_clip.mp4" type="video/mp4" />
+        </video>
+      )}
+      
+      {/* Dark overlay for better contrast */}
+      {hasStartedExploring && (
+        <div className="fixed inset-0 bg-black/40 z-[1]" style={{ pointerEvents: 'none' }} />
+      )}
+
       {/* 3D Scene - Only visible after user clicks "Start Exploring" */}
       {hasStartedExploring && (
         <>
@@ -367,7 +390,7 @@ export default function Home() {
             }`}
             style={{ 
               pointerEvents: 'auto',
-              zIndex: 0,
+              zIndex: 2,
               position: 'absolute',
               top: 0,
               left: 0,
@@ -375,26 +398,7 @@ export default function Home() {
               bottom: 0
             }}
           >
-            {/* Video Background */}
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="absolute inset-0 w-full h-full object-cover"
-              style={{
-                opacity: 0.4, // Slightly more subtle for globe view
-                zIndex: 0,
-              }}
-            >
-              <source src="/assets/video_clip.mp4" type="video/mp4" />
-            </video>
-            
-            {/* Dark overlay for better contrast */}
-            <div className="absolute inset-0 bg-black/40 z-[1]" />
-            
-            <div className="relative z-[2] w-full h-full">
-              <MemoryGlobe 
+            <MemoryGlobe 
               memories={memories} 
               autoRotate={true}
               highlightId={highlightMemoryId || undefined}
@@ -407,7 +411,6 @@ export default function Home() {
                 setSpiralOverlapId(isOpen ? overlapId : null);
               }}
             />
-            </div>
           </div>
 
           {/* Header Section - Top Left */}
