@@ -32,14 +32,21 @@ export default function AnimatedGrainOptimized({
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      console.warn('AnimatedGrain: Canvas ref is null');
+      return;
+    }
 
     const ctx = canvas.getContext('2d', { alpha: false });
-    if (!ctx) return;
+    if (!ctx) {
+      console.warn('AnimatedGrain: Could not get 2d context');
+      return;
+    }
 
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      console.log('AnimatedGrain: Canvas resized to', canvas.width, 'x', canvas.height);
     };
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
@@ -80,6 +87,7 @@ export default function AnimatedGrainOptimized({
 
     // Draw first frame immediately
     drawNoise();
+    console.log('AnimatedGrain: First frame drawn, canvas size:', canvas.width, 'x', canvas.height);
 
     if (isAnimating) {
       then = Date.now();
@@ -102,18 +110,29 @@ export default function AnimatedGrainOptimized({
         position: 'fixed',
         top: 0,
         left: 0,
-        width: '100%',
-        height: '100%',
+        width: '100vw',
+        height: '100vh',
         zIndex: 999999, // Super high z-index
         opacity: opacity / 100,
         mixBlendMode: blendMode,
         pointerEvents: 'none',
+        // Force hardware acceleration
+        willChange: 'opacity',
+        transform: 'translateZ(0)',
       }}
     />
   );
 
   // Only render portal on client side
   if (!mounted) return null;
+
+  // Ensure document.body exists before creating portal
+  if (typeof document === 'undefined' || !document.body) {
+    console.warn('AnimatedGrain: document.body not available');
+    return null;
+  }
+
+  console.log('AnimatedGrain: Creating portal to document.body, z-index:', 999999, 'opacity:', opacity / 100);
 
   // Render directly to document.body using portal
   return createPortal(grainElement, document.body);
