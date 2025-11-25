@@ -31,7 +31,7 @@ export default function RootLayout({
       >
         <BackgroundAudio />
         {children}
-        <AnimatedGrainOptimized opacity={8} fps={24} blendMode="screen" />
+        <AnimatedGrainOptimized opacity={4} fps={24} blendMode="screen" />
       </body>
     </html>
   );
