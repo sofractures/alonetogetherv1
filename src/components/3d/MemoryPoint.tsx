@@ -60,7 +60,7 @@ export default function MemoryPoint({
   
   const baseScale = highlighted ? 1.4 : hovered ? 1.3 : 1;
   const scale = baseScale * distanceScale;
-  const opacity = highlighted ? 1 : hovered ? 1 : 0.85;
+  const opacity = highlighted ? 1 : hovered ? 1 : 1; // Full opacity for all windows
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
