@@ -436,7 +436,7 @@ export default function Home() {
               <h2 className="text-2xl font-semibold mb-2" style={{ color: '#e5ddc7' }}>Welcome to Alone Together</h2>
               <p className="mb-6" style={{ color: '#e5ddc7' }}>Record your memory to create your own personal song, or explore others on the map.</p>
               <div className="flex gap-3 justify-center">
-                <button onClick={() => { setIsWelcomeOpen(false); setShowWelcomeModal(false); setWelcomeModalVisible(false); setIsOverlayOpen(true); }} className="px-5 py-2 rounded bg-white text-black hover:bg-gray-100">Create</button>
+                <button onClick={() => { setIsWelcomeOpen(false); setShowWelcomeModal(false); setWelcomeModalVisible(false); setIsOverlayOpen(true); }} className="px-5 py-2 rounded border border-white/30 hover:bg-white/10" style={{ color: '#e5ddc7' }}>Create</button>
                 <button onClick={() => { setIsWelcomeOpen(false); setShowWelcomeModal(false); setWelcomeModalVisible(false); setHasStartedExploring(true); }} className="px-5 py-2 rounded border border-white/30 hover:bg-white/10" style={{ color: '#e5ddc7' }}>Explore</button>
               </div>
             </div>
@@ -479,7 +479,8 @@ export default function Home() {
                         <button 
                           onClick={() => proceedWithUpload(null)} 
                           disabled={isUploading || isProcessing || flowState !== 'idle'} 
-                          className="px-4 py-2 rounded bg-white text-black hover:bg-gray-100 disabled:opacity-60"
+                          className="px-4 py-2 rounded border border-white/30 hover:bg-white/10 disabled:opacity-60 transition-colors"
+                          style={{ color: '#e5ddc7' }}
                         >
                           {isUploading ? 'Uploading…' : isProcessing ? 'Processing…' : 'Accept & Upload'}
                         </button>

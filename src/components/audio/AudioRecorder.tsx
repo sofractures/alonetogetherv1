@@ -104,16 +104,11 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
           <button
             onClick={handleStartClick}
             aria-label="Start recording"
+            className="px-4 py-2 rounded border border-white/30 hover:bg-white/10 transition-colors"
             style={{
-              background: '#a78bfa',
-              color: '#0b0b10',
-              border: 'none',
-              borderRadius: 9999,
-              padding: '12px 18px',
-              fontWeight: 700,
+              color: '#e5ddc7',
+              fontWeight: 600,
               cursor: 'pointer',
-              boxShadow: '0 0 0 0 rgba(167,139,250,0.7)',
-              animation: 'pulseGlow 2s infinite',
             }}
           >
             ● Record
@@ -124,12 +119,9 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
           <button
             onClick={stop}
             aria-label="Stop recording"
+            className="px-4 py-2 rounded border border-white/30 hover:bg-white/10 transition-colors"
             style={{
-              background: 'transparent',
-              color: '#fda4af',
-              border: '1px solid #fda4af',
-              borderRadius: 9999,
-              padding: '10px 16px',
+              color: '#e5ddc7',
               fontWeight: 600,
               cursor: 'pointer',
             }}
@@ -143,12 +135,9 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
             <button
               onClick={reset}
               aria-label="Re-record"
+              className="px-4 py-2 rounded border border-white/30 hover:bg-white/10 transition-colors"
               style={{
-                background: 'transparent',
-                color: '#a78bfa',
-                border: '1px solid #a78bfa',
-                borderRadius: 9999,
-                padding: '10px 16px',
+                color: '#e5ddc7',
                 fontWeight: 600,
                 cursor: 'pointer',
               }}
@@ -171,14 +160,6 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
         </div>
       )}
 
-      {/* Minimal keyframes for pulsing glow */}
-      <style>{`
-        @keyframes pulseGlow {
-          0% { box-shadow: 0 0 0 0 rgba(167,139,250,0.7); }
-          70% { box-shadow: 0 0 0 12px rgba(167,139,250,0); }
-          100% { box-shadow: 0 0 0 0 rgba(167,139,250,0); }
-        }
-      `}</style>
     </div>
   );
 };
