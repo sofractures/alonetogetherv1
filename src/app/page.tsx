@@ -12,7 +12,6 @@ import { useState, useEffect } from "react";
 import { getAudioController, onRecordingStartFadeOutBackground, onRecordingStopResumeBackground } from "@/lib/audio-context";
 import { useMemoryStore } from "@/store/memoryStore";
 import { getBrowserLocation, getIPLocation, LocationData } from "@/lib/location";
-import { MemoryForMap } from "@/types/memory";
 
 type FlowState = 
   | 'idle'
@@ -48,7 +47,8 @@ export default function Home() {
   // New flow state management
   const [flowState, setFlowState] = useState<FlowState>('idle');
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [_userName, setUserName] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [userName, setUserName] = useState<string | null>(null);
   const [pinnedMemoryId, setPinnedMemoryId] = useState<string | null>(null);
   const [pinnedLocation, setPinnedLocation] = useState<string | null>(null);
   
