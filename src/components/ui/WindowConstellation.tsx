@@ -64,8 +64,9 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
           return (
             <span
               key={index}
-              className="absolute text-6xl md:text-8xl font-bold text-white transition-all duration-[2500ms] ease-out"
+              className="absolute text-6xl md:text-8xl font-bold transition-all duration-[2500ms] ease-out"
               style={{
+                color: '#e5ddc7',
                 transform: isScattered ? scatteredPosition : centeredPosition,
                 opacity: isScattered ? 0.1 : 1,
                 transitionDelay: isReversing 
@@ -83,10 +84,16 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
       {!isReversing && (
         <button
           onClick={handleStartClick}
-          className={`absolute bottom-40 px-8 py-3 bg-white text-black font-mono font-semibold transition-all duration-300 z-10 hover:bg-gray-100 ${
+          className={`absolute px-8 py-3 border border-white/30 hover:bg-white/10 font-mono font-semibold transition-all duration-300 z-10 rounded ${
             isAnimating ? "opacity-0 translate-y-8" : "opacity-100 translate-y-0"
           }`}
-          style={{ transitionDelay: "3000ms" }}
+          style={{ 
+            transitionDelay: "3000ms",
+            color: '#e5ddc7',
+            top: 'calc(50% + 4rem)', // Position underneath the title text (title is centered, button is 4rem below center)
+            left: '50%',
+            transform: isAnimating ? 'translate(-50%, calc(50% + 2rem))' : 'translate(-50%, 0)',
+          }}
         >
           Start
         </button>

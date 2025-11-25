@@ -93,31 +93,32 @@ export default function MemoryPlayer({ memory, isOpen, onClose }: MemoryPlayerPr
       <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl p-6">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+          className="absolute top-4 right-4 transition-colors"
+          style={{ color: '#e5ddc7' }}
           aria-label="Close memory player"
         >
           ✕
         </button>
         
         <div className="flex items-center justify-between mb-2">
-          <h2 id="memory-player-title" className="text-2xl font-semibold text-white">
+          <h2 id="memory-player-title" className="text-2xl font-semibold" style={{ color: '#e5ddc7' }}>
             {title}
           </h2>
           {isUserMemory && (
-            <span className="px-2 py-1 rounded text-xs bg-white/20 text-white border border-white/30">
+            <span className="px-2 py-1 rounded text-xs bg-white/20 border border-white/30" style={{ color: '#e5ddc7' }}>
               Your Memory
             </span>
           )}
         </div>
         
         {currentMemory.location && (
-          <p id="memory-player-description" className="text-gray-300 text-sm mb-4">
+          <p id="memory-player-description" className="text-sm mb-4" style={{ color: '#e5ddc7' }}>
             📍 {currentMemory.location}
           </p>
         )}
 
         {isLoadingAudio ? (
-          <p className="text-gray-400 mt-4">Loading audio...</p>
+          <p className="mt-4" style={{ color: '#e5ddc7' }}>Loading audio...</p>
         ) : audioUrl ? (
           <div className="mt-4">
             <audio
@@ -138,13 +139,13 @@ export default function MemoryPlayer({ memory, isOpen, onClose }: MemoryPlayerPr
               </a>
             )}
             {!isUserMemory && (
-              <p className="mt-4 text-sm text-gray-400 italic">
+              <p className="mt-4 text-sm italic" style={{ color: '#e5ddc7' }}>
                 You can listen to everyone&apos;s memories, but downloads are only available for your own songs.
               </p>
             )}
           </div>
         ) : (
-          <p className="text-gray-400 mt-4">Audio not available</p>
+          <p className="mt-4" style={{ color: '#e5ddc7' }}>Audio not available</p>
         )}
       </div>
     </div>

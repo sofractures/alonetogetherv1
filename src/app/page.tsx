@@ -7,11 +7,11 @@ import PlaybackModal from "@/components/flow/PlaybackModal";
 import PinModal from "@/components/flow/PinModal";
 import CelebrationScreen from "@/components/flow/CelebrationScreen";
 import { WindowConstellation } from "@/components/ui/WindowConstellation";
+import { ExploreMenu } from "@/components/ui/ExploreMenu";
 import { useState, useEffect } from "react";
 import { getAudioController, onRecordingStartFadeOutBackground, onRecordingStopResumeBackground } from "@/lib/audio-context";
 import { useMemoryStore } from "@/store/memoryStore";
 import { getBrowserLocation, getIPLocation, LocationData } from "@/lib/location";
-import { MemoryForMap } from "@/types/memory";
 
 type FlowState = 
   | 'idle'
@@ -47,7 +47,8 @@ export default function Home() {
   // New flow state management
   const [flowState, setFlowState] = useState<FlowState>('idle');
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [_userName, setUserName] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [userName, setUserName] = useState<string | null>(null);
   const [pinnedMemoryId, setPinnedMemoryId] = useState<string | null>(null);
   const [pinnedLocation, setPinnedLocation] = useState<string | null>(null);
   
@@ -391,7 +392,7 @@ export default function Home() {
 
           {/* Header Section - Top Left */}
           <div className="absolute top-0 left-0 z-10 p-4 md:p-6 max-w-2xl pointer-events-none">
-            <h1 className="text-3xl md:text-5xl font-bold text-white uppercase">
+            <h1 className="text-3xl md:text-5xl font-bold uppercase" style={{ color: '#e5ddc7' }}>
               Alone Together
             </h1>
           </div>
@@ -402,6 +403,12 @@ export default function Home() {
               Drag to rotate • Scroll to zoom • Click to listen
             </p>
           </div>
+
+          {/* Menu - Top Right */}
+          <ExploreMenu 
+            currentPage="explore" 
+            onCreate={() => setIsOverlayOpen(true)}
+          />
         </>
       )}
       
@@ -426,11 +433,11 @@ export default function Home() {
           }`}>
             <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => { setIsWelcomeOpen(false); setShowWelcomeModal(false); setWelcomeModalVisible(false); }} />
             <div className="relative z-10 w-full max-w-xl mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl p-6 text-center">
-              <h2 className="text-white text-2xl font-semibold mb-2">Welcome to Alone Together</h2>
-              <p className="text-gray-300 mb-6">Record your memory to create your own personal song, or explore others on the map.</p>
+              <h2 className="text-2xl font-semibold mb-2" style={{ color: '#e5ddc7' }}>Welcome to Alone Together</h2>
+              <p className="mb-6" style={{ color: '#e5ddc7' }}>Record your memory to create your own personal song, or explore others on the map.</p>
               <div className="flex gap-3 justify-center">
-                <button onClick={() => { setIsWelcomeOpen(false); setShowWelcomeModal(false); setWelcomeModalVisible(false); setIsOverlayOpen(true); }} className="px-5 py-2 rounded bg-white text-black hover:bg-gray-100">Create</button>
-                <button onClick={() => { setIsWelcomeOpen(false); setShowWelcomeModal(false); setWelcomeModalVisible(false); setHasStartedExploring(true); }} className="px-5 py-2 rounded border border-white/30 text-white hover:bg-white/10">Explore</button>
+                <button onClick={() => { setIsWelcomeOpen(false); setShowWelcomeModal(false); setWelcomeModalVisible(false); setIsOverlayOpen(true); }} className="px-5 py-2 rounded border border-white/30 hover:bg-white/10" style={{ color: '#e5ddc7' }}>Create</button>
+                <button onClick={() => { setIsWelcomeOpen(false); setShowWelcomeModal(false); setWelcomeModalVisible(false); setHasStartedExploring(true); }} className="px-5 py-2 rounded border border-white/30 hover:bg-white/10" style={{ color: '#e5ddc7' }}>Explore</button>
               </div>
             </div>
           </div>
@@ -448,13 +455,13 @@ export default function Home() {
             <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl p-5">
               {isProcessing && !processedAudioUrl ? (
                 // Simple processing view - hide everything else
-                <div className="p-4 rounded bg-white/10 border border-white/20 text-white text-center">
+                <div className="p-4 rounded bg-white/10 border border-white/20 text-center" style={{ color: '#e5ddc7' }}>
                   Processing… we are creating your song.
                 </div>
               ) : (
                 <>
-                  <div className="text-sm text-gray-300 mb-1">Prompt:</div>
-                  <div className="text-lg font-semibold text-white mb-4">Share a time when you felt a part of something bigger than you</div>
+                  <div className="text-sm mb-1" style={{ color: '#e5ddc7' }}>Prompt:</div>
+                  <div className="text-lg font-semibold mb-4" style={{ color: '#e5ddc7' }}>Share a time when you felt a part of something bigger than you</div>
 
                   {!pendingBlob && (
                     <AudioRecorder onComplete={onRecorderComplete} onStartRecording={onRecordingStartFadeOutBackground} />
@@ -462,21 +469,22 @@ export default function Home() {
 
                   {pendingBlob && !processedAudioUrl && (
                     <div>
-                      <div className="text-gray-300 text-sm mb-2">Preview your recording</div>
+                      <div className="text-sm mb-2" style={{ color: '#e5ddc7' }}>Preview your recording</div>
                       {pendingUrl && <audio src={pendingUrl} controls className="w-full" />}
                       {uploadError && <div className="text-red-300 text-sm mt-2">{uploadError}</div>}
                       <div className="flex gap-2 mt-4 items-center">
-                        <button onClick={() => { setPendingBlob(null); setPendingUrl(null); }} className="px-4 py-2 rounded border border-white/30 text-white hover:bg-white/10">
+                        <button onClick={() => { setPendingBlob(null); setPendingUrl(null); }} className="px-4 py-2 rounded border border-white/30 hover:bg-white/10" style={{ color: '#e5ddc7' }}>
                           Re-record
                         </button>
                         <button 
                           onClick={() => proceedWithUpload(null)} 
                           disabled={isUploading || isProcessing || flowState !== 'idle'} 
-                          className="px-4 py-2 rounded bg-white text-black hover:bg-gray-100 disabled:opacity-60"
+                          className="px-4 py-2 rounded border border-white/30 hover:bg-white/10 disabled:opacity-60 transition-colors"
+                          style={{ color: '#e5ddc7' }}
                         >
                           {isUploading ? 'Uploading…' : isProcessing ? 'Processing…' : 'Accept & Upload'}
                         </button>
-                        <button onClick={closeOverlay} disabled={isUploading || isProcessing} className="ml-auto px-4 py-2 rounded border border-gray-500/40 text-gray-200 disabled:opacity-60">Close</button>
+                        <button onClick={closeOverlay} disabled={isUploading || isProcessing} className="ml-auto px-4 py-2 rounded border border-gray-500/40 disabled:opacity-60" style={{ color: '#e5ddc7' }}>Close</button>
                       </div>
                     </div>
                   )}
@@ -486,7 +494,7 @@ export default function Home() {
               {/* Old flow - only show if not in new flow */}
               {processedAudioUrl && flowState === 'idle' && (
                 <div className="mt-4 p-4 rounded bg-white/10 border border-white/20">
-                  <div className="text-white font-semibold mb-3">Your song is ready!</div>
+                  <div className="font-semibold mb-3" style={{ color: '#e5ddc7' }}>Your song is ready!</div>
                   <audio src={processedAudioUrl} controls className="w-full mb-4" />
                   <div className="flex gap-2 justify-center">
                     <button 
@@ -498,7 +506,8 @@ export default function Home() {
                     <a 
                       href={processedAudioUrl} 
                       download="my-song.mp3"
-                      className="px-6 py-2 rounded border border-white/30 text-white hover:bg-white/10 transition-colors text-center flex-1"
+                      className="px-6 py-2 rounded border border-white/30 hover:bg-white/10 transition-colors text-center flex-1"
+                      style={{ color: '#e5ddc7' }}
                     >
                       Download
                     </a>
@@ -509,8 +518,8 @@ export default function Home() {
               {/* Pinning processing state */}
               {flowState === 'pinning-processing' && (
                 <div className="mt-4 p-4 rounded bg-white/10 border border-white/20 text-center">
-                  <div className="text-white font-semibold mb-2">Pinning your memory...</div>
-                  <div className="text-gray-400 text-sm">Adding your window to the globe</div>
+                  <div className="font-semibold mb-2" style={{ color: '#e5ddc7' }}>Pinning your memory...</div>
+                  <div className="text-sm" style={{ color: '#e5ddc7' }}>Adding your window to the globe</div>
                 </div>
               )}
             </div>

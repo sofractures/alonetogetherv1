@@ -70,7 +70,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
     <div
       style={{
         background: 'rgba(10,10,14,0.6)',
-        border: '1px solid rgba(167,139,250,0.25)',
+        border: '1px solid rgba(213, 66, 48, 0.25)',
         borderRadius: 12,
         padding: 16,
         color: '#e5e7eb',
@@ -81,7 +81,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ fontSize: 14, color: '#cbd5e1' }}>Recording limit: 00:30</div>
-        <div style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: '#a78bfa' }}>{formatMs(timeLeftMs)}</div>
+        <div style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: '#d54230' }}>{formatMs(timeLeftMs)}</div>
       </div>
 
       {/* Level meter */}
@@ -91,7 +91,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
             style={{
               height: '100%',
               width: `${Math.round(level * 100)}%`,
-              background: 'linear-gradient(90deg, #6d28d9, #a78bfa)',
+              background: '#d54230',
               transition: 'width 80ms linear',
             }}
           />
@@ -104,16 +104,19 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
           <button
             onClick={handleStartClick}
             aria-label="Start recording"
+            className="px-4 py-2 rounded transition-colors"
             style={{
-              background: '#a78bfa',
-              color: '#0b0b10',
-              border: 'none',
-              borderRadius: 9999,
-              padding: '12px 18px',
-              fontWeight: 700,
+              color: '#d54230',
+              border: '1px solid #d54230',
+              fontWeight: 600,
               cursor: 'pointer',
-              boxShadow: '0 0 0 0 rgba(167,139,250,0.7)',
-              animation: 'pulseGlow 2s infinite',
+              backgroundColor: 'transparent',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(213, 66, 48, 0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
             }}
           >
             ● Record
@@ -124,12 +127,9 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
           <button
             onClick={stop}
             aria-label="Stop recording"
+            className="px-4 py-2 rounded border border-white/30 hover:bg-white/10 transition-colors"
             style={{
-              background: 'transparent',
-              color: '#fda4af',
-              border: '1px solid #fda4af',
-              borderRadius: 9999,
-              padding: '10px 16px',
+              color: '#e5ddc7',
               fontWeight: 600,
               cursor: 'pointer',
             }}
@@ -143,12 +143,9 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
             <button
               onClick={reset}
               aria-label="Re-record"
+              className="px-4 py-2 rounded border border-white/30 hover:bg-white/10 transition-colors"
               style={{
-                background: 'transparent',
-                color: '#a78bfa',
-                border: '1px solid #a78bfa',
-                borderRadius: 9999,
-                padding: '10px 16px',
+                color: '#e5ddc7',
                 fontWeight: 600,
                 cursor: 'pointer',
               }}
@@ -171,14 +168,6 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
         </div>
       )}
 
-      {/* Minimal keyframes for pulsing glow */}
-      <style>{`
-        @keyframes pulseGlow {
-          0% { box-shadow: 0 0 0 0 rgba(167,139,250,0.7); }
-          70% { box-shadow: 0 0 0 12px rgba(167,139,250,0); }
-          100% { box-shadow: 0 0 0 0 rgba(167,139,250,0); }
-        }
-      `}</style>
     </div>
   );
 };

@@ -66,8 +66,8 @@ export default function LocationSelector({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
       <div className="relative z-10 w-full max-w-md mx-4 rounded-xl border border-purple-400/30 bg-gray-900/95 backdrop-blur p-6">
-        <h2 className="text-white text-xl font-semibold mb-4">Set Your Location</h2>
-        <p className="text-gray-300 text-sm mb-6">
+        <h2 className="text-xl font-semibold mb-4" style={{ color: '#e5ddc7' }}>Set Your Location</h2>
+        <p className="text-sm mb-6" style={{ color: '#e5ddc7' }}>
           Your memory will be pinned to the globe at this location. You can use your current location or set a custom one.
         </p>
 
@@ -87,7 +87,8 @@ export default function LocationSelector({
             </button>
             <button
               onClick={handleSkip}
-              className="w-full px-4 py-2 rounded text-gray-400 hover:text-gray-200 transition-colors text-sm"
+              className="w-full px-4 py-2 rounded transition-colors text-sm"
+              style={{ color: '#e5ddc7' }}
             >
               Skip (No Location)
             </button>
@@ -95,7 +96,7 @@ export default function LocationSelector({
         ) : (
           <div className="space-y-4">
             <div>
-              <label className="block text-gray-300 text-sm mb-1">
+              <label className="block text-sm mb-1" style={{ color: '#e5ddc7' }}>
                 City <span className="text-gray-500">(at least city or country required)</span>
               </label>
               <input
@@ -108,7 +109,7 @@ export default function LocationSelector({
               />
             </div>
             <div>
-              <label className="block text-gray-300 text-sm mb-1">
+              <label className="block text-sm mb-1" style={{ color: '#e5ddc7' }}>
                 Country <span className="text-gray-500">(at least city or country required)</span>
               </label>
               <input
@@ -121,7 +122,7 @@ export default function LocationSelector({
               />
             </div>
             <div>
-              <label className="block text-gray-300 text-sm mb-1">Name <span className="text-gray-500">(optional)</span></label>
+              <label className="block text-sm mb-1" style={{ color: '#e5ddc7' }}>Name <span className="text-gray-500">(optional)</span></label>
               <input
                 type="text"
                 value={manualName}
@@ -130,7 +131,7 @@ export default function LocationSelector({
                 className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-600 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
                 disabled={isGeocoding}
               />
-              <p className="text-gray-400 text-xs mt-1">This name will be shown when others listen to your memory</p>
+              <p className="text-xs mt-1" style={{ color: '#e5ddc7' }}>This name will be shown when others listen to your memory</p>
             </div>
             <div className="flex gap-2 pt-2">
               <button
@@ -143,7 +144,8 @@ export default function LocationSelector({
               <button
                 onClick={() => setUseManual(false)}
                 disabled={isGeocoding}
-                className="px-4 py-2 rounded border border-gray-600 text-gray-300 hover:bg-gray-800 transition-colors disabled:opacity-50"
+                className="px-4 py-2 rounded border border-gray-600 hover:bg-gray-800 transition-colors disabled:opacity-50"
+                style={{ color: '#e5ddc7' }}
               >
                 Back
               </button>
@@ -153,7 +155,8 @@ export default function LocationSelector({
 
         <button
           onClick={onCancel}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+          className="absolute top-4 right-4 transition-colors"
+          style={{ color: '#e5ddc7' }}
         >
           ✕
         </button>

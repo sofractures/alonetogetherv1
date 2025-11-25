@@ -514,6 +514,18 @@
   - [x] Both sections have `z-10` to appear above 3D globe
   - [x] Removed subtitle from explore page header (title only)
   - [x] Consistent font styles (Geist Sans) applied to all text elements
+- [x] **Explore Page Menu**:
+  - [x] Create menu component with "Listen" and "Skyline" buttons (`components/ui/ExploreMenu.tsx`)
+  - [x] Position menu in top-right corner
+  - [x] Style menu to match black theme with white borders (`border-white/20`, `bg-black/80`, `backdrop-blur-xl`)
+  - [x] Implement navigation to skyline page using Next.js router
+  - [x] "Listen" button placeholder (ready for future functionality)
+- [x] **Skyline Page**:
+  - [x] Create new page route for skyline view (`/app/skyline/page.tsx`)
+  - [x] Display MemorySkyline component at bottom (matching landing page style)
+  - [x] Add "Explore" button in menu corner to return to explore page
+  - [x] Ensure consistent styling with rest of app (black background)
+  - [x] Black background matching landing page
 - [ ] Location permission UI flow
 - [ ] Error/retry screens
 - [ ] Abandoned session recovery

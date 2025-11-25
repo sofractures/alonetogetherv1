@@ -35,18 +35,19 @@ export default function PlaybackModal({
         {onClose && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            className="absolute top-4 right-4 transition-colors"
+            style={{ color: '#e5ddc7' }}
             aria-label="Close playback modal"
           >
             ✕
           </button>
         )}
         
-        <h2 id="playback-modal-title" className="text-2xl font-semibold text-white mb-2">
+        <h2 id="playback-modal-title" className="text-2xl font-semibold mb-2" style={{ color: '#e5ddc7' }}>
           Your Song is Ready! 🎵
         </h2>
         
-        <p className="text-gray-300 text-sm mb-6">
+        <p className="text-sm mb-6" style={{ color: '#e5ddc7' }}>
           This is <strong>YOUR unique version</strong> of &quot;Alone Together&quot; - your voice woven into the song.
         </p>
 
@@ -68,7 +69,7 @@ export default function PlaybackModal({
             Add to Globe
           </button>
           
-          <p className="text-center text-gray-400 text-sm">
+          <p className="text-center text-sm" style={{ color: '#e5ddc7' }}>
             Pin it to the globe and get your copy to download
           </p>
         </div>

@@ -334,9 +334,9 @@ export default function MemoryGlobe({
           )}
           
           {/* Lighting */}
-          <ambientLight intensity={0.6} />
-          <directionalLight position={[10, 10, 5]} intensity={1.2} />
-          <pointLight position={[-10, -10, -5]} intensity={0.6} color="#a78bfa" />
+          <ambientLight intensity={1.0} />
+          <directionalLight position={[10, 10, 5]} intensity={1.5} />
+          <pointLight position={[-10, -10, -5]} intensity={0.8} color="#a78bfa" />
           
           {/* Camera */}
           <PerspectiveCamera makeDefault position={[0, 0, 12]} fov={50} />
