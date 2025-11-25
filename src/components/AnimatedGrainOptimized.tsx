@@ -78,6 +78,9 @@ export default function AnimatedGrainOptimized({
 
     fpsInterval = 1000 / fps;
 
+    // Draw first frame immediately
+    drawNoise();
+
     if (isAnimating) {
       then = Date.now();
       animate();
@@ -96,9 +99,15 @@ export default function AnimatedGrainOptimized({
       ref={canvasRef}
       className={`fixed top-0 left-0 w-full h-full pointer-events-none ${className}`}
       style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
         zIndex: 999999, // Super high z-index
         opacity: opacity / 100,
         mixBlendMode: blendMode,
+        pointerEvents: 'none',
       }}
     />
   );
