@@ -94,10 +94,6 @@ export default function AnimatedGrainOptimized({
 
     fpsInterval = 1000 / fps;
 
-    // Draw first frame immediately
-    drawNoise();
-    console.log(`🎨 First frame drawn! Canvas size: ${canvas.width}x${canvas.height}, opacity: ${opacity}%, blend: ${blendMode}`);
-
     if (isAnimating) {
       then = Date.now();
       animate();
@@ -111,25 +107,17 @@ export default function AnimatedGrainOptimized({
       }
       console.log('⏹️ Animation stopped');
     };
-  }, [fps, isAnimating, opacity, blendMode]);
+  }, [fps, isAnimating]);
 
   const grainElement = (
     <canvas
       ref={canvasRef}
       className={`fixed top-0 left-0 w-full h-full pointer-events-none ${className}`}
       style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        zIndex: 999999, // Super high z-index
+        zIndex: 999999,
         opacity: opacity / 100,
         mixBlendMode: blendMode,
-        pointerEvents: 'none',
-        // Force hardware acceleration
-        willChange: 'opacity',
-        transform: 'translateZ(0)',
+        willChange: 'transform',
       }}
     />
   );
@@ -140,13 +128,7 @@ export default function AnimatedGrainOptimized({
     return null;
   }
 
-  // Ensure document.body exists before creating portal
-  if (typeof document === 'undefined' || !document.body) {
-    console.warn('⚠️ document.body not available');
-    return null;
-  }
-
-  console.log(`✨ Rendering grain portal with opacity: ${opacity}% (${opacity / 100}), fps: ${fps}, blend: ${blendMode}, z-index: 999999`);
+  console.log(`✨ Rendering grain with opacity: ${opacity}%, fps: ${fps}, blend: ${blendMode}`);
 
   // Render directly to document.body using portal
   return createPortal(grainElement, document.body);
