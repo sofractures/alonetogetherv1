@@ -362,7 +362,7 @@ export default function Home() {
       {hasStartedExploring && (
         <>
           <div 
-            className={`absolute inset-0 bg-black transition-opacity duration-[2500ms] ${
+            className={`absolute inset-0 transition-opacity duration-[2500ms] ${
               showGlobe ? "opacity-100" : "opacity-0"
             }`}
             style={{ 
@@ -375,7 +375,26 @@ export default function Home() {
               bottom: 0
             }}
           >
-            <MemoryGlobe 
+            {/* Video Background */}
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{
+                opacity: 0.4, // Slightly more subtle for globe view
+                zIndex: 0,
+              }}
+            >
+              <source src="/assets/video_clip.mp4" type="video/mp4" />
+            </video>
+            
+            {/* Dark overlay for better contrast */}
+            <div className="absolute inset-0 bg-black/40 z-[1]" />
+            
+            <div className="relative z-[2] w-full h-full">
+              <MemoryGlobe 
               memories={memories} 
               autoRotate={true}
               highlightId={highlightMemoryId || undefined}
@@ -388,6 +407,7 @@ export default function Home() {
                 setSpiralOverlapId(isOpen ? overlapId : null);
               }}
             />
+            </div>
           </div>
 
           {/* Header Section - Top Left */}
