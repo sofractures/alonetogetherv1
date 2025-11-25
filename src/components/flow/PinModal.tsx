@@ -106,24 +106,25 @@ export default function PinModal({
       <div className="relative z-10 w-full max-w-md mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl p-6 max-h-[90vh] overflow-y-auto">
         <button
           onClick={onCancel}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+          className="absolute top-4 right-4 transition-colors"
+          style={{ color: '#e5ddc7' }}
           aria-label="Close pin modal"
         >
           ✕
         </button>
         
-        <h2 id="pin-modal-title" className="text-2xl font-semibold text-white mb-2">
+        <h2 id="pin-modal-title" className="text-2xl font-semibold mb-2" style={{ color: '#e5ddc7' }}>
           Add Your Memory to the Globe
         </h2>
         
-        <p className="text-gray-300 text-sm mb-6">
+        <p className="text-sm mb-6" style={{ color: '#e5ddc7' }}>
           Your story will appear as a glowing window that anyone can discover. Plus, you&apos;ll get your personalized song to keep forever.
         </p>
 
         <div className="space-y-4">
           {/* Email Input - Required */}
           <div>
-            <label className="block text-gray-300 text-sm mb-1">
+            <label className="block text-sm mb-1" style={{ color: '#e5ddc7' }}>
               Email <span className="text-red-400">*</span>
             </label>
             <input
@@ -135,12 +136,12 @@ export default function PinModal({
               disabled={isSubmitting || isGeocoding}
               required
             />
-            <p className="text-gray-400 text-xs mt-1">We&apos;ll send you a link to your song</p>
+            <p className="text-xs mt-1" style={{ color: '#e5ddc7' }}>We&apos;ll send you a link to your song</p>
           </div>
 
           {/* Name Input - Optional */}
           <div>
-            <label className="block text-gray-300 text-sm mb-1">
+            <label className="block text-sm mb-1" style={{ color: '#e5ddc7' }}>
               Name <span className="text-gray-500">(optional)</span>
             </label>
             <input
@@ -156,7 +157,7 @@ export default function PinModal({
           {/* Location Section - Only show if location not already provided */}
           {!initialLocation && (
             <div>
-              <label className="block text-gray-300 text-sm mb-2">Location</label>
+              <label className="block text-sm mb-2" style={{ color: '#e5ddc7' }}>Location</label>
               
               {!useManual ? (
                 <div className="space-y-2">
@@ -170,14 +171,16 @@ export default function PinModal({
                   <button
                     onClick={() => setUseManual(true)}
                     disabled={isSubmitting || isGeocoding}
-                    className="w-full px-4 py-2 rounded border border-white/30 text-white hover:bg-white/10 transition-colors disabled:opacity-50"
+                    className="w-full px-4 py-2 rounded border border-white/30 hover:bg-white/10 transition-colors disabled:opacity-50"
+                    style={{ color: '#e5ddc7' }}
                   >
                     Set Custom Location
                   </button>
                   <button
                     onClick={handleSkipLocation}
                     disabled={!isValidEmail(email) || isSubmitting || isGeocoding}
-                    className="w-full px-4 py-2 rounded text-gray-400 hover:text-gray-200 transition-colors text-sm disabled:opacity-50"
+                    className="w-full px-4 py-2 rounded transition-colors text-sm disabled:opacity-50"
+                    style={{ color: '#e5ddc7' }}
                   >
                     Skip (No Location)
                   </button>
@@ -215,7 +218,8 @@ export default function PinModal({
                     <button
                       onClick={() => setUseManual(false)}
                       disabled={isGeocoding || isSubmitting}
-                      className="px-4 py-2 rounded border border-gray-600 text-gray-300 hover:bg-gray-800 transition-colors disabled:opacity-50"
+                      className="px-4 py-2 rounded border border-gray-600 hover:bg-gray-800 transition-colors disabled:opacity-50"
+                      style={{ color: '#e5ddc7' }}
                     >
                       Back
                     </button>
@@ -228,7 +232,7 @@ export default function PinModal({
           {/* Show location info if already provided */}
           {initialLocation && (initialLocation.city || initialLocation.country) && (
             <div className="bg-white/10 border border-white/20 rounded p-3">
-              <p className="text-gray-300 text-sm">
+              <p className="text-sm" style={{ color: '#e5ddc7' }}>
                 📍 Location: <strong>{initialLocation.city || ''}{initialLocation.city && initialLocation.country ? ', ' : ''}{initialLocation.country || ''}</strong>
               </p>
             </div>
@@ -258,8 +262,8 @@ export default function PinModal({
 
           {/* Benefits */}
           <div className="pt-4 border-t border-white/20">
-            <p className="text-gray-400 text-sm mb-2">Benefits:</p>
-            <ul className="text-gray-300 text-sm space-y-1">
+            <p className="text-sm mb-2" style={{ color: '#e5ddc7' }}>Benefits:</p>
+            <ul className="text-sm space-y-1" style={{ color: '#e5ddc7' }}>
               <li>✓ See your window on the globe</li>
               <li>✓ Download your unique song</li>
               <li>✓ Return anytime to listen</li>

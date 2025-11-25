@@ -4,12 +4,14 @@
   --background: #ffffff;
   --foreground: #171717;
   --muted-foreground: oklch(0.65 0.02 270);
+  --text-cream: #e5ddc7;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-muted-foreground: var(--muted-foreground);
+  --color-text-cream: var(--text-cream);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

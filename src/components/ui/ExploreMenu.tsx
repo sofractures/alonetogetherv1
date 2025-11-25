@@ -18,7 +18,8 @@ export function ExploreMenu({ currentPage = "explore", onCreate }: ExploreMenuPr
             {onCreate && (
               <button
                 onClick={onCreate}
-                className="text-white hover:text-gray-300 transition-colors text-sm font-sans"
+                className="transition-colors text-sm font-sans"
+                style={{ color: '#e5ddc7' }}
               >
                 Create
               </button>

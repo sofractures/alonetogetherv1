@@ -30,29 +30,29 @@ export default function CelebrationScreen({
         </div>
 
         {/* Heading */}
-        <h2 id="celebration-title" className="text-3xl font-bold text-white mb-3">
+        <h2 id="celebration-title" className="text-3xl font-bold mb-3" style={{ color: '#e5ddc7' }}>
           Your Memory is Live!
         </h2>
 
         {/* Message */}
-        <p className="text-gray-300 text-lg mb-2">
+        <p className="text-lg mb-2" style={{ color: '#e5ddc7' }}>
           {location ? (
             <>Your window is now glowing on the globe in <strong>{location}</strong>.</>
           ) : (
             <>Your window is now glowing on the globe.</>
           )}
         </p>
-        <p className="text-gray-400 text-sm mb-8">
+        <p className="text-sm mb-8" style={{ color: '#e5ddc7' }}>
           Anyone exploring can discover your story.
         </p>
 
         {/* Download Section */}
         <div className="bg-white/10 border border-white/20 rounded-lg p-6 mb-6">
           <div className="text-3xl mb-3">🎁</div>
-          <h3 className="text-xl font-semibold text-white mb-2">
+          <h3 className="text-xl font-semibold mb-2" style={{ color: '#e5ddc7' }}>
             Here&apos;s Your Copy to Keep
           </h3>
-          <p className="text-gray-300 text-sm mb-4">
+          <p className="text-sm mb-4" style={{ color: '#e5ddc7' }}>
             This is your unique version - your voice woven into the song. It&apos;s yours forever.
           </p>
           
@@ -63,8 +63,8 @@ export default function CelebrationScreen({
             ⬇ Download Your Song
           </button>
           
-          <p className="text-gray-400 text-xs">
-            We&apos;ve also sent it to <strong className="text-gray-300">{email}</strong>
+          <p className="text-xs" style={{ color: '#e5ddc7' }}>
+            We&apos;ve also sent it to <strong>{email}</strong>
           </p>
         </div>
 
@@ -72,7 +72,8 @@ export default function CelebrationScreen({
         <div className="space-y-3">
           <button
             onClick={onExploreGlobe}
-            className="w-full px-6 py-3 rounded border border-white/30 text-white hover:bg-white/10 transition-colors font-semibold"
+            className="w-full px-6 py-3 rounded border border-white/30 hover:bg-white/10 transition-colors font-semibold"
+            style={{ color: '#e5ddc7' }}
           >
             Explore the Globe
           </button>
@@ -80,7 +81,8 @@ export default function CelebrationScreen({
           {onCreateAnother && (
             <button
               onClick={onCreateAnother}
-              className="w-full px-4 py-2 rounded text-gray-400 hover:text-gray-200 transition-colors text-sm"
+              className="w-full px-4 py-2 rounded transition-colors text-sm"
+              style={{ color: '#e5ddc7' }}
             >
               Create Another Memory
             </button>

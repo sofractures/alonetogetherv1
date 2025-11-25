@@ -64,7 +64,8 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
           return (
             <span
               key={index}
-              className="absolute text-6xl md:text-8xl font-bold text-white transition-all duration-[2500ms] ease-out"
+              className="absolute text-6xl md:text-8xl font-bold transition-all duration-[2500ms] ease-out"
+              style={{ color: '#e5ddc7' }}
               style={{
                 transform: isScattered ? scatteredPosition : centeredPosition,
                 opacity: isScattered ? 0.1 : 1,
