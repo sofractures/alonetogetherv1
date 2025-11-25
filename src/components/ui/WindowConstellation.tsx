@@ -50,7 +50,24 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
 
   return (
     <div className="relative w-full h-full flex items-center justify-center overflow-hidden bg-black">
-      <div className="absolute inset-0 flex items-center justify-center">
+      {/* Video Background */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover z-0"
+        style={{
+          opacity: 0.6, // Adjust opacity to ensure text remains readable
+        }}
+      >
+        <source src="/assets/video_clip.mp4" type="video/mp4" />
+      </video>
+      
+      {/* Optional dark overlay for better text contrast */}
+      <div className="absolute inset-0 bg-black/30 z-[1]" />
+      
+      <div className="absolute inset-0 flex items-center justify-center z-[2]">
         {text.split("").map((letter, index) => {
           // Random starting position (-100vw to +100vw, -100vh to +100vh)
           const randomX = randomPositions[index].x;
@@ -100,7 +117,7 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
       )}
 
       {/* Memory Skyline - appears at bottom */}
-      <div className={`absolute bottom-0 left-0 right-0 z-0 h-64 flex items-end overflow-hidden transition-opacity duration-[2500ms] ${
+      <div className={`absolute bottom-0 left-0 right-0 z-[3] h-64 flex items-end overflow-hidden transition-opacity duration-[2500ms] ${
         isReversing ? "opacity-0" : "opacity-100"
       }`}>
         <MemorySkyline
