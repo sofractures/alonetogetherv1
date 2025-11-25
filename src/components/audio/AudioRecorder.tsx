@@ -70,7 +70,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
     <div
       style={{
         background: 'rgba(10,10,14,0.6)',
-        border: '1px solid rgba(167,139,250,0.25)',
+        border: '1px solid rgba(213, 66, 48, 0.25)',
         borderRadius: 12,
         padding: 16,
         color: '#e5e7eb',
@@ -81,7 +81,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ fontSize: 14, color: '#cbd5e1' }}>Recording limit: 00:30</div>
-        <div style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: '#a78bfa' }}>{formatMs(timeLeftMs)}</div>
+        <div style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: '#d54230' }}>{formatMs(timeLeftMs)}</div>
       </div>
 
       {/* Level meter */}
@@ -91,7 +91,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
             style={{
               height: '100%',
               width: `${Math.round(level * 100)}%`,
-              background: 'linear-gradient(90deg, #6d28d9, #a78bfa)',
+              background: '#d54230',
               transition: 'width 80ms linear',
             }}
           />
