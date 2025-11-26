@@ -109,8 +109,8 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
             }
 
             const xOffset = (localIndex - (wordLength - 1) / 2) * 1; // ch units
-            // Move title higher on mobile so it sits clearly above the centered Start button
-            const yOffset = isSecondLine ? -0.2 : -1.6;
+            // Two-line title on mobile: small vertical gap between "ALONE" (upper) and "TOGETHER" (just below)
+            const yOffset = isSecondLine ? -0.6 : -1.2;
             centeredPosition = `translate(${xOffset}ch, ${yOffset}em)`;
           } else {
             centeredPosition = `translate(${(index - (text.length - 1) / 2) * 1}ch, 0)`;
