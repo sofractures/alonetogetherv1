@@ -147,8 +147,8 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
           style={{ 
             transitionDelay: "3000ms",
             color: '#e5ddc7',
-            // Center the button vertically, with the title sitting just above and skyline at the bottom
-            top: '50%',
+            // On mobile: center button vertically. On desktop: place it slightly below the centered title.
+            top: isMobile ? '50%' : 'calc(50% + 4rem)',
             left: '50%',
             transform: isAnimating ? 'translate(-50%, 2rem)' : 'translate(-50%, 0)',
           }}
