@@ -372,7 +372,7 @@ export default function Home() {
             pointerEvents: 'none',
           }}
         >
-          <source src="/assets/video_clip.mp4" type="video/mp4" />
+          <source src="/assets/video_clip_explore.mp4" type="video/mp4" />
         </video>
       )}
       
