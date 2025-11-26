@@ -64,6 +64,14 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
 
   return (
     <div className="relative w-full h-[100dvh] flex items-center justify-center overflow-hidden bg-black">
+      {/* Logo - top-right, hero only */}
+      <div className="absolute top-3 right-3 md:top-4 md:right-4 z-[4]">
+        <img
+          src="/assets/logo-hero.png"
+          alt="Alone Together logo"
+          className="w-8 h-8 md:w-10 md:h-10 opacity-80"
+        />
+      </div>
       {/* Video Background */}
       <video
         autoPlay
