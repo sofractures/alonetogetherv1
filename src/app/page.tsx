@@ -417,8 +417,8 @@ export default function Home() {
           </div>
 
           {/* Header Section - Top Left */}
-          <div className="absolute top-0 left-0 z-10 p-4 md:p-6 max-w-2xl pointer-events-none">
-            <h1 className="text-3xl md:text-5xl font-bold uppercase" style={{ color: '#e5ddc7' }}>
+          <div className="absolute top-0 left-0 z-10 p-3 md:p-6 max-w-2xl pointer-events-none">
+            <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold uppercase" style={{ color: '#e5ddc7' }}>
               Alone Together
             </h1>
           </div>
