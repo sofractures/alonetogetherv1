@@ -70,9 +70,9 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
           src="/assets/Logo.png"
           alt="Alone Together logo"
           style={{
-            // Increase size ~30% on mobile and ~80% on desktop compared to the original
-            width: isMobile ? 26 : 36, // px
-            height: isMobile ? 26 : 36,
+            // Mobile: ~30% larger than original. Desktop: doubled compared to previous size.
+            width: isMobile ? 26 : 72, // px
+            height: isMobile ? 26 : 72,
             opacity: 0.8,
           }}
         />
