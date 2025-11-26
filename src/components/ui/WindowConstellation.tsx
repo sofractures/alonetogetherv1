@@ -69,7 +69,12 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
         <img
           src="/assets/Logo.png"
           alt="Alone Together logo"
-          className="w-8 h-8 md:w-10 md:h-10 opacity-80"
+          style={{
+            // Increase size ~30% on mobile and ~80% on desktop compared to the original
+            width: isMobile ? 26 : 36, // px
+            height: isMobile ? 26 : 36,
+            opacity: 0.8,
+          }}
         />
       </div>
       {/* Video Background */}
