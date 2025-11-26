@@ -530,6 +530,32 @@
 - [ ] Error/retry screens
 - [ ] Abandoned session recovery
 
+### Visual Styling & Effects
+- [x] **Grain/Noise Overlay System**:
+  - [x] Implemented React Portal-based grain overlay for proper z-index layering
+  - [x] Replaced canvas-based noise generation with GIF file for better visual quality
+  - [x] Set grain opacity to 6% with "screen" blend mode for subtle effect
+  - [x] Grain renders at body level with z-index 999999 to ensure it's above all content
+- [x] **Button Styling Consistency**:
+  - [x] Updated all buttons to match explore button style (black with thin white outline)
+  - [x] Styled record button with red color (#d54230) for text and outline
+  - [x] Updated record box border, time code, and level meter to red color
+  - [x] Applied consistent styling to Start, Create, Accept & Upload buttons
+- [x] **Text Color Updates**:
+  - [x] Changed all text titles and fonts to cream color (#e5ddc7)
+  - [x] Applied to titles, headings, body text, labels, and modal content
+- [x] **Video Backgrounds**:
+  - [x] Added video background to hero page (video_clip_hero.mp4)
+  - [x] Added video background to explore/globe page (video_clip_explore.mp4)
+  - [x] Added video background to skyline page (video_clip_skyline.mp4)
+  - [x] Implemented proper z-index layering and opacity controls
+  - [x] Added dark overlays for better text contrast
+- [x] **3D Scene Visual Improvements**:
+  - [x] Brightened globe images by changing grain blend mode to "screen"
+  - [x] Increased lighting intensities (ambient: 0.6→1.0, directional: 1.2→1.5, point: 0.6→0.8)
+  - [x] Set window opacity to full brightness (1.0 instead of 0.85)
+  - [x] Removed black background from MemoryGlobe container to allow video to show through
+
 ### Mobile Optimization
 - [ ] Test touch controls for 3D scene
 - [ ] Optimize recording interface for mobile
