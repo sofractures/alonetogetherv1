@@ -109,7 +109,8 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
             }
 
             const xOffset = (localIndex - (wordLength - 1) / 2) * 1; // ch units
-            const yOffset = isSecondLine ? 1.2 : -1.2; // stack words vertically
+            // Keep lines close together on mobile so "TOGETHER" sits directly under "ALONE"
+            const yOffset = isSecondLine ? 0.4 : -0.4;
             centeredPosition = `translate(${xOffset}ch, ${yOffset}em)`;
           } else {
             centeredPosition = `translate(${(index - (text.length - 1) / 2) * 1}ch, 0)`;
@@ -120,7 +121,7 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
           return (
             <span
               key={index}
-              className="absolute text-4xl sm:text-5xl md:text-7xl font-bold transition-all duration-[2500ms] ease-out"
+              className="absolute text-5xl sm:text-6xl md:text-8xl font-bold transition-all duration-[2500ms] ease-out"
               style={{
                 color: '#e5ddc7',
                 transform: isScattered ? scatteredPosition : centeredPosition,
@@ -146,9 +147,10 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
           style={{ 
             transitionDelay: "3000ms",
             color: '#e5ddc7',
-            top: 'calc(50% + 4rem)', // Position underneath the title text (title is centered, button is 4rem below center)
+            // Center the button vertically, with the title sitting just above and skyline at the bottom
+            top: '50%',
             left: '50%',
-            transform: isAnimating ? 'translate(-50%, calc(50% + 2rem))' : 'translate(-50%, 0)',
+            transform: isAnimating ? 'translate(-50%, 2rem)' : 'translate(-50%, 0)',
           }}
         >
           Start
