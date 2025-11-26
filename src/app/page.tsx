@@ -357,7 +357,10 @@ export default function Home() {
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black" style={{ minHeight: '-webkit-fill-available' }}>
+    <div
+      className="relative w-full h-[100dvh] overflow-hidden bg-black"
+      style={{ minHeight: '100dvh' }}
+    >
       {/* Video Background - Always visible when exploring */}
       {hasStartedExploring && (
         <video

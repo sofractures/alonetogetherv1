@@ -63,7 +63,7 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
   if (!isVisible) return null;
 
   return (
-    <div className="relative w-full h-screen flex items-center justify-center overflow-hidden bg-black">
+    <div className="relative w-full h-[100dvh] flex items-center justify-center overflow-hidden bg-black">
       {/* Video Background */}
       <video
         autoPlay
@@ -109,8 +109,8 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
             }
 
             const xOffset = (localIndex - (wordLength - 1) / 2) * 1; // ch units
-            // Keep lines close together on mobile so "TOGETHER" sits directly under "ALONE"
-            const yOffset = isSecondLine ? 0.4 : -0.4;
+            // Position title slightly above center so button can sit cleanly in the middle
+            const yOffset = isSecondLine ? -0.1 : -1.1;
             centeredPosition = `translate(${xOffset}ch, ${yOffset}em)`;
           } else {
             centeredPosition = `translate(${(index - (text.length - 1) / 2) * 1}ch, 0)`;
