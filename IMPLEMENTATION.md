@@ -427,7 +427,7 @@
     - [x] Letters drift together over 2.5 seconds to form centered title
     - [x] Final letter spacing: 1ch (subtle overlap for "together" concept)
     - [x] Smooth ease-out transition with 50ms stagger per letter
-    - [x] Black background for dramatic effect
+    - [x] Video background (video_clip_hero.mp4) with dark overlay for dramatic effect
   - [x] **Memory Skyline Component** (`components/ui/MemorySkyline.tsx`):
     - [x] City skyline visualization at bottom of landing page
     - [x] 12-20 randomly generated buildings with varying heights (5-30 rows)
@@ -442,9 +442,10 @@
     - [x] Positioned at bottom with z-0 (behind title letters)
     - [x] Height limited to h-64 (256px) with overflow-hidden
   - [x] **Start Button**:
-    - [x] White background with black text
+    - [x] Black background with thin white outline (matching explore button style)
+    - [x] Cream text color (#e5ddc7)
     - [x] Monospace font (matching skyline)
-    - [x] Positioned closer to title (bottom-40)
+    - [x] Positioned underneath title text (4rem below center)
     - [x] Appears after title animation completes (3000ms delay)
     - [x] Disappears immediately when clicked (removed from DOM)
   - [x] Start button begins background song and transitions to globe view
@@ -529,6 +530,32 @@
 - [ ] Location permission UI flow
 - [ ] Error/retry screens
 - [ ] Abandoned session recovery
+
+### Visual Styling & Effects
+- [x] **Grain/Noise Overlay System**:
+  - [x] Implemented React Portal-based grain overlay for proper z-index layering
+  - [x] Replaced canvas-based noise generation with GIF file for better visual quality
+  - [x] Set grain opacity to 6% with "screen" blend mode for subtle effect
+  - [x] Grain renders at body level with z-index 999999 to ensure it's above all content
+- [x] **Button Styling Consistency**:
+  - [x] Updated all buttons to match explore button style (black with thin white outline)
+  - [x] Styled record button with red color (#d54230) for text and outline
+  - [x] Updated record box border, time code, and level meter to red color
+  - [x] Applied consistent styling to Start, Create, Accept & Upload buttons
+- [x] **Text Color Updates**:
+  - [x] Changed all text titles and fonts to cream color (#e5ddc7)
+  - [x] Applied to titles, headings, body text, labels, and modal content
+- [x] **Video Backgrounds**:
+  - [x] Added video background to hero page (video_clip_hero.mp4)
+  - [x] Added video background to explore/globe page (video_clip_explore.mp4)
+  - [x] Added video background to skyline page (video_clip_skyline.mp4)
+  - [x] Implemented proper z-index layering and opacity controls
+  - [x] Added dark overlays for better text contrast
+- [x] **3D Scene Visual Improvements**:
+  - [x] Brightened globe images by changing grain blend mode to "screen"
+  - [x] Increased lighting intensities (ambient: 0.6→1.0, directional: 1.2→1.5, point: 0.6→0.8)
+  - [x] Set window opacity to full brightness (1.0 instead of 0.85)
+  - [x] Removed black background from MemoryGlobe container to allow video to show through
 
 ### Mobile Optimization
 - [ ] Test touch controls for 3D scene

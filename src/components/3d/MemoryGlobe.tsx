@@ -248,7 +248,7 @@ export default function MemoryGlobe({
   return (
     <>
       <div 
-        className="absolute inset-0 w-full h-full bg-black" 
+        className="absolute inset-0 w-full h-full" 
         style={{ 
           pointerEvents: 'auto', 
           touchAction: 'none',
@@ -257,7 +257,8 @@ export default function MemoryGlobe({
           top: 0,
           left: 0,
           right: 0,
-          bottom: 0
+          bottom: 0,
+          backgroundColor: 'transparent'
         }}
       >
         {/* Dark overlay when spiral is expanded - behind canvas but visible */}

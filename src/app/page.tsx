@@ -358,16 +358,39 @@ export default function Home() {
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black">
+      {/* Video Background - Always visible when exploring */}
+      {hasStartedExploring && (
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="fixed inset-0 w-full h-full object-cover"
+          style={{
+            opacity: 0.6, // Increased visibility
+            zIndex: 0,
+            pointerEvents: 'none',
+          }}
+        >
+          <source src="/assets/video_clip_explore.mp4" type="video/mp4" />
+        </video>
+      )}
+      
+      {/* Dark overlay for better contrast */}
+      {hasStartedExploring && (
+        <div className="fixed inset-0 bg-black/20 z-[1]" style={{ pointerEvents: 'none' }} />
+      )}
+
       {/* 3D Scene - Only visible after user clicks "Start Exploring" */}
       {hasStartedExploring && (
         <>
           <div 
-            className={`absolute inset-0 bg-black transition-opacity duration-[2500ms] ${
+            className={`absolute inset-0 transition-opacity duration-[2500ms] ${
               showGlobe ? "opacity-100" : "opacity-0"
             }`}
             style={{ 
               pointerEvents: 'auto',
-              zIndex: 0,
+              zIndex: 2,
               position: 'absolute',
               top: 0,
               left: 0,
