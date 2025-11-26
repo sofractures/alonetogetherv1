@@ -52,20 +52,17 @@ body {
   }
 }
 
-/* Hero logo 3D slow rotation */
-@keyframes hero-logo-spin-3d {
+/* Hero logo vertical-axis slow rotation */
+@keyframes hero-logo-spin-y {
   0% {
-    transform: rotate3d(1, 1, 0, 0deg);
-  }
-  50% {
-    transform: rotate3d(1, -1, 0, 180deg);
+    transform: rotateY(0deg);
   }
   100% {
-    transform: rotate3d(1, 1, 0, 360deg);
+    transform: rotateY(360deg);
   }
 }
 
 .hero-logo-3d-spin {
-  animation: hero-logo-spin-3d 24s linear infinite;
+  animation: hero-logo-spin-y 24s linear infinite;
   transform-style: preserve-3d;
 }
