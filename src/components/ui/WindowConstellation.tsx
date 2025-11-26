@@ -13,7 +13,21 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
   const [isAnimating, setIsAnimating] = useState(true);
   const [isReversing, setIsReversing] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const text = "ALONE TOGETHER";
+
+  // Detect mobile viewport for stacked title layout
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const updateIsMobile = () => {
+      setIsMobile(window.innerWidth < 640); // Tailwind sm breakpoint
+    };
+
+    updateIsMobile();
+    window.addEventListener("resize", updateIsMobile);
+    return () => window.removeEventListener("resize", updateIsMobile);
+  }, []);
 
   // Memoize random positions so they don't change on re-render
   const randomPositions = useMemo(() => {
@@ -49,7 +63,7 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
   if (!isVisible) return null;
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center overflow-hidden bg-black">
+    <div className="relative w-full h-screen flex items-center justify-center overflow-hidden bg-black">
       {/* Video Background */}
       <video
         autoPlay
@@ -75,13 +89,38 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
           
           // Determine current state: initial scatter -> together -> reverse scatter
           const isScattered = isReversing ? true : isAnimating;
-          const centeredPosition = `translate(${(index - (text.length - 1) / 2) * 1}ch, 0)`;
+
+          // Centered positions
+          let centeredPosition: string;
+          if (isMobile) {
+            const spaceIndex = text.indexOf(" ");
+            const isSecondLine = index > spaceIndex;
+
+            // Compute local index within each word (ignore the space)
+            let localIndex = 0;
+            let wordLength = 1;
+
+            if (index < spaceIndex) {
+              localIndex = index;
+              wordLength = spaceIndex; // "ALONE"
+            } else if (index > spaceIndex) {
+              localIndex = index - spaceIndex - 1;
+              wordLength = text.length - spaceIndex - 1; // "TOGETHER"
+            }
+
+            const xOffset = (localIndex - (wordLength - 1) / 2) * 1; // ch units
+            const yOffset = isSecondLine ? 1.2 : -1.2; // stack words vertically
+            centeredPosition = `translate(${xOffset}ch, ${yOffset}em)`;
+          } else {
+            centeredPosition = `translate(${(index - (text.length - 1) / 2) * 1}ch, 0)`;
+          }
+
           const scatteredPosition = `translate(${randomX}vw, ${randomY}vh)`;
 
           return (
             <span
               key={index}
-              className="absolute text-6xl md:text-8xl font-bold transition-all duration-[2500ms] ease-out"
+              className="absolute text-4xl sm:text-5xl md:text-7xl font-bold transition-all duration-[2500ms] ease-out"
               style={{
                 color: '#e5ddc7',
                 transform: isScattered ? scatteredPosition : centeredPosition,

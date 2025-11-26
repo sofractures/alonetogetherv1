@@ -527,9 +527,9 @@ export default function MemoryGlobe({
           {/* Orbit Controls */}
           <OrbitControls
             makeDefault
-            enabled={true}
-            enableRotate={true}
-            enableZoom={true}
+            enabled
+            enableRotate
+            enableZoom
             enablePan={false}
             minDistance={6}
             maxDistance={30}
@@ -546,9 +546,6 @@ export default function MemoryGlobe({
               ONE: 0, // Rotate (one finger drag)
               TWO: 2, // Zoom (pinch)
             }}
-            // Mobile optimizations
-            enableTouch={true}
-            touchAction="none" // Prevent default touch behaviors
             onChange={() => {
               // Don't auto-collapse on every camera change - let user click away or select a memory
               // Auto-collapse was too aggressive and collapsed immediately after expansion
