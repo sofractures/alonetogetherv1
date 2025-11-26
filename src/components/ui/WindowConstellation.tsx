@@ -109,8 +109,8 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
             }
 
             const xOffset = (localIndex - (wordLength - 1) / 2) * 1; // ch units
-            // Position title slightly above center so button can sit cleanly in the middle
-            const yOffset = isSecondLine ? -0.1 : -1.1;
+            // Move title higher on mobile so it sits clearly above the centered Start button
+            const yOffset = isSecondLine ? -0.2 : -1.6;
             centeredPosition = `translate(${xOffset}ch, ${yOffset}em)`;
           } else {
             centeredPosition = `translate(${(index - (text.length - 1) / 2) * 1}ch, 0)`;
