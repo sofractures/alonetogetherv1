@@ -31,7 +31,7 @@ export default function PlaybackModal({
         className="absolute inset-0 bg-black/40 backdrop-blur-md" 
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl p-6">
+      <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl p-4 sm:p-6">
         {onClose && (
           <button
             onClick={onClose}

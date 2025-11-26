@@ -17,6 +17,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Alone Together",
   description: "A modern React application built with Next.js, TypeScript, and Tailwind CSS",
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+    userScalable: true,
+  },
+  themeColor: '#000000',
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({

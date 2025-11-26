@@ -357,7 +357,7 @@ export default function Home() {
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black">
+    <div className="relative w-full h-screen overflow-hidden bg-black" style={{ minHeight: '-webkit-fill-available' }}>
       {/* Video Background - Always visible when exploring */}
       {hasStartedExploring && (
         <video
@@ -455,7 +455,7 @@ export default function Home() {
             welcomeModalVisible ? "opacity-100" : "opacity-0"
           }`}>
             <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => { setIsWelcomeOpen(false); setShowWelcomeModal(false); setWelcomeModalVisible(false); }} />
-            <div className="relative z-10 w-full max-w-xl mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl p-6 text-center">
+            <div className="relative z-10 w-full max-w-xl mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl p-4 sm:p-6 text-center">
               <h2 className="text-2xl font-semibold mb-2" style={{ color: '#e5ddc7' }}>Welcome to Alone Together</h2>
               <p className="mb-6" style={{ color: '#e5ddc7' }}>Record your memory to create your own personal song, or explore others on the map.</p>
               <div className="flex gap-3 justify-center">
