@@ -65,7 +65,7 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
   return (
     <div className="relative w-full h-[100dvh] flex items-center justify-center overflow-hidden bg-black">
       {/* Logo - top-right, hero only */}
-      <div className="absolute top-3 right-3 md:top-4 md:right-4 z-[4]">
+      <div className="absolute top-3 right-3 md:top-4 md:right-4 z-[4] hero-logo-3d-spin">
         <img
           src="/assets/Logo.png"
           alt="Alone Together logo"
