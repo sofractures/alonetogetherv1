@@ -22,7 +22,7 @@ export default function CelebrationScreen({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-labelledby="celebration-title">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-md" />
-      <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl p-8 text-center">
+      <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl p-4 sm:p-6 md:p-8 text-center">
         {/* Success Animation */}
         <div className="mb-6">
           <div className="text-6xl mb-4">✨</div>

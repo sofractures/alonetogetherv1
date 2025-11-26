@@ -6,7 +6,7 @@ import { memoriesText } from "@/data/memories";
 
 export default function SkylinePage() {
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black">
+    <div className="relative w-full h-[100dvh] overflow-hidden bg-black">
       {/* Video Background */}
       <video
         autoPlay
@@ -31,8 +31,11 @@ export default function SkylinePage() {
       </div>
 
       {/* Skyline positioned at bottom (matching landing page style) */}
-      <div className="absolute bottom-0 left-0 right-0 z-[2] h-64 flex items-end overflow-hidden">
-        <MemorySkyline memories={memoriesText} className="w-full" />
+      <div className="absolute bottom-0 left-0 right-0 z-[2] h-64 flex items-end overflow-x-auto overflow-y-hidden touch-pan-x">
+        {/* Allow horizontal scrolling across the skyline, especially on mobile */}
+        <div className="min-w-full">
+          <MemorySkyline memories={memoriesText} className="w-full" />
+        </div>
       </div>
     </div>
   );

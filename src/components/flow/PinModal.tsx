@@ -103,7 +103,7 @@ export default function PinModal({
         className="absolute inset-0 bg-black/40 backdrop-blur-md" 
         onClick={onCancel}
       />
-      <div className="relative z-10 w-full max-w-md mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl p-6 max-h-[90vh] overflow-y-auto">
+      <div className="relative z-10 w-full max-w-md mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
         <button
           onClick={onCancel}
           className="absolute top-4 right-4 transition-colors"

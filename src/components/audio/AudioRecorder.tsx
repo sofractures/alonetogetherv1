@@ -72,9 +72,10 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
         background: 'rgba(10,10,14,0.6)',
         border: '1px solid rgba(213, 66, 48, 0.25)',
         borderRadius: 12,
-        padding: 16,
+        padding: 'clamp(16px, 4vw, 24px)',
         color: '#e5e7eb',
         maxWidth: 480,
+        width: '100%',
         margin: '0 auto',
         backdropFilter: 'blur(6px)',
       }}
@@ -99,23 +100,32 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
       </div>
 
       {/* Controls */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'clamp(12px, 3vw, 16px)', marginTop: 16, flexWrap: 'wrap' }}>
         {canStart && (
           <button
             onClick={handleStartClick}
             aria-label="Start recording"
-            className="px-4 py-2 rounded transition-colors"
+            className="rounded transition-colors touch-manipulation"
             style={{
               color: '#d54230',
               border: '1px solid #d54230',
               fontWeight: 600,
               cursor: 'pointer',
               backgroundColor: 'transparent',
+              padding: 'clamp(12px, 3vw, 16px) clamp(16px, 4vw, 24px)',
+              minHeight: '44px', // iOS touch target minimum
+              minWidth: '44px',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = 'rgba(213, 66, 48, 0.1)';
             }}
             onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+            onTouchStart={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(213, 66, 48, 0.1)';
+            }}
+            onTouchEnd={(e) => {
               e.currentTarget.style.backgroundColor = 'transparent';
             }}
           >
@@ -127,11 +137,20 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
           <button
             onClick={stop}
             aria-label="Stop recording"
-            className="px-4 py-2 rounded border border-white/30 hover:bg-white/10 transition-colors"
+            className="rounded border border-white/30 hover:bg-white/10 transition-colors touch-manipulation"
             style={{
               color: '#e5ddc7',
               fontWeight: 600,
               cursor: 'pointer',
+              padding: 'clamp(12px, 3vw, 16px) clamp(16px, 4vw, 24px)',
+              minHeight: '44px',
+              minWidth: '44px',
+            }}
+            onTouchStart={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+            }}
+            onTouchEnd={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
             }}
           >
             Stop
@@ -143,11 +162,20 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
             <button
               onClick={reset}
               aria-label="Re-record"
-              className="px-4 py-2 rounded border border-white/30 hover:bg-white/10 transition-colors"
+              className="rounded border border-white/30 hover:bg-white/10 transition-colors touch-manipulation"
               style={{
                 color: '#e5ddc7',
                 fontWeight: 600,
                 cursor: 'pointer',
+                padding: 'clamp(12px, 3vw, 16px) clamp(16px, 4vw, 24px)',
+                minHeight: '44px',
+                minWidth: '44px',
+              }}
+              onTouchStart={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+              }}
+              onTouchEnd={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
               }}
             >
               Re-record

@@ -11,14 +11,14 @@ export function ExploreMenu({ currentPage = "explore", onCreate }: ExploreMenuPr
   const router = useRouter();
 
   return (
-    <div className="absolute top-0 right-0 z-20 p-4 md:p-6">
-      <div className="flex flex-col gap-3 items-end">
+    <div className="absolute top-0 right-0 z-20 p-2 sm:p-3 md:p-6">
+      <div className="flex flex-col gap-1.5 sm:gap-2 md:gap-3 items-end">
         {currentPage === "explore" ? (
           <>
             {onCreate && (
               <button
                 onClick={onCreate}
-                className="transition-colors text-sm font-sans"
+                className="transition-colors text-xs sm:text-sm font-sans"
                 style={{ color: '#e5ddc7' }}
               >
                 Create
@@ -26,7 +26,7 @@ export function ExploreMenu({ currentPage = "explore", onCreate }: ExploreMenuPr
             )}
             <button
               onClick={() => router.push("/skyline")}
-              className="text-white hover:text-gray-300 transition-colors text-sm font-sans"
+              className="text-white hover:text-gray-300 transition-colors text-xs sm:text-sm font-sans"
             >
               Skyline
             </button>
@@ -36,7 +36,7 @@ export function ExploreMenu({ currentPage = "explore", onCreate }: ExploreMenuPr
                 // Future: Could open a playlist or audio player
                 // For now, this could be a placeholder or removed
               }}
-              className="text-white hover:text-gray-300 transition-colors text-sm font-sans"
+              className="text-white hover:text-gray-300 transition-colors text-xs sm:text-sm font-sans"
             >
               Listen
             </button>
@@ -44,7 +44,7 @@ export function ExploreMenu({ currentPage = "explore", onCreate }: ExploreMenuPr
         ) : (
           <button
             onClick={() => router.push("/")}
-            className="text-white hover:text-gray-300 transition-colors text-sm font-sans"
+            className="text-white hover:text-gray-300 transition-colors text-xs sm:text-sm font-sans"
           >
             Explore
           </button>

@@ -258,7 +258,8 @@ export default function MemoryGlobe({
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'transparent'
+          backgroundColor: 'transparent',
+          minHeight: '-webkit-fill-available' // iOS Safari fix
         }}
       >
         {/* Dark overlay when spiral is expanded - behind canvas but visible */}
@@ -526,9 +527,9 @@ export default function MemoryGlobe({
           {/* Orbit Controls */}
           <OrbitControls
             makeDefault
-            enabled={true}
-            enableRotate={true}
-            enableZoom={true}
+            enabled
+            enableRotate
+            enableZoom
             enablePan={false}
             minDistance={6}
             maxDistance={30}
@@ -542,8 +543,8 @@ export default function MemoryGlobe({
               LEFT: 0, // Rotate
             }}
             touches={{
-              ONE: 0, // Rotate
-              TWO: 2, // Zoom
+              ONE: 0, // Rotate (one finger drag)
+              TWO: 2, // Zoom (pinch)
             }}
             onChange={() => {
               // Don't auto-collapse on every camera change - let user click away or select a memory
