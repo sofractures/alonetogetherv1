@@ -427,7 +427,7 @@
     - [x] Letters drift together over 2.5 seconds to form centered title
     - [x] Final letter spacing: 1ch (subtle overlap for "together" concept)
     - [x] Smooth ease-out transition with 50ms stagger per letter
-    - [x] Black background for dramatic effect
+    - [x] Video background (video_clip_hero.mp4) with dark overlay for dramatic effect
   - [x] **Memory Skyline Component** (`components/ui/MemorySkyline.tsx`):
     - [x] City skyline visualization at bottom of landing page
     - [x] 12-20 randomly generated buildings with varying heights (5-30 rows)
@@ -442,9 +442,10 @@
     - [x] Positioned at bottom with z-0 (behind title letters)
     - [x] Height limited to h-64 (256px) with overflow-hidden
   - [x] **Start Button**:
-    - [x] White background with black text
+    - [x] Black background with thin white outline (matching explore button style)
+    - [x] Cream text color (#e5ddc7)
     - [x] Monospace font (matching skyline)
-    - [x] Positioned closer to title (bottom-40)
+    - [x] Positioned underneath title text (4rem below center)
     - [x] Appears after title animation completes (3000ms delay)
     - [x] Disappears immediately when clicked (removed from DOM)
   - [x] Start button begins background song and transitions to globe view
