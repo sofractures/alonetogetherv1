@@ -428,6 +428,8 @@
     - [x] Final letter spacing: 1ch (subtle overlap for "together" concept)
     - [x] Smooth ease-out transition with 50ms stagger per letter
     - [x] Video background (video_clip_hero.mp4) with dark overlay for dramatic effect
+    - [x] **Mobile-specific stacked layout**: "ALONE" and "TOGETHER" stack vertically on mobile with proper spacing
+    - [x] **Hero logo**: Small logo in top-right corner with slow vertical rotation animation (26px mobile, 72px desktop)
   - [x] **Memory Skyline Component** (`components/ui/MemorySkyline.tsx`):
     - [x] City skyline visualization at bottom of landing page
     - [x] 12-20 randomly generated buildings with varying heights (5-30 rows)
@@ -445,7 +447,8 @@
     - [x] Black background with thin white outline (matching explore button style)
     - [x] Cream text color (#e5ddc7)
     - [x] Monospace font (matching skyline)
-    - [x] Positioned underneath title text (4rem below center)
+    - [x] Positioned underneath title text (4rem below center on desktop, centered on mobile)
+    - [x] Separate mobile/desktop positioning for optimal layout
     - [x] Appears after title animation completes (3000ms delay)
     - [x] Disappears immediately when clicked (removed from DOM)
   - [x] Start button begins background song and transitions to globe view
@@ -506,27 +509,30 @@
   - [x] Added `email TEXT` and `user_name TEXT` columns to `memories` table
 - [x] Pin memory to globe with location and email
 - [x] Smooth transitions between flow states
-- [x] **Explore Page Text Placement**:
-  - [x] Header section (top left) with "ALONE TOGETHER" title (uppercase, bold, white)
-  - [x] Instructions section (bottom left): "Drag to rotate • Scroll to zoom • Click to listen"
-  - [x] Both sections only appear after landing animation completes
-  - [x] Header has `max-w-2xl` constraint
-  - [x] Uses `text-foreground` for title and `text-muted-foreground` for instructions
-  - [x] Both sections have `z-10` to appear above 3D globe
-  - [x] Removed subtitle from explore page header (title only)
-  - [x] Consistent font styles (Geist Sans) applied to all text elements
-- [x] **Explore Page Menu**:
-  - [x] Create menu component with "Listen" and "Skyline" buttons (`components/ui/ExploreMenu.tsx`)
-  - [x] Position menu in top-right corner
-  - [x] Style menu to match black theme with white borders (`border-white/20`, `bg-black/80`, `backdrop-blur-xl`)
-  - [x] Implement navigation to skyline page using Next.js router
-  - [x] "Listen" button placeholder (ready for future functionality)
-- [x] **Skyline Page**:
-  - [x] Create new page route for skyline view (`/app/skyline/page.tsx`)
-  - [x] Display MemorySkyline component at bottom (matching landing page style)
-  - [x] Add "Explore" button in menu corner to return to explore page
-  - [x] Ensure consistent styling with rest of app (black background)
-  - [x] Black background matching landing page
+  - [x] **Explore Page Text Placement**:
+    - [x] Header section (top left) with "ALONE TOGETHER" title (uppercase, bold, white)
+    - [x] Instructions section (bottom left): "Drag to rotate • Scroll to zoom • Click to listen"
+    - [x] Both sections only appear after landing animation completes
+    - [x] Header has `max-w-2xl` constraint
+    - [x] Uses `text-foreground` for title and `text-muted-foreground` for instructions
+    - [x] Both sections have `z-10` to appear above 3D globe
+    - [x] Removed subtitle from explore page header (title only)
+    - [x] Consistent font styles (Geist Sans) applied to all text elements
+    - [x] **Mobile optimization**: Reduced title font size on mobile (`text-2xl` on small screens)
+  - [x] **Explore Page Menu**:
+    - [x] Create menu component with "Listen" and "Skyline" buttons (`components/ui/ExploreMenu.tsx`)
+    - [x] Position menu in top-right corner
+    - [x] Style menu to match black theme with white borders (`border-white/20`, `bg-black/80`, `backdrop-blur-xl`)
+    - [x] Implement navigation to skyline page using Next.js router
+    - [x] "Listen" button placeholder (ready for future functionality)
+    - [x] **Mobile optimization**: Tighter spacing between menu items (`gap-1.5` on mobile), smaller text size
+  - [x] **Skyline Page**:
+    - [x] Create new page route for skyline view (`/app/skyline/page.tsx`)
+    - [x] Display MemorySkyline component at bottom (matching landing page style)
+    - [x] Add "Explore" button in menu corner to return to explore page
+    - [x] Ensure consistent styling with rest of app (black background)
+    - [x] Black background matching landing page
+    - [x] **Mobile optimization**: Skyline anchored to bottom using `100dvh`, horizontal scrolling enabled to read entire skyline
 - [ ] Location permission UI flow
 - [ ] Error/retry screens
 - [ ] Abandoned session recovery
@@ -558,12 +564,47 @@
   - [x] Removed black background from MemoryGlobe container to allow video to show through
 
 ### Mobile Optimization
-- [ ] Test touch controls for 3D scene
-- [ ] Optimize recording interface for mobile
-- [ ] Ensure modals are mobile-friendly
-- [ ] Test on various screen sizes
-- [ ] Handle orientation changes
-- [ ] Implement PWA manifest
+- [x] **Touch Controls for 3D Scene**:
+  - [x] Optimized OrbitControls touch configuration (one finger rotate, two finger zoom)
+  - [x] Verified touch interactions work smoothly on mobile devices
+  - [x] Added `touchAction: 'none'` to prevent default touch behaviors
+- [x] **Recording Interface Optimization**:
+  - [x] Responsive padding using `clamp()` for fluid sizing
+  - [x] Minimum 44px touch targets (iOS standard) for all buttons
+  - [x] Added `touch-manipulation` CSS utility for better touch response
+  - [x] Touch feedback with `onTouchStart`/`onTouchEnd` handlers
+  - [x] Flexible button layout with wrapping for small screens
+- [x] **Mobile-Friendly Modals**:
+  - [x] Responsive padding: `p-4 sm:p-6 md:p-8` on all modals
+  - [x] Updated: PinModal, CelebrationScreen, PlaybackModal, MemoryPlayer, Welcome modal
+  - [x] Proper scroll handling with `max-h-[90vh] overflow-y-auto`
+  - [x] Touch-friendly button sizes throughout
+- [x] **Hero Page Mobile Layout**:
+  - [x] Stacked "ALONE / TOGETHER" title on mobile (two lines with proper spacing)
+  - [x] Centered Start button on mobile, positioned below title on desktop
+  - [x] Skyline anchored to bottom using `100dvh` for proper mobile viewport
+  - [x] Hero logo with slow vertical rotation animation
+- [x] **Skyline Page Mobile**:
+  - [x] Skyline positioned at bottom of screen using `100dvh`
+  - [x] Horizontal scrolling enabled to read entire skyline content
+- [x] **Explore Page Mobile**:
+  - [x] Reduced title font size on mobile
+  - [x] Tighter menu spacing (smaller gaps between items)
+- [x] **Orientation Handling**:
+  - [x] Created `useOrientation` hook for device orientation detection
+  - [x] Added iOS Safari viewport height fix (`100dvh` instead of `h-screen`)
+  - [x] Layout adapts properly to orientation changes
+- [x] **PWA Manifest**:
+  - [x] Created `public/manifest.json` with app metadata
+  - [x] Configured for standalone display mode
+  - [x] Added theme color and orientation settings
+  - [x] Ready for icon assets (icon-192.png, icon-512.png)
+- [x] **Mobile CSS Utilities**:
+  - [x] Added `.touch-manipulation` utility class
+  - [x] Removed tap highlight colors for cleaner interactions
+  - [x] Disabled text selection on mobile for better UX
+  - [x] Minimum button sizes enforced via CSS
+- [ ] Test on various screen sizes (requires manual device testing)
 
 ### Accessibility
 - [ ] Add keyboard navigation for 3D scene
