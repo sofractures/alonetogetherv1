@@ -61,7 +61,7 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
           opacity: 0.6, // Adjust opacity to ensure text remains readable
         }}
       >
-        <source src="/assets/video_clip.mp4" type="video/mp4" />
+        <source src="/assets/video_clip_hero.mp4" type="video/mp4" />
       </video>
       
       {/* Optional dark overlay for better text contrast */}
