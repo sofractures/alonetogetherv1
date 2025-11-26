@@ -23,27 +23,104 @@ export function MemorySkyline({
   }, []);
 
   const buildings = useMemo(() => {
-    const allChars = memories.split("");
+    // Process text: split into words and preserve spaces/newlines
+    const words = memories.split(/(\s+|\n+)/).filter(w => w.length > 0);
     const buildingCount = Math.floor(Math.random() * 8) + 12; // 12-20 buildings
     const buildingsData = [];
-    let charIndex = 0;
+    let wordIndex = 0;
 
     for (let i = 0; i < buildingCount; i++) {
       const rows = Math.floor(Math.random() * 26) + 5; // 5-30 rows
       const cols = Math.floor(Math.random() * 5) + 8; // 8-13 columns
-      const charsInBuilding = rows * cols;
+      const totalCells = rows * cols;
 
+      // Create a 2D grid to fill (rows x cols)
+      // We'll fill top to bottom, left to right
+      const grid: Array<Array<{ char: string; color?: string } | null>> = [];
+      for (let r = 0; r < rows; r++) {
+        grid[r] = new Array(cols).fill(null);
+      }
+
+      let currentRow = rows - 1; // Start at top row (remember: flex-col-reverse means row 0 is bottom)
+      let currentCol = 0;
+      let cellsFilled = 0;
+
+      // Fill building completely before moving to next
+      while (cellsFilled < totalCells && wordIndex < words.length * 10) { // Safety limit
+        // Get current word (loop if we've exhausted all words)
+        const word = words[wordIndex % words.length];
+        wordIndex++;
+
+        // Try to place the word
+        const wordChars = word.split("");
+        let wordFits = true;
+        let tempRow = currentRow;
+        let tempCol = currentCol;
+
+        // Check if word fits on current line
+        for (const char of wordChars) {
+          if (tempRow < 0) {
+            wordFits = false;
+            break;
+          }
+          if (tempCol >= cols) {
+            // Move to next row
+            tempRow--;
+            tempCol = 0;
+            if (tempRow < 0) {
+              wordFits = false;
+              break;
+            }
+          }
+          tempCol++;
+        }
+
+        if (wordFits) {
+          // Place the word
+          for (const char of wordChars) {
+            if (currentCol >= cols) {
+              currentRow--;
+              currentCol = 0;
+              if (currentRow < 0) break;
+            }
+            if (currentRow >= 0) {
+              const color =
+                char !== " " && char !== "\n"
+                  ? brickColors[Math.floor(Math.random() * brickColors.length)]
+                  : undefined;
+              grid[currentRow][currentCol] = { char, color };
+              currentCol++;
+              cellsFilled++;
+            }
+          }
+        } else {
+          // Word doesn't fit, move to next position
+          if (currentCol >= cols) {
+            currentRow--;
+            currentCol = 0;
+            if (currentRow < 0) break;
+          } else {
+            // Fill current cell with space if empty, then move
+            if (grid[currentRow][currentCol] === null) {
+              grid[currentRow][currentCol] = { char: " ", color: undefined };
+              cellsFilled++;
+            }
+            currentCol++;
+          }
+        }
+
+        // Safety check
+        if (currentRow < 0) break;
+      }
+
+      // Flatten grid to 1D array
+      // flex-col-reverse means: first row in array = bottom visually, last row = top visually
+      // So we flatten from row 0 (bottom) to row rows-1 (top)
       const buildingChars: Array<{ char: string; color?: string }> = [];
-      for (let j = 0; j < charsInBuilding; j++) {
-        if (charIndex >= allChars.length) charIndex = 0; // Loop back to start
-        const char = allChars[charIndex];
-        // Pre-assign color for letters (not spaces/newlines)
-        const color =
-          char !== " " && char !== "\n"
-            ? brickColors[Math.floor(Math.random() * brickColors.length)]
-            : undefined;
-        buildingChars.push({ char, color });
-        charIndex++;
+      for (let r = 0; r < rows; r++) { // Bottom to top (for flex-col-reverse)
+        for (let c = 0; c < cols; c++) { // Left to right
+          buildingChars.push(grid[r][c] || { char: " ", color: undefined });
+        }
       }
 
       buildingsData.push({
