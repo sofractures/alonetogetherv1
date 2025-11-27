@@ -1,9 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { ExploreMenu } from "@/components/ui/ExploreMenu";
 
 export default function AboutPage() {
-  const router = useRouter();
 
   return (
     <main className="relative min-h-[100dvh] bg-black text-left flex flex-col items-center justify-center px-4 py-10 sm:py-16">
@@ -27,27 +26,8 @@ export default function AboutPage() {
         className="fixed inset-0 bg-black/30 z-[1]"
         style={{ pointerEvents: "none" }}
       />
-      {/* Top-right navigation to get back into the experience */}
-      <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-1.5 sm:gap-2 text-xs sm:text-sm font-sans">
-        <button
-          onClick={() => router.push("/")}
-          className="text-white hover:text-gray-300 transition-colors"
-        >
-          Explore
-        </button>
-        <button
-          onClick={() => router.push("/")}
-          className="text-white hover:text-gray-300 transition-colors"
-        >
-          Create
-        </button>
-        <button
-          onClick={() => router.push("/skyline")}
-          className="text-white hover:text-gray-300 transition-colors"
-        >
-          Skyline
-        </button>
-      </div>
+      {/* Top-right shared menu */}
+      <ExploreMenu currentPage="about" />
 
       <div className="relative z-[2] w-full max-w-3xl space-y-8">
         <header className="space-y-2">
