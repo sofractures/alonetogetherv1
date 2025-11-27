@@ -94,8 +94,9 @@ export default function MemoryPoint({
             map={texture}
             transparent
             opacity={opacity}
-            emissive={highlighted ? '#f59e0b' : hovered ? '#a78bfa' : '#000000'}
-            emissiveIntensity={highlighted ? 1.2 : hovered ? 0.5 : 0}
+            // On hover, brighten the window using a warm light tone instead of adding a new color
+            emissive={highlighted ? '#f59e0b' : hovered ? '#e5ddc7' : '#000000'}
+            emissiveIntensity={highlighted ? 1.2 : hovered ? 0.4 : 0}
             side={2} // DoubleSide - render both sides
           />
         </mesh>
