@@ -30,24 +30,28 @@ export function ExploreMenu({ currentPage = "explore", onCreate }: ExploreMenuPr
             >
               Skyline
             </button>
-            {/* Listen button - can be used for future functionality */}
             <button
-              onClick={() => {
-                // Future: Could open a playlist or audio player
-                // For now, this could be a placeholder or removed
-              }}
+              onClick={() => router.push("/about")}
               className="text-white hover:text-gray-300 transition-colors text-xs sm:text-sm font-sans"
             >
-              Listen
+              About
             </button>
           </>
         ) : (
-          <button
-            onClick={() => router.push("/")}
-            className="text-white hover:text-gray-300 transition-colors text-xs sm:text-sm font-sans"
-          >
-            Explore
-          </button>
+          <>
+            <button
+              onClick={() => router.push("/")}
+              className="text-white hover:text-gray-300 transition-colors text-xs sm:text-sm font-sans"
+            >
+              Explore
+            </button>
+            <button
+              onClick={() => router.push("/about")}
+              className="text-white hover:text-gray-300 transition-colors text-xs sm:text-sm font-sans"
+            >
+              About
+            </button>
+          </>
         )}
       </div>
     </div>

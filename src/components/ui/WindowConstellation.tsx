@@ -64,6 +64,13 @@ export function WindowConstellation({ onStart, onTransitionComplete }: WindowCon
 
   return (
     <div className="relative w-full h-[100dvh] flex items-center justify-center overflow-hidden bg-black">
+      {/* Intro text - centered at top */}
+      <div className="absolute top-4 left-0 right-0 z-[3] flex justify-center pointer-events-none">
+        <p className="text-xs sm:text-sm tracking-[0.2em] uppercase" style={{ color: '#e5ddc7' }}>
+          Sound of Fractures presents
+        </p>
+      </div>
+
       {/* Logo - top-right, hero only */}
       <div className="absolute top-3 right-3 md:top-4 md:right-4 z-[4] hero-logo-3d-spin">
         <img

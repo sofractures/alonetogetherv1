@@ -94,20 +94,22 @@ export default function MemoryPoint({
             map={texture}
             transparent
             opacity={opacity}
-            emissive={highlighted ? '#f59e0b' : hovered ? '#a78bfa' : '#000000'}
-            emissiveIntensity={highlighted ? 1.2 : hovered ? 0.5 : 0}
+            // On hover, brighten the window using a warm light tone instead of adding a new color
+            emissive={highlighted ? '#f59e0b' : hovered ? '#e5ddc7' : '#000000'}
+            emissiveIntensity={highlighted ? 1.2 : hovered ? 0.4 : 0}
             side={2} // DoubleSide - render both sides
           />
         </mesh>
         {/* Don't show label in spiral mode - only center label shows */}
         {!hideLabelInSpiral && (hovered || showLabelAlways || highlighted) && (name || location) && (
           <group position={[0, -1, 0]}>
-            {/* Creator Name - text-[10px], font-medium, text-foreground/90 */}
+            {/* Creator Name - Geist Sans-like, small all-caps label */}
             {name && (
               <Text
                 position={[0, 0.15, 0]}
-                fontSize={0.15}
-                color="#e8e8e8" // Approximate oklch(0.98 0.01 270) at 90% opacity
+                fontSize={0.14}
+                letterSpacing={0.02}
+                color="#e5ddc7" // Match cream UI text color
                 anchorX="center"
                 anchorY="middle"
                 outlineWidth={0.02}
@@ -117,11 +119,12 @@ export default function MemoryPoint({
                 {name}
               </Text>
             )}
-            {/* Location - text-[9px], normal weight, text-muted-foreground/80 */}
+            {/* Location - smaller, muted label */}
             {location && (
               <Text
                 position={[0, -0.05, 0]}
-                fontSize={0.135}
+                fontSize={0.12}
+                letterSpacing={0.02}
                 color="#a5a5a5" // Approximate oklch(0.65 0.02 270) at 80% opacity
                 anchorX="center"
                 anchorY="middle"
