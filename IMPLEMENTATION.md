@@ -533,6 +533,15 @@
     - [x] Ensure consistent styling with rest of app (black background)
     - [x] Black background matching landing page
     - [x] **Mobile optimization**: Skyline anchored to bottom using `100dvh`, horizontal scrolling enabled to read entire skyline
+- [x] **About Page & Info Architecture**:
+  - [x] Created dedicated `/about` route with structured sections:
+    - [x] Alone Together overview
+    - [x] About Sound of Fractures (artist bio and context)
+    - [x] How This Project is Funded (patron model, executive production)
+    - [x] Why Alone Together (conceptual framing)
+  - [x] Reused skyline video (`video_clip_skyline.mp4`) as the background for the About page with dark overlay for readability
+  - [x] Added top-right navigation on About page with **Explore**, **Create**, and **Skyline** options to return to the main experience
+  - [x] Extended `ExploreMenu` to include an **About** item on explore and skyline views for consistent navigation
 - [ ] Location permission UI flow
 - [ ] Error/retry screens
 - [ ] Abandoned session recovery
@@ -562,6 +571,8 @@
   - [x] Increased lighting intensities (ambient: 0.6→1.0, directional: 1.2→1.5, point: 0.6→0.8)
   - [x] Set window opacity to full brightness (1.0 instead of 0.85)
   - [x] Removed black background from MemoryGlobe container to allow video to show through
+  - [x] Updated window hover emissive color to use the cream palette tone instead of blue for a more cohesive look
+  - [x] Refined Drei `Text` labels under windows (creator + location) to better match Geist Sans styling (sizes, letter spacing, color hierarchy)
 
 ### Mobile Optimization
 - [x] **Touch Controls for 3D Scene**:
