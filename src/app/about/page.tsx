@@ -7,6 +7,26 @@ export default function AboutPage() {
 
   return (
     <main className="relative min-h-[100dvh] bg-black text-left flex flex-col items-center justify-center px-4 py-10 sm:py-16">
+      {/* Video background (same as skyline) */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="fixed inset-0 w-full h-full object-cover z-0"
+        style={{
+          opacity: 0.6,
+          pointerEvents: "none",
+        }}
+      >
+        <source src="/assets/video_clip_skyline.mp4" type="video/mp4" />
+      </video>
+
+      {/* Dark overlay for better text contrast */}
+      <div
+        className="fixed inset-0 bg-black/30 z-[1]"
+        style={{ pointerEvents: "none" }}
+      />
       {/* Top-right navigation to get back into the experience */}
       <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-1.5 sm:gap-2 text-xs sm:text-sm font-sans">
         <button
@@ -29,7 +49,7 @@ export default function AboutPage() {
         </button>
       </div>
 
-      <div className="w-full max-w-3xl space-y-8">
+      <div className="relative z-[2] w-full max-w-3xl space-y-8">
         <header className="space-y-2">
           <p className="text-xs sm:text-sm uppercase tracking-[0.2em]" style={{ color: '#e5ddc7' }}>
             About
