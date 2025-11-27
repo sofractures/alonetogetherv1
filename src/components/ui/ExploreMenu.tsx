@@ -44,7 +44,8 @@ export function ExploreMenu({ currentPage = "explore", onCreate }: ExploreMenuPr
               <button
                 type="button"
                 onClick={handleCreate}
-                className="block w-full px-3 py-1.5 text-right text-white hover:text-black hover:bg-white/90 transition-colors"
+                className="block w-full px-3 py-1.5 text-right hover:bg-white/10 transition-colors"
+                style={{ color: '#e5ddc7' }}
               >
                 Create
               </button>
@@ -54,7 +55,8 @@ export function ExploreMenu({ currentPage = "explore", onCreate }: ExploreMenuPr
               <button
                 type="button"
                 onClick={() => handleNavigate("/")}
-                className="block w-full px-3 py-1.5 text-right text-white hover:text-black hover:bg-white/90 transition-colors"
+                className="block w-full px-3 py-1.5 text-right hover:bg-white/10 transition-colors"
+                style={{ color: '#e5ddc7' }}
               >
                 Explore
               </button>
@@ -64,7 +66,8 @@ export function ExploreMenu({ currentPage = "explore", onCreate }: ExploreMenuPr
               <button
                 type="button"
                 onClick={() => handleNavigate("/skyline")}
-                className="block w-full px-3 py-1.5 text-right text-white hover:text-black hover:bg-white/90 transition-colors"
+                className="block w-full px-3 py-1.5 text-right hover:bg-white/10 transition-colors"
+                style={{ color: '#e5ddc7' }}
               >
                 Skyline
               </button>
@@ -74,7 +77,8 @@ export function ExploreMenu({ currentPage = "explore", onCreate }: ExploreMenuPr
               <button
                 type="button"
                 onClick={() => handleNavigate("/about")}
-                className="block w-full px-3 py-1.5 text-right text-white hover:text-black hover:bg-white/90 transition-colors"
+                className="block w-full px-3 py-1.5 text-right hover:bg-white/10 transition-colors"
+                style={{ color: '#e5ddc7' }}
               >
                 About
               </button>
