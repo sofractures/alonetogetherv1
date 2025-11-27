@@ -1,8 +1,34 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 export default function AboutPage() {
+  const router = useRouter();
+
   return (
-    <main className="min-h-[100dvh] bg-black text-left flex flex-col items-center justify-center px-4 py-10 sm:py-16">
+    <main className="relative min-h-[100dvh] bg-black text-left flex flex-col items-center justify-center px-4 py-10 sm:py-16">
+      {/* Top-right navigation to get back into the experience */}
+      <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-1.5 sm:gap-2 text-xs sm:text-sm font-sans">
+        <button
+          onClick={() => router.push("/")}
+          className="text-white hover:text-gray-300 transition-colors"
+        >
+          Explore
+        </button>
+        <button
+          onClick={() => router.push("/")}
+          className="text-white hover:text-gray-300 transition-colors"
+        >
+          Create
+        </button>
+        <button
+          onClick={() => router.push("/skyline")}
+          className="text-white hover:text-gray-300 transition-colors"
+        >
+          Skyline
+        </button>
+      </div>
+
       <div className="w-full max-w-3xl space-y-8">
         <header className="space-y-2">
           <p className="text-xs sm:text-sm uppercase tracking-[0.2em]" style={{ color: '#e5ddc7' }}>
