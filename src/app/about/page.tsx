@@ -99,6 +99,9 @@ export default function AboutPage() {
               The project is executive produced by CY Lee, whose support enables the platform development,
               interactive installations, and broader creative vision to come to life.
             </p>
+            <p>
+              To become a patron and play a role in making the upcoming exhibition a reality, or to enquire about partnerships, contact <a href="mailto:hello@soundoffractures.com" className="underline hover:opacity-80 transition-opacity">hello@soundoffractures.com</a>.
+            </p>
           </div>
         </section>
 
