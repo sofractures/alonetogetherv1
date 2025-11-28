@@ -499,8 +499,16 @@ export default function Home() {
                 </div>
               ) : (
                 <>
-                  <div className="text-sm mb-1" style={{ color: '#e5ddc7' }}>Prompt:</div>
-                  <div className="text-lg font-semibold mb-4" style={{ color: '#e5ddc7' }}>Share a time when you felt a part of something bigger than you</div>
+                  {/* Show prompt only on the main record view, or on desktop preview. 
+                      On mobile preview we hide it to keep things visually simpler. */}
+                  {(!isMobile || !pendingBlob) && (
+                    <>
+                      <div className="text-sm mb-1" style={{ color: '#e5ddc7' }}>Prompt:</div>
+                      <div className="text-lg font-semibold mb-4" style={{ color: '#e5ddc7' }}>
+                        Share a time when you felt a part of something bigger than you
+                      </div>
+                    </>
+                  )}
 
                   {!pendingBlob && (
                     <AudioRecorder onComplete={onRecorderComplete} onStartRecording={onRecordingStartFadeOutBackground} />
@@ -515,7 +523,7 @@ export default function Home() {
                         </>
                       )}
                       {isMobile && (
-                        <div className="text-sm mb-4" style={{ color: '#e5ddc7' }}>Your recording is ready</div>
+                        <div className="text-sm mb-4" style={{ color: '#e5ddc7' }}>Your recording is complete</div>
                       )}
                       {uploadError && <div className="text-red-300 text-sm mt-2">{uploadError}</div>}
                       <div className="flex gap-2 mt-4 items-center">
