@@ -81,7 +81,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        <div style={{ fontSize: 14, color: '#cbd5e1' }}>Recording limit: 00:30</div>
+        <div style={{ fontSize: 14, color: '#e5ddc7' }}>Recording limit: 00:30</div>
         <div style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: '#d54230' }}>{formatMs(timeLeftMs)}</div>
       </div>
 
