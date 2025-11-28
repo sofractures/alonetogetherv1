@@ -37,6 +37,7 @@ export default function Home() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [processedAudioUrl, setProcessedAudioUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [audioPreviewError, setAudioPreviewError] = useState(false);
   const [isMemoryPlayerOpen, setIsMemoryPlayerOpen] = useState(false);
   const [highlightMemoryId, setHighlightMemoryId] = useState<string | null>(null);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
@@ -59,6 +60,19 @@ export default function Home() {
   useEffect(() => {
     fetchMemories();
   }, [fetchMemories]);
+
+  // Detect mobile device for audio preview handling
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const checkMobile = () => {
+        setIsMobile(window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+      };
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      return () => window.removeEventListener('resize', checkMobile);
+    }
+  }, []);
 
   const handleStart = async () => {
     const c = getAudioController();
@@ -105,6 +119,7 @@ export default function Home() {
     setPendingBlob(blob);
     setPendingUrl(url);
     setFlowState('idle'); // Reset flow state when new recording starts
+    setAudioPreviewError(false); // Reset audio preview error for new recording
   };
 
   const handleLocationSelected = async (location: LocationData | null) => {
@@ -496,10 +511,31 @@ export default function Home() {
                   {pendingBlob && !processedAudioUrl && (
                     <div>
                       <div className="text-sm mb-2" style={{ color: '#e5ddc7' }}>Preview your recording</div>
-                      {pendingUrl && <audio src={pendingUrl} controls className="w-full" />}
+                      {pendingUrl && (
+                        <>
+                          <audio 
+                            src={pendingUrl} 
+                            controls 
+                            className="w-full" 
+                            onError={(e) => {
+                              console.warn('Audio preview error:', e);
+                              setAudioPreviewError(true);
+                            }}
+                            onLoadedData={() => {
+                              setAudioPreviewError(false);
+                            }}
+                          />
+                          {audioPreviewError && (
+                            <div className="text-sm mt-2 p-2 rounded bg-white/10 border border-white/20" style={{ color: '#e5ddc7' }}>
+                              <p className="mb-1">Preview not available on this device.</p>
+                              <p className="text-xs opacity-80">Your recording was saved successfully. You can still upload and create your song.</p>
+                            </div>
+                          )}
+                        </>
+                      )}
                       {uploadError && <div className="text-red-300 text-sm mt-2">{uploadError}</div>}
                       <div className="flex gap-2 mt-4 items-center">
-                        <button onClick={() => { setPendingBlob(null); setPendingUrl(null); }} className="px-4 py-2 rounded border border-white/30 hover:bg-white/10" style={{ color: '#e5ddc7' }}>
+                        <button onClick={() => { setPendingBlob(null); setPendingUrl(null); setAudioPreviewError(false); }} className="px-4 py-2 rounded border border-white/30 hover:bg-white/10" style={{ color: '#e5ddc7' }}>
                           Re-record
                         </button>
                         <button 
