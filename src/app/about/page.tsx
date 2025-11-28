@@ -100,7 +100,7 @@ export default function AboutPage() {
               interactive installations, and broader creative vision to come to life.
             </p>
             <p>
-              This isn&apos;t just streaming—it&apos;s participation.
+              To become a patron and play a role in making the upcoming exhibition a reality, or to enquire about partnerships, contact <a href="mailto:hello@soundoffractures.com" className="underline hover:opacity-80 transition-opacity">hello@soundoffractures.com</a>.
             </p>
           </div>
         </section>
@@ -109,11 +109,17 @@ export default function AboutPage() {
           <h2 className="text-xl sm:text-2xl font-semibold" style={{ color: '#e5ddc7' }}>
             Why Alone Together
           </h2>
-          <p className="text-sm sm:text-base" style={{ color: '#e5ddc7' }}>
-            In an age of digital isolation, algorithmic feeds, and endless scrolling, Alone Together offers a
-            different kind of connection—one built on shared vulnerability, personal storytelling, and the
-            recognition that we&apos;re all living parallel lives, alone but emotionally together.
-          </p>
+          <div className="space-y-3 text-sm sm:text-base" style={{ color: '#e5ddc7' }}>
+            <p>
+              We live beside each other but rarely connect. Technology amplified that distance while promising to close it.
+            </p>
+            <p>
+              Alone Together is part of the Sound of Fractures ecosystem—projects that explore our relationship with technology and how it affects connection, memory, and what we care about. <a href="https://soundoffractures.substack.com/p/beyond-streams-and-virality-a-case" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80 transition-opacity">SCENES</a> invited 500+ people to co-create artwork. This platform invites you to record yourself into the music.
+            </p>
+            <p>
+              Want to understand the thinking behind these experiments? Read the <a href="https://soundoffractures.substack.com/" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80 transition-opacity">Sound of Fractures Substack: Being a Creator Is More Than You Think It Is</a>.
+            </p>
+          </div>
         </section>
       </div>
     </main>

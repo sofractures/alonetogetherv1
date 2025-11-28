@@ -60,6 +60,19 @@ export default function Home() {
     fetchMemories();
   }, [fetchMemories]);
 
+  // Detect mobile device for audio preview handling
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const checkMobile = () => {
+        setIsMobile(window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+      };
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      return () => window.removeEventListener('resize', checkMobile);
+    }
+  }, []);
+
   const handleStart = async () => {
     const c = getAudioController();
     c.setSrc("/assets/fullsong.mp3");
@@ -479,6 +492,18 @@ export default function Home() {
               }}
             />
             <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl p-5">
+              {/* Mobile-only close button for the post-record confirm view */}
+              {isMobile && pendingBlob && !processedAudioUrl && (
+                <button
+                  type="button"
+                  onClick={closeOverlay}
+                  className="absolute top-3 right-3 text-lg leading-none"
+                  style={{ color: '#e5ddc7' }}
+                  aria-label="Close"
+                >
+                  ×
+                </button>
+              )}
               {isProcessing && !processedAudioUrl ? (
                 // Simple processing view - hide everything else
                 <div className="p-4 rounded bg-white/10 border border-white/20 text-center" style={{ color: '#e5ddc7' }}>
@@ -486,8 +511,16 @@ export default function Home() {
                 </div>
               ) : (
                 <>
-                  <div className="text-sm mb-1" style={{ color: '#e5ddc7' }}>Prompt:</div>
-                  <div className="text-lg font-semibold mb-4" style={{ color: '#e5ddc7' }}>Share a time when you felt a part of something bigger than you</div>
+                  {/* Show prompt only on the main record view, or on desktop preview. 
+                      On mobile preview we hide it to keep things visually simpler. */}
+                  {(!isMobile || !pendingBlob) && (
+                    <>
+                      <div className="text-sm mb-1" style={{ color: '#e5ddc7' }}>Prompt:</div>
+                      <div className="text-lg font-semibold mb-4" style={{ color: '#e5ddc7' }}>
+                        Share a time when you felt a part of something bigger than you
+                      </div>
+                    </>
+                  )}
 
                   {!pendingBlob && (
                     <AudioRecorder onComplete={onRecorderComplete} onStartRecording={onRecordingStartFadeOutBackground} />
@@ -495,22 +528,44 @@ export default function Home() {
 
                   {pendingBlob && !processedAudioUrl && (
                     <div>
-                      <div className="text-sm mb-2" style={{ color: '#e5ddc7' }}>Preview your recording</div>
-                      {pendingUrl && <audio src={pendingUrl} controls className="w-full" />}
+                      {!isMobile && (
+                        <>
+                          <div className="text-sm mb-2" style={{ color: '#e5ddc7' }}>Preview your recording</div>
+                          {pendingUrl && <audio src={pendingUrl} controls className="w-full" />}
+                        </>
+                      )}
+                      {isMobile && (
+                        <div className="text-sm mb-4 text-center" style={{ color: '#e5ddc7' }}>
+                          Your recording is complete!
+                        </div>
+                      )}
                       {uploadError && <div className="text-red-300 text-sm mt-2">{uploadError}</div>}
                       <div className="flex gap-2 mt-4 items-center">
-                        <button onClick={() => { setPendingBlob(null); setPendingUrl(null); }} className="px-4 py-2 rounded border border-white/30 hover:bg-white/10" style={{ color: '#e5ddc7' }}>
+                        <button
+                          onClick={() => { setPendingBlob(null); setPendingUrl(null); }}
+                          className="px-4 py-2 rounded border border-white/30 hover:bg-white/10 flex-1"
+                          style={{ color: '#e5ddc7' }}
+                        >
                           Re-record
                         </button>
                         <button 
                           onClick={() => proceedWithUpload(null)} 
                           disabled={isUploading || isProcessing || flowState !== 'idle'} 
-                          className="px-4 py-2 rounded border border-white/30 hover:bg-white/10 disabled:opacity-60 transition-colors"
+                          className="px-4 py-2 rounded border border-white/30 hover:bg-white/10 disabled:opacity-60 transition-colors flex-1"
                           style={{ color: '#e5ddc7' }}
                         >
                           {isUploading ? 'Uploading…' : isProcessing ? 'Processing…' : 'Accept & Upload'}
                         </button>
-                        <button onClick={closeOverlay} disabled={isUploading || isProcessing} className="ml-auto px-4 py-2 rounded border border-gray-500/40 disabled:opacity-60" style={{ color: '#e5ddc7' }}>Close</button>
+                        {!isMobile && (
+                          <button
+                            onClick={closeOverlay}
+                            disabled={isUploading || isProcessing}
+                            className="ml-auto px-4 py-2 rounded border border-gray-500/40 disabled:opacity-60"
+                            style={{ color: '#e5ddc7' }}
+                          >
+                            Close
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
