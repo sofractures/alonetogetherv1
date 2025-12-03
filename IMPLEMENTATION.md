@@ -24,7 +24,7 @@
   ```
 - [x] Configure RLS policies for buckets
 - [x] **CRITICAL STEP: Create `memories` database table**
-  - [x] **Location:** Supabase Dashboard → SQL Editor → Run `CREATE_TABLE.sql`
+  - [x] **Location:** Supabase Dashboard → SQL Editor → Run `CREATE_TABLE.sql` (audio `memories` table)
   - [x] **Why Critical:** Without this table, memory records cannot be created, causing:
     - `memoryId = null` (insert fails silently)
     - Processed songs exist in bucket but have no database record
@@ -40,13 +40,17 @@
     3. Process audio → File uploaded to `processed-songs` bucket ✅
     4. **Update database record** → Set `audio_url` using `memoryId` ← **CAN'T UPDATE IF STEP 2 FAILED**
     5. Fetch memories for globe → Query `memories` table ← **NO RECORDS IF STEP 2 FAILED**
-  - [x] **Table Requirements:**
+  - [x] **Table Requirements (audio `memories`):**
     - `audio_url TEXT` (nullable, NOT `NOT NULL`) - Set after processing
     - `latitude DECIMAL`, `longitude DECIMAL` (nullable) - For globe positioning
     - `location_city TEXT`, `location_country TEXT` (nullable) - For display
     - RLS enabled with service_role policy
     - Indexes on location and audio_url for performance
-  - [x] **Script:** See `CREATE_TABLE.sql` in project root for complete SQL
+  - [x] **Script:** See `CREATE_TABLE.sql` in project root for complete SQL (defines both `memories` and `skyline_memories`)
+- [x] Create `skyline_memories` database table (text-only skyline memories)
+  - [x] **Location:** Supabase Dashboard → SQL Editor → run the `skyline_memories` block from `CREATE_TABLE.sql` on existing projects
+  - [x] Columns: `id UUID`, `text TEXT`, `prompt TEXT`, `email TEXT`, `user_name TEXT`, `created_at TIMESTAMP`
+  - [x] RLS enabled with service_role policy (`Service role can do everything (skyline_memories)`)
 - [ ] Create `prompts` table (if needed):
   ```sql
   CREATE TABLE prompts (
@@ -105,7 +109,8 @@
 - [x] **Memory Skyline Data File** (`src/data/memories.ts`):
   - [x] Contains sample memory text as continuous string with line breaks
   - [x] Text flows across all buildings in skyline visualization
-  - [x] Can be replaced with real memories from database in future
+  - [x] Used as static base text for hero page skyline
+  - [x] On `/skyline` page, this base text is combined with dynamic skyline memories from Supabase
   - [x] Format: Plain text with newlines separating individual memories
 
 ---
@@ -388,6 +393,7 @@
     - [x] Handles processor responses
     - [x] Creates signed URLs for playback
     - [x] Error handling with diagnostics
+  - [x] `/api/skyline-memories` - GET/POST text skyline memories (backed by `skyline_memories` table)
   - [ ] Add rate limiting
   - [x] Implement error handling
   - [ ] Add request validation
@@ -528,10 +534,15 @@
     - [x] **Mobile optimization**: Tighter spacing between menu items (`gap-1.5` on mobile), smaller text size
   - [x] **Skyline Page**:
     - [x] Create new page route for skyline view (`/app/skyline/page.tsx`)
-    - [x] Display MemorySkyline component at bottom (matching landing page style)
+    - [x] Display `MemorySkyline` component at bottom (matching landing page style)
     - [x] Add "Explore" button in menu corner to return to explore page
     - [x] Ensure consistent styling with rest of app (black background)
     - [x] Black background matching landing page
+    - [x] **Interactive skyline memories**:
+      - [x] On page load, fetch existing skyline text memories from Supabase via `/api/skyline-memories` and combine with static `memoriesText`
+      - [x] Show modal prompt ("Add a memory to the skyline") when user visits `/skyline`, with rotating reflective prompts
+      - [x] User-submitted text is POSTed to `/api/skyline-memories` and appended live to the rendered skyline
+      - [x] Skyline scrolls horizontally as it grows (city made from accumulated memories)
     - [x] **Mobile optimization**: Skyline anchored to bottom using `100dvh`, horizontal scrolling enabled to read entire skyline
 - [x] **About Page & Info Architecture**:
   - [x] Created dedicated `/about` route with structured sections:
