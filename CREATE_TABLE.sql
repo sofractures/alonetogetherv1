@@ -1,4 +1,4 @@
--- Create the memories table in Supabase
+-- Create the audio memories table in Supabase
 -- Run this in Supabase SQL Editor: https://supabase.com/dashboard/project/_/sql
 
 CREATE TABLE IF NOT EXISTS public.memories (
@@ -31,4 +31,24 @@ WITH CHECK (true);
 -- Optional: Create an index on location for faster queries
 CREATE INDEX IF NOT EXISTS idx_memories_location ON public.memories(latitude, longitude);
 CREATE INDEX IF NOT EXISTS idx_memories_audio_url ON public.memories(audio_url) WHERE audio_url IS NOT NULL;
+
+-- Skyline memories: text-only entries that feed the interactive skyline page
+-- This is separate from the audio `memories` table above.
+CREATE TABLE IF NOT EXISTS public.skyline_memories (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  text TEXT NOT NULL,
+  prompt TEXT,
+  email TEXT,
+  user_name TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+ALTER TABLE public.skyline_memories ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Service role can do everything (skyline_memories)"
+ON public.skyline_memories
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
 
