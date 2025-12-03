@@ -26,11 +26,13 @@ export default function SkylinePage() {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [showPromptModal, setShowPromptModal] = useState<boolean>(true);
+  const [isIntroStep, setIsIntroStep] = useState<boolean>(true);
   const [currentPrompt, setCurrentPrompt] = useState<string>(PROMPTS[0]);
   const [inputValue, setInputValue] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     // Choose a random prompt on first mount
@@ -77,6 +79,7 @@ export default function SkylinePage() {
     event.preventDefault();
     setSubmitError(null);
     setValidationError(null);
+    setSubmitSuccess(null);
 
     const value = inputValue.trim();
     if (value.length < 5) {
@@ -120,6 +123,8 @@ export default function SkylinePage() {
       );
       setInputValue("");
       setShowPromptModal(false);
+      setIsIntroStep(false);
+      setSubmitSuccess("Thank you — your memory has been added to the skyline.");
     } catch (err) {
       console.error(err);
       setSubmitError(
@@ -135,6 +140,13 @@ export default function SkylinePage() {
     if (submitError) return submitError;
     return "Your words will become part of the city's lights.";
   }, [validationError, submitError]);
+
+  // Clear success message after a short delay
+  useEffect(() => {
+    if (!submitSuccess) return;
+    const timeout = setTimeout(() => setSubmitSuccess(null), 6000);
+    return () => clearTimeout(timeout);
+  }, [submitSuccess]);
 
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden bg-black">
@@ -153,12 +165,6 @@ export default function SkylinePage() {
         <source src="/assets/video_clip_skyline.mp4" type="video/mp4" />
       </video>
       
-      {/* Dark overlay for better contrast */}
-      <div
-        className="fixed inset-0 bg-black/30 z-[1]"
-        style={{ pointerEvents: "none" }}
-      />
-      
       {/* Menu in top-right corner */}
       <div className="relative z-10">
         <ExploreMenu currentPage="skyline" />
@@ -176,6 +182,12 @@ export default function SkylinePage() {
         </div>
       )}
 
+      {submitSuccess && (
+        <div className="absolute bottom-64 right-4 z-[2] text-xs font-mono text-white/70 max-w-xs text-right">
+          {submitSuccess}
+        </div>
+      )}
+
       {/* Skyline positioned at bottom (matching landing page style) */}
       <div className="absolute bottom-0 left-0 right-0 z-[2] h-64 flex items-end overflow-x-auto overflow-y-hidden touch-pan-x scroll-smooth pb-4">
         {/* Allow horizontal scrolling across the skyline, especially on mobile */}
@@ -184,47 +196,78 @@ export default function SkylinePage() {
         </div>
       </div>
 
-      {/* Prompt modal */}
+      {/* Skyline modal flow: intro step → prompt + text step */}
       {showPromptModal && (
-        <div className="fixed inset-0 z-[20] flex items-center justify-center bg-black/70">
+        <div className="fixed inset-0 z-[20] flex items-center justify-center">
           <div className="max-w-lg w-full mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-md p-6 sm:p-8 text-white">
-            <h2 className="text-lg sm:text-xl font-mono font-semibold mb-3">
-              Add a memory to the skyline
-            </h2>
-            <p className="text-sm sm:text-base text-white/80 mb-4">
-              {currentPrompt}
-            </p>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <textarea
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                className="w-full min-h-[120px] rounded-md border border-white/25 bg-black/40 text-sm sm:text-base text-white placeholder-white/40 p-3 resize-none focus:outline-none focus:ring-2 focus:ring-white/40"
-                placeholder="Type your memory here..."
-              />
-
-              <p className="text-xs sm:text-[13px] text-white/70 min-h-[1.5rem]">
-                {combinedHelperText}
-              </p>
-
-              <div className="flex items-center justify-between gap-3 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setShowPromptModal(false)}
-                  className="text-xs sm:text-sm font-mono text-white/70 hover:text-white/90 underline underline-offset-4"
-                >
-                  Skip for now
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-4 sm:px-5 py-2 rounded-md border border-white/40 bg-white/10 hover:bg-white/20 text-xs sm:text-sm font-mono font-semibold tracking-wide transition disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? "Sharing..." : "Share memory"}
-                </button>
+            {isIntroStep ? (
+              <div className="space-y-4">
+                <h2 className="text-lg sm:text-xl font-mono font-semibold">
+                  Welcome to the skyline
+                </h2>
+                <p className="text-sm sm:text-base text-white/80">
+                  The memory skyline is a city of memories that grows with each
+                  story added, creating an interconnected community of shared
+                  experiences.
+                </p>
+                <div className="flex items-center justify-between gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPromptModal(false)}
+                    className="text-xs sm:text-sm font-mono text-white/70 hover:text-white/90 underline underline-offset-4"
+                  >
+                    Skip for now
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsIntroStep(false)}
+                    className="px-4 sm:px-5 py-2 rounded-md border border-white/40 bg-white/10 hover:bg-white/20 text-xs sm:text-sm font-mono font-semibold tracking-wide transition"
+                  >
+                    Share a memory
+                  </button>
+                </div>
               </div>
-            </form>
+            ) : (
+              <>
+                <h2 className="text-lg sm:text-xl font-mono font-semibold mb-3">
+                  Add a memory to the skyline
+                </h2>
+                <p className="text-sm sm:text-base text-white/80 mb-4">
+                  {currentPrompt}
+                </p>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <textarea
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    className="w-full min-h-[120px] rounded-md border border-white/25 bg-black/40 text-sm sm:text-base text-white placeholder-white/40 p-3 resize-none focus:outline-none focus:ring-2 focus:ring-white/40"
+                    placeholder="Type your memory here..."
+                  />
+
+                  <p className="text-xs sm:text-[13px] text-white/70 min-h-[1.5rem]">
+                    {combinedHelperText}
+                  </p>
+
+                  <div className="flex items-center justify-between gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowPromptModal(false)}
+                      className="text-xs sm:text-sm font-mono text-white/70 hover:text-white/90 underline underline-offset-4"
+                    >
+                      Skip for now
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="px-4 sm:px-5 py-2 rounded-md border border-white/40 bg-white/10 hover:bg-white/20 text-xs sm:text-sm font-mono font-semibold tracking-wide transition disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {isSubmitting ? "Sharing..." : "Share memory"}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}
