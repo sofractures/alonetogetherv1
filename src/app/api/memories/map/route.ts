@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
 import { Memory, MemoryForMap } from '@/types/memory';
+import crypto from 'crypto';
 
 export const runtime = 'nodejs';
+
+// SECURITY: Hash email for ownership verification without exposing the actual email
+function hashEmail(email: string): string {
+  return crypto.createHash('sha256').update(email.toLowerCase().trim()).digest('hex').slice(0, 16);
+}
 
 export async function GET() {
   try {
@@ -95,6 +101,7 @@ export async function GET() {
     }
 
     // Transform to format needed for 3D map (memories are already filtered)
+    // SECURITY: Do NOT expose email addresses publicly - hash them for ownership check
     const memoriesForMap: MemoryForMap[] = memories.map((m: Memory) => ({
         id: m.id,
         latitude: m.latitude!,
@@ -106,7 +113,8 @@ export async function GET() {
         audioUrl: m.audio_url,
         name: m.display_name,
         createdAt: m.created_at, // Include creation timestamp for sorting
-        email: m.email, // Include email for download permission check
+        // SECURITY: Hash email for client-side ownership comparison instead of exposing raw email
+        emailHash: m.email ? hashEmail(m.email) : undefined,
       }));
     
     console.log('[v0] API: Returning', memoriesForMap.length, 'memories for map');

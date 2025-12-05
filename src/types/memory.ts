@@ -25,6 +25,7 @@ export interface MemoryForMap {
   audioUrl: string;
   name?: string;
   createdAt?: string; // ISO timestamp for sorting by creation time
-  email?: string; // Email of memory creator (for download permission check)
+  // SECURITY: Use hashed email for ownership verification - never expose raw emails
+  emailHash?: string; // SHA256 hash (first 16 chars) of email for client-side ownership check
 }
 

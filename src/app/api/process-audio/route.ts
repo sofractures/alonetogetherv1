@@ -1,15 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
+import { rateLimit, getClientIP, RATE_LIMITS } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 
+// SECURITY: Validate UUID format
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isValidUUID(id: string): boolean {
+  return UUID_REGEX.test(id);
+}
+
+// SECURITY: Validate storage path format to prevent path traversal
+function isValidStoragePath(path: string): boolean {
+  // Only allow alphanumeric, hyphens, underscores, periods, and forward slashes
+  // Must not contain .. (directory traversal)
+  const pathRegex = /^[a-zA-Z0-9\-_./]+$/;
+  return pathRegex.test(path) && !path.includes('..') && !path.startsWith('/');
+}
+
 export async function POST(req: NextRequest) {
   try {
+    // SECURITY: Rate limit processing requests to prevent abuse
+    const clientIP = getClientIP(req.headers);
+    const rateLimitResult = rateLimit(`process:${clientIP}`, RATE_LIMITS.PROCESS);
+    
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please wait a moment and try again.' },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000).toString(),
+          }
+        }
+      );
+    }
     const body = await req.json();
     const inputPath = body?.path as string | undefined;
     const memoryId = (body?.memoryId as string | null) ?? null;
+    
+    // SECURITY: Validate input path
     if (!inputPath) {
       return NextResponse.json({ error: 'Missing path' }, { status: 400 });
+    }
+    
+    // SECURITY: Validate path format to prevent path traversal attacks
+    if (!isValidStoragePath(inputPath)) {
+      return NextResponse.json({ error: 'Invalid path format' }, { status: 400 });
+    }
+    
+    // SECURITY: Validate memoryId format if provided
+    if (memoryId && !isValidUUID(memoryId)) {
+      return NextResponse.json({ error: 'Invalid memory ID format' }, { status: 400 });
     }
 
     // Check if audio processor service URL is configured
@@ -68,20 +111,14 @@ export async function POST(req: NextRequest) {
             .eq('id', memoryId)
             .single();
           
-          console.log('[v0] API: Verified memory after processing:', {
-            id: updatedMemory?.id,
-            hasAudioUrl: !!updatedMemory?.audio_url,
-            audioUrl: updatedMemory?.audio_url,
-            hasLocation: !!(updatedMemory?.latitude && updatedMemory?.longitude),
-            lat: updatedMemory?.latitude,
-            lng: updatedMemory?.longitude
-          });
+          // SECURITY: Only log non-sensitive confirmation
+          console.log('[v0] API: Verified memory after processing, success:', !!updatedMemory?.audio_url);
           
           if (checkError) {
-            console.error('[v0] API: Error verifying memory:', checkError);
+            console.error('[v0] API: Error verifying memory');
           }
-        } catch (verifyError) {
-          console.error('[v0] API: Exception verifying memory:', verifyError);
+        } catch {
+          console.error('[v0] API: Exception verifying memory');
         }
       }
 
