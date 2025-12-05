@@ -10,26 +10,39 @@ interface MemoryPlayerProps {
   onClose: () => void;
 }
 
+// SECURITY: Hash email client-side to compare with server-side hash
+// This prevents exposing actual email addresses in the API response
+async function hashEmailClient(email: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(email.toLowerCase().trim());
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex.slice(0, 16); // Match server-side truncation
+}
+
 export default function MemoryPlayer({ memory, isOpen, onClose }: MemoryPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userEmailHash, setUserEmailHash] = useState<string | null>(null);
   
-  // Get user email from localStorage on mount
+  // Get user email from localStorage and hash it on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedEmail = localStorage.getItem('userEmail');
-      setUserEmail(storedEmail);
+      if (storedEmail) {
+        hashEmailClient(storedEmail).then(hash => setUserEmailHash(hash));
+      }
     }
   }, []);
   
   const currentMemory = memory;
   const title = currentMemory?.name || currentMemory?.location || 'Memory';
   
-  // Check if current memory belongs to the user
-  const isUserMemory = userEmail && currentMemory?.email && 
-    userEmail.toLowerCase() === currentMemory.email.toLowerCase();
+  // SECURITY: Check ownership using hash comparison instead of exposing raw emails
+  const isUserMemory = userEmailHash && currentMemory?.emailHash && 
+    userEmailHash === currentMemory.emailHash;
 
   // Fetch signed URL when modal opens and memory is available
   useEffect(() => {

@@ -3,6 +3,13 @@ import { supabaseServer } from '@/lib/supabase-server';
 
 export const runtime = 'nodejs';
 
+// SECURITY: Validate UUID format to prevent injection attacks
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isValidUUID(id: string): boolean {
+  return UUID_REGEX.test(id);
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -10,9 +17,10 @@ export async function GET(
   try {
     const { id: memoryId } = await params;
 
-    if (!memoryId) {
+    // SECURITY: Validate UUID format
+    if (!memoryId || !isValidUUID(memoryId)) {
       return NextResponse.json(
-        { error: 'Memory ID is required' },
+        { error: 'Invalid memory ID format' },
         { status: 400 }
       );
     }
@@ -53,14 +61,10 @@ export async function GET(
       .createSignedUrl(cleanPath, 3600); // 1 hour expiry
 
     if (signedError || !signedData?.signedUrl) {
-      console.error('[v0] API: Error creating signed URL:', {
-        error: signedError,
-        path: cleanPath,
-        memoryId: memoryId,
-        originalPath: memory.audio_url
-      });
+      // SECURITY: Log error internally but don't expose details to client
+      console.error('[v0] API: Error creating signed URL for memory:', memoryId);
       return NextResponse.json(
-        { error: 'Failed to generate audio URL', details: signedError?.message },
+        { error: 'Failed to generate audio URL' },
         { status: 500 }
       );
     }

@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { rateLimit, getClientIP, RATE_LIMITS } from "@/lib/rate-limit";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  // SECURITY: Rate limit read requests
+  const clientIP = getClientIP(req.headers);
+  const rateLimitResult = rateLimit(`skyline-read:${clientIP}`, RATE_LIMITS.READ);
+  
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429 }
+    );
+  }
   const { data, error } = await supabaseServer
     .from("skyline_memories")
     .select("id, text, prompt, created_at")
@@ -19,8 +30,24 @@ export async function GET() {
   return NextResponse.json({ memories: data ?? [] });
 }
 
+// SECURITY: Sanitize text input
+function sanitizeText(input: string): string {
+  return input.replace(/[<>]/g, '').trim(); // Remove potential XSS chars
+}
+
 export async function POST(req: NextRequest) {
   try {
+    // SECURITY: Rate limit write requests more strictly
+    const clientIP = getClientIP(req.headers);
+    const rateLimitResult = rateLimit(`skyline-write:${clientIP}`, RATE_LIMITS.WRITE);
+    
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many submissions. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const rawText = typeof body.text === "string" ? body.text : "";
     const prompt =
@@ -28,7 +55,8 @@ export async function POST(req: NextRequest) {
         ? body.prompt.trim()
         : null;
 
-    const text = rawText.trim();
+    // SECURITY: Sanitize user input
+    const text = sanitizeText(rawText);
 
     if (text.length < 5) {
       return NextResponse.json(
@@ -44,9 +72,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // SECURITY: Also sanitize prompt if present
+    const sanitizedPrompt = prompt ? sanitizeText(prompt).slice(0, 200) : null;
+
     const { data, error } = await supabaseServer
       .from("skyline_memories")
-      .insert({ text, prompt })
+      .insert({ text, prompt: sanitizedPrompt })
       .select("id, text, prompt, created_at")
       .single();
 

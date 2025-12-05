@@ -34,14 +34,14 @@ function getSupabaseClient() {
       throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
     }
     
-    // Diagnostic: log key format (first 20 chars only for security)
-    const keyPrefix = supabaseKey.substring(0, 20);
+    // SECURITY: Only log format validation result, not any part of the key
     const isJWT = supabaseKey.startsWith('eyJ');
     const isNewFormat = supabaseKey.startsWith('sb_secret_');
-    console.log(`[DIAG] Key format check: prefix="${keyPrefix}...", isJWT=${isJWT}, isNewFormat=${isNewFormat}, length=${supabaseKey.length}`);
     
     if (!isJWT && !isNewFormat) {
-      console.error(`[ERROR] Key format unrecognized! Expected JWT (eyJ...) or new format (sb_secret_...), got: ${keyPrefix}...`);
+      console.error('[ERROR] Supabase key format unrecognized. Expected JWT or sb_secret_ format.');
+    } else {
+      console.log('[INFO] Supabase client initialized successfully');
     }
     
     supabase = createClient(supabaseUrl, supabaseKey);
@@ -406,37 +406,28 @@ app.get('/health', (req, res) => {
   });
 });
 
+// SECURITY: Diagnostic endpoint - only available in development or with secret token
 app.get('/diag', (req, res) => {
-  // Diagnostic endpoint to check environment variables (without exposing secrets)
-  const envVars = Object.keys(process.env).filter(key => 
-    key.includes('SUPABASE') || key.includes('RAILWAY')
-  );
-  const envInfo = {};
-  envVars.forEach(key => {
-    envInfo[key] = process.env[key] ? 
-      (key.includes('KEY') ? '***SET***' : process.env[key]) : 
-      'NOT SET';
-  });
+  // SECURITY: Require a secret token in production to prevent information disclosure
+  const diagToken = process.env.DIAG_SECRET_TOKEN;
+  const providedToken = req.headers['x-diag-token'] || req.query.token;
   
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-  const keyPrefix = key.substring(0, 20);
-  const isJWT = key.startsWith('eyJ');
-  const isNewFormat = key.startsWith('sb_secret_');
+  // In production, require token. In development, allow without token
+  if (process.env.NODE_ENV === 'production') {
+    if (!diagToken) {
+      return res.status(503).json({ error: 'Diagnostic endpoint disabled in production' });
+    }
+    if (providedToken !== diagToken) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+  }
   
+  // SECURITY: Only return minimal, non-sensitive information
   res.json({
-    hasSupabaseUrl: !!process.env.SUPABASE_URL,
-    hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-    supabaseUrlValue: process.env.SUPABASE_URL ? 'SET' : 'NOT SET',
-    supabaseKeyValue: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'NOT SET',
-    keyFormat: {
-      prefix: keyPrefix + '...',
-      isJWT: isJWT,
-      isNewFormat: isNewFormat,
-      length: key.length
-    },
-    allEnvVars: envInfo,
-    port: process.env.PORT,
-    nodeEnv: process.env.NODE_ENV
+    status: 'ok',
+    configured: !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY),
+    nodeEnv: process.env.NODE_ENV,
+    timestamp: new Date().toISOString()
   });
 });
 
