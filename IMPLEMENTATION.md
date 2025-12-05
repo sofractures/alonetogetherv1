@@ -394,9 +394,9 @@
     - [x] Creates signed URLs for playback
     - [x] Error handling with diagnostics
   - [x] `/api/skyline-memories` - GET/POST text skyline memories (backed by `skyline_memories` table)
-  - [ ] Add rate limiting
+  - [x] Add rate limiting (in-memory rate limiter: 5 uploads/min, 3 processes/min, 60 reads/min)
   - [x] Implement error handling
-  - [ ] Add request validation
+  - [x] Add request validation (UUID validation, input sanitization, path traversal protection)
 
 ### Supabase Integration Notes
 - [x] Use `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (publishable) on the client
@@ -660,6 +660,18 @@
 - [ ] User acceptance testing:
   - [ ] Complete user journey
   - [ ] Edge cases (no location, long recordings)
+
+### Security Hardening (Completed)
+- [x] **CVE-2025-55182 Patched**: Upgraded to Next.js 15.5.7, React 19.1.2 (critical RCE fix)
+- [x] **Email Privacy**: User emails hashed (SHA256) before sending to client, never exposed in API
+- [x] **Authorization**: Memory update endpoint prevents modification of already-claimed memories
+- [x] **UUID Validation**: All API routes validate memory ID format to prevent injection
+- [x] **Rate Limiting**: In-memory rate limiter (5 uploads/min, 3 processes/min, 60 reads/min, 10 writes/min)
+- [x] **Input Sanitization**: All user inputs validated and sanitized (email, names, locations, coordinates)
+- [x] **Path Traversal Protection**: Storage paths validated to prevent directory traversal attacks
+- [x] **Security Headers**: Added X-Frame-Options, HSTS, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy
+- [x] **Error Sanitization**: Internal details removed from error responses
+- [x] **Audio Processor Secured**: Diagnostic endpoint requires auth token in production
 
 ### Deployment Preparation
 - [ ] Optimize build size:
