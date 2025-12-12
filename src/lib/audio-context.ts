@@ -1,13 +1,16 @@
 export type AudioController = {
   element: HTMLAudioElement | null;
   isReady: boolean;
-  isPlaying: boolean;
+  readonly isPlaying: boolean;
   currentTime: number;
   volume: number;
+  savedTime: number; // Store playback position when pausing
   play: () => Promise<void>;
   pause: () => void;
+  fadeOutAndPause: (ms?: number) => Promise<void>;
   fadeOut: (ms?: number) => Promise<void>;
   fadeIn: (targetVolume?: number, ms?: number) => Promise<void>;
+  resumeFromSaved: () => Promise<void>;
   setVolume: (v: number) => void;
   setSrc: (src: string) => void;
 };
@@ -23,9 +26,9 @@ export function getAudioController(): AudioController {
     element.loop = true;
   }
 
-  const isReady = false;
-  let isPlaying = false;
+  let isReady = false;
   let volume = 0.5; // default 50%
+  let savedTime = 0; // Store position for resume
 
   async function play() {
     if (!element) {
@@ -35,7 +38,6 @@ export function getAudioController(): AudioController {
     try {
       console.log("AudioController: Attempting to play audio, current src:", element.src);
       await element.play();
-      isPlaying = true;
       console.log("AudioController: Successfully started playing");
     } catch (error) {
       console.error("AudioController: Failed to play audio", error);
@@ -45,8 +47,8 @@ export function getAudioController(): AudioController {
 
   function pause() {
     if (!element) return;
+    console.log("AudioController: Pausing audio");
     element.pause();
-    isPlaying = false;
   }
 
   function setVolume(v: number) {
@@ -86,6 +88,16 @@ export function getAudioController(): AudioController {
     });
   }
 
+  // Fade out and then pause - important for mobile where audio at volume 0 still uses resources
+  async function fadeOutAndPause(ms = 600) {
+    if (!element) return;
+    // Save current position before pausing
+    savedTime = element.currentTime;
+    console.log("AudioController: Fading out and pausing, saving position:", savedTime);
+    await fadeOut(ms);
+    pause();
+  }
+
   async function fadeIn(targetVolume = volume, ms = 600) {
     if (!element) return;
     const end = Math.max(0, Math.min(1, targetVolume));
@@ -110,51 +122,92 @@ export function getAudioController(): AudioController {
     });
   }
 
-  controller = {
+  // Resume from saved position with fade in
+  async function resumeFromSaved() {
+    if (!element) return;
+    console.log("AudioController: Resuming from saved position:", savedTime);
+    // Restore position if we have one saved
+    if (savedTime > 0) {
+      element.currentTime = savedTime;
+    }
+    element.volume = 0; // Start at 0 for fade in
+    await play();
+    await fadeIn(volume, 600);
+  }
+
+  // Create controller with getters for dynamic properties
+  const ctrl: AudioController = {
     element,
     isReady,
-    isPlaying,
+    // Use getter to always return actual playing state from the element
+    get isPlaying() {
+      return element ? !element.paused : false;
+    },
     currentTime: 0,
     volume,
+    savedTime: 0,
     play,
     pause,
     fadeOut,
+    fadeOutAndPause,
     fadeIn,
+    resumeFromSaved,
     setVolume,
     setSrc,
   };
 
+  controller = ctrl;
+
   if (element) {
     element.addEventListener("canplay", () => {
       if (controller) controller.isReady = true;
+      isReady = true;
     });
     element.addEventListener("timeupdate", () => {
       if (controller && element) controller.currentTime = element.currentTime;
+    });
+    // Track play/pause events for debugging
+    element.addEventListener("play", () => {
+      console.log("AudioController: Element play event fired");
+    });
+    element.addEventListener("pause", () => {
+      console.log("AudioController: Element pause event fired");
     });
   }
 
   return controller;
 }
 
+// Called when user starts recording - fade out and pause background music
 export async function onRecordingStartFadeOutBackground() {
   const c = getAudioController();
-  await c.fadeOut(800);
-  c.pause();
+  console.log("onRecordingStartFadeOutBackground: Starting fade out, isPlaying:", c.isPlaying);
+  await c.fadeOutAndPause(800);
+  console.log("onRecordingStartFadeOutBackground: Fade out complete, isPlaying:", c.isPlaying);
 }
 
+// Called when recording overlay closes - resume background music
 export async function onRecordingStopResumeBackground() {
   const c = getAudioController();
-  await c.fadeIn(0.5, 800);
-  c.play();
+  console.log("onRecordingStopResumeBackground: Resuming background music");
+  await c.resumeFromSaved();
+  console.log("onRecordingStopResumeBackground: Resume complete, isPlaying:", c.isPlaying);
 }
 
+// Called when user opens memory player - fade out and pause background music
 export async function onMemoryPlaybackStartMuteBackground() {
   const c = getAudioController();
-  await c.fadeOut(400);
+  console.log("onMemoryPlaybackStartMuteBackground: Starting fade out, isPlaying:", c.isPlaying);
+  // IMPORTANT: Must pause on mobile, not just fade to 0
+  await c.fadeOutAndPause(400);
+  console.log("onMemoryPlaybackStartMuteBackground: Fade out complete, isPlaying:", c.isPlaying);
 }
 
+// Called when user closes memory player - resume background music
 export async function onMemoryPlaybackStopUnmuteBackground() {
   const c = getAudioController();
-  await c.fadeIn(0.5, 400);
+  console.log("onMemoryPlaybackStopUnmuteBackground: Resuming background music");
+  await c.resumeFromSaved();
+  console.log("onMemoryPlaybackStopUnmuteBackground: Resume complete, isPlaying:", c.isPlaying);
 }
 
