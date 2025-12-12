@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
 import { rateLimit, getClientIP, RATE_LIMITS } from '@/lib/rate-limit';
+import { captureApiError } from '@/lib/sentry';
 
 export const runtime = 'nodejs';
 
@@ -176,6 +177,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ path, memoryId, diagnostics: { listCount: (listRes.data?.length ?? 0), signedUrl } }, { status: 200 });
   } catch (e) {
+    // Track error with Sentry
+    captureApiError(e, {
+      route: '/api/memory/record',
+      method: 'POST',
+    });
     const message = e instanceof Error ? e.message : 'Upload failed';
     return NextResponse.json({ error: message }, { status: 500 });
   }
