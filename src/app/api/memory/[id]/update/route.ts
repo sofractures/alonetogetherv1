@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
+import { captureApiError } from '@/lib/sentry';
 
 export const runtime = 'nodejs';
 
@@ -127,6 +128,11 @@ export async function PATCH(
     // SECURITY: Don't return email in response
     return NextResponse.json({ success: true, memoryId: data.id });
   } catch (e) {
+    // Track error with Sentry
+    captureApiError(e, {
+      route: '/api/memory/[id]/update',
+      method: 'PATCH',
+    });
     console.error('[v0] API: Exception updating memory');
     return NextResponse.json(
       { error: 'Failed to update memory' },

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
 import { Memory, MemoryForMap } from '@/types/memory';
 import crypto from 'crypto';
+import { captureApiError } from '@/lib/sentry';
 
 export const runtime = 'nodejs';
 
@@ -127,6 +128,12 @@ export async function GET() {
       { status: 200 }
     );
   } catch (e) {
+    // Track error with Sentry
+    captureApiError(e, {
+      route: '/api/memories/map',
+      method: 'GET',
+    });
+    
     const message = e instanceof Error ? e.message : 'Failed to fetch memories';
     const stack = e instanceof Error ? e.stack : undefined;
     console.error('[v0] API: Exception fetching memories:', message);

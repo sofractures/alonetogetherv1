@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
 import { rateLimit, getClientIP, RATE_LIMITS } from '@/lib/rate-limit';
+import { captureProcessingError, captureApiError } from '@/lib/sentry';
 
 export const runtime = 'nodejs';
 
@@ -128,6 +129,12 @@ export async function POST(req: NextRequest) {
         diagnostics: { listCount: (listRes.data?.length ?? 0) },
       }, { status: 200 });
     } catch (processorError) {
+      // Track processing error with Sentry
+      captureProcessingError(processorError, {
+        memoryId: memoryId || undefined,
+        stage: 'process',
+        extra: { processorUrl: fullUrl },
+      });
       const errorMsg = processorError instanceof Error ? processorError.message : 'Processor invocation failed';
       console.error('[process-audio] Processor fetch failed:', errorMsg, 'URL was:', fullUrl);
       return NextResponse.json({
@@ -136,6 +143,11 @@ export async function POST(req: NextRequest) {
       }, { status: 500 });
     }
   } catch (e) {
+    // Track error with Sentry (outer catch - memoryId not in scope)
+    captureApiError(e, {
+      route: '/api/process-audio',
+      method: 'POST',
+    });
     const message = e instanceof Error ? e.message : 'Processing failed';
     return NextResponse.json({ error: message }, { status: 500 });
   }
