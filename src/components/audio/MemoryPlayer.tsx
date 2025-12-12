@@ -87,12 +87,19 @@ export default function MemoryPlayer({ memory, isOpen, onClose }: MemoryPlayerPr
   // Fade out background music when memory player opens
   useEffect(() => {
     if (isOpen) {
-      onMemoryPlaybackStartMuteBackground();
-      // Resume background music when modal closes
-      return () => {
-        onMemoryPlaybackStopUnmuteBackground();
-      };
+      console.log('[MemoryPlayer] Opening - muting background audio');
+      // Use void to handle the promise without blocking
+      void onMemoryPlaybackStartMuteBackground();
     }
+    
+    // Resume background music when modal closes or component unmounts
+    return () => {
+      if (isOpen) {
+        console.log('[MemoryPlayer] Closing - resuming background audio');
+        // Use void to handle the promise in cleanup
+        void onMemoryPlaybackStopUnmuteBackground();
+      }
+    };
   }, [isOpen]);
 
   if (!isOpen || !currentMemory) return null;

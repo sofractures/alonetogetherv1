@@ -13,7 +13,8 @@ function formatMs(ms: number): string {
 
 export interface AudioRecorderProps {
   onComplete?: (blob: Blob, url: string) => void;
-  onStartRecording?: () => void;
+  // Allow async callback for proper sequencing with background audio
+  onStartRecording?: () => void | Promise<void>;
 }
 
 export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStartRecording }) => {
@@ -60,9 +61,17 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
 
   const handleStartClick = async () => {
     try {
-      onStartRecording?.();
-    } finally {
+      // IMPORTANT: Await the callback to ensure background music is paused
+      // before starting the recording - critical for mobile
+      console.log('[AudioRecorder] Starting recording, calling onStartRecording callback');
+      if (onStartRecording) {
+        await onStartRecording();
+      }
+      console.log('[AudioRecorder] Background audio handled, starting recording');
       await start();
+      console.log('[AudioRecorder] Recording started');
+    } catch (error) {
+      console.error('[AudioRecorder] Error starting recording:', error);
     }
   };
 
