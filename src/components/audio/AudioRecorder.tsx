@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import useRecorder from "@/hooks/useRecorder";
+import { Analytics } from "@/lib/analytics";
 
 function formatMs(ms: number): string {
   const totalSeconds = Math.ceil(ms / 1000);
@@ -50,14 +51,25 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
     };
   }, [isRecording, getCurrentLevel]);
 
-  // Notify parent when ready
+  // Notify parent when ready and track completion
   useEffect(() => {
-    if (audioBlob && audioUrl && onComplete) {
-      onComplete(audioBlob, audioUrl);
+    if (audioBlob && audioUrl) {
+      // Calculate recording duration and track completion
+      const durationMs = recordingStartTime.current > 0 
+        ? Date.now() - recordingStartTime.current 
+        : 0;
+      Analytics.recordingCompleted(durationMs);
+      
+      if (onComplete) {
+        onComplete(audioBlob, audioUrl);
+      }
     }
   }, [audioBlob, audioUrl, onComplete]);
 
   const canStart = useMemo(() => !isRecording && !audioBlob, [isRecording, audioBlob]);
+
+  // Track recording start time for duration calculation
+  const recordingStartTime = useRef<number>(0);
 
   const handleStartClick = async () => {
     try {
@@ -69,6 +81,11 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onComplete, onStar
       }
       console.log('[AudioRecorder] Background audio handled, starting recording');
       await start();
+      
+      // Track recording started event
+      Analytics.recordingStarted();
+      recordingStartTime.current = Date.now();
+      
       console.log('[AudioRecorder] Recording started');
     } catch (error) {
       console.error('[AudioRecorder] Error starting recording:', error);

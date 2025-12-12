@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import BackgroundAudio from "@/components/audio/BackgroundAudio";
 import AnimatedGrainOptimized from "@/components/AnimatedGrainOptimized";
@@ -40,6 +41,7 @@ export default function RootLayout({
         <BackgroundAudio />
         {children}
         <AnimatedGrainOptimized opacity={6} fps={24} blendMode="screen" />
+        <Analytics />
       </body>
     </html>
   );
