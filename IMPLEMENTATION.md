@@ -661,8 +661,21 @@
   - [ ] Complete user journey
   - [ ] Edge cases (no location, long recordings)
 
+### Analytics & Event Tracking (Completed)
+- [x] **Vercel Analytics**: Installed `@vercel/analytics` and added to layout
+- [x] **Analytics Utility**: Created `src/lib/analytics.ts` with centralized tracking helpers
+- [x] **Funnel Tracking**: Landing → start_clicked → create_opened → recording_started → recording_completed → processing_completed → memory_pinned
+- [x] **Events Tracked**:
+  - `start_clicked`, `create_opened`, `explore_opened` (navigation)
+  - `recording_started`, `recording_completed` (with duration), `recording_abandoned` (funnel)
+  - `processing_started`, `processing_completed` (status)
+  - `memory_pinned` (with location), `memory_played`, `song_downloaded` (engagement)
+- [x] **View Analytics**: Vercel Dashboard → Project → Analytics tab
+
 ### Security Hardening (Completed)
 - [x] **CVE-2025-55182 Patched**: Upgraded to Next.js 15.5.7, React 19.1.2 (critical RCE fix)
+- [x] **CVE-2025-55184 Patched**: Upgraded to Next.js 15.5.9, React 19.2.3 (DoS fix)
+- [x] **CVE-2025-55183 Patched**: Upgraded to Next.js 15.5.9, React 19.2.3 (source code exposure fix)
 - [x] **Email Privacy**: User emails hashed (SHA256) before sending to client, never exposed in API
 - [x] **Authorization**: Memory update endpoint prevents modification of already-claimed memories
 - [x] **UUID Validation**: All API routes validate memory ID format to prevent injection
@@ -682,8 +695,8 @@
   - [ ] Configure environment variables
   - [ ] Set up custom domain
   - [ ] Configure caching headers
-- [ ] Set up monitoring:
-  - [ ] Vercel Analytics
+- [x] Set up monitoring:
+  - [x] Vercel Analytics (custom event tracking for user funnel)
   - [ ] Error tracking (Sentry)
   - [ ] Performance monitoring
 - [ ] Create backup strategy:
