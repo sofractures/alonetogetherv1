@@ -12,6 +12,7 @@ import { useState, useEffect } from "react";
 import { getAudioController, onRecordingStartFadeOutBackground, onRecordingStopResumeBackground } from "@/lib/audio-context";
 import { useMemoryStore } from "@/store/memoryStore";
 import { getBrowserLocation, getIPLocation, LocationData } from "@/lib/location";
+import { Analytics } from "@/lib/analytics";
 
 type FlowState = 
   | 'idle'
@@ -74,6 +75,9 @@ export default function Home() {
   }, []);
 
   const handleStart = async () => {
+    // Track user clicking Start button
+    Analytics.startClicked();
+    
     const c = getAudioController();
     c.setSrc("/assets/fullsong.mp3");
     c.setVolume(0.5);
@@ -95,6 +99,12 @@ export default function Home() {
   };
 
   const closeOverlay = async () => {
+    // Track abandonment if user had started but didn't complete
+    // (has pending blob but no processed URL means they recorded but left before processing)
+    if (pendingBlob && !processedAudioUrl) {
+      Analytics.recordingAbandoned();
+    }
+    
     setIsOverlayOpen(false);
     setPendingBlob(null);
     setPendingUrl(null);
@@ -180,6 +190,7 @@ export default function Home() {
       // Begin processing step
       setIsProcessing(true);
       setFlowState('processing');
+      Analytics.processingStarted();
       try {
         const pres = await fetch('/api/process-audio', {
           method: 'POST',
@@ -194,6 +205,7 @@ export default function Home() {
         }
         // Processing complete - store the processed audio URL for playback
         if (pdata.signedUrl) {
+          Analytics.processingCompleted();
           setProcessedAudioUrl(pdata.signedUrl);
           setFlowState('playback'); // Move to playback modal
           
@@ -316,6 +328,9 @@ export default function Home() {
         // Refresh memories to show the updated pin
         await fetchMemories();
         
+        // Track memory pinned event
+        Analytics.memoryPinned(pinnedLocation || undefined);
+        
         // Move to celebration screen
         setFlowState('celebrating');
       } catch (error) {
@@ -331,6 +346,9 @@ export default function Home() {
 
   const handleDownload = () => {
     if (processedAudioUrl) {
+      // Track download event
+      Analytics.songDownloaded(pinnedMemoryId || 'unknown');
+      
       const link = document.createElement('a');
       link.href = processedAudioUrl;
       link.download = `alone-together-${pinnedMemoryId || 'memory'}.mp3`;
@@ -446,7 +464,7 @@ export default function Home() {
           {/* Menu - Top Right */}
           <ExploreMenu 
             currentPage="explore" 
-            onCreate={() => setIsOverlayOpen(true)}
+            onCreate={() => { Analytics.createOpened(); setIsOverlayOpen(true); }}
           />
         </>
       )}
@@ -475,8 +493,8 @@ export default function Home() {
               <h2 className="text-2xl font-semibold mb-2" style={{ color: '#e5ddc7' }}>Welcome to Alone Together</h2>
               <p className="mb-6" style={{ color: '#e5ddc7' }}>Record your memory to create your own personal song, or explore others on the map.</p>
               <div className="flex gap-3 justify-center">
-                <button onClick={() => { setIsWelcomeOpen(false); setShowWelcomeModal(false); setWelcomeModalVisible(false); setIsOverlayOpen(true); }} className="px-5 py-2 rounded border border-white/30 hover:bg-white/10" style={{ color: '#e5ddc7' }}>Create</button>
-                <button onClick={() => { setIsWelcomeOpen(false); setShowWelcomeModal(false); setWelcomeModalVisible(false); setHasStartedExploring(true); }} className="px-5 py-2 rounded border border-white/30 hover:bg-white/10" style={{ color: '#e5ddc7' }}>Explore</button>
+                <button onClick={() => { Analytics.createOpened(); setIsWelcomeOpen(false); setShowWelcomeModal(false); setWelcomeModalVisible(false); setIsOverlayOpen(true); }} className="px-5 py-2 rounded border border-white/30 hover:bg-white/10" style={{ color: '#e5ddc7' }}>Create</button>
+                <button onClick={() => { Analytics.exploreOpened(); setIsWelcomeOpen(false); setShowWelcomeModal(false); setWelcomeModalVisible(false); setHasStartedExploring(true); }} className="px-5 py-2 rounded border border-white/30 hover:bg-white/10" style={{ color: '#e5ddc7' }}>Explore</button>
               </div>
             </div>
           </div>

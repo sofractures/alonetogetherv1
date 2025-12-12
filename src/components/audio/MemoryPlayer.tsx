@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { MemoryForMap } from '@/types/memory';
 import { onMemoryPlaybackStartMuteBackground, onMemoryPlaybackStopUnmuteBackground } from '@/lib/audio-context';
+import { Analytics } from '@/lib/analytics';
 
 interface MemoryPlayerProps {
   memory: MemoryForMap | null;
@@ -84,12 +85,15 @@ export default function MemoryPlayer({ memory, isOpen, onClose }: MemoryPlayerPr
     }
   }, [isOpen, audioUrl]);
 
-  // Fade out background music when memory player opens
+  // Fade out background music when memory player opens and track playback
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && currentMemory) {
       console.log('[MemoryPlayer] Opening - muting background audio');
       // Use void to handle the promise without blocking
       void onMemoryPlaybackStartMuteBackground();
+      
+      // Track memory played event
+      Analytics.memoryPlayed(currentMemory.id, currentMemory.location);
     }
     
     // Resume background music when modal closes or component unmounts
@@ -100,7 +104,7 @@ export default function MemoryPlayer({ memory, isOpen, onClose }: MemoryPlayerPr
         void onMemoryPlaybackStopUnmuteBackground();
       }
     };
-  }, [isOpen]);
+  }, [isOpen, currentMemory]);
 
   if (!isOpen || !currentMemory) return null;
 
@@ -154,6 +158,7 @@ export default function MemoryPlayer({ memory, isOpen, onClose }: MemoryPlayerPr
                 href={audioUrl}
                 download={`memory-${currentMemory.id}.mp3`}
                 className="mt-4 inline-block px-4 py-2 rounded bg-white text-black hover:bg-gray-100 transition-colors"
+                onClick={() => Analytics.songDownloaded(currentMemory.id)}
               >
                 ⬇ Download Your Song
               </a>
