@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { MemorySkyline } from "@/components/ui/MemorySkyline";
+import { InteractiveSkyline } from "@/components/ui/InteractiveSkyline";
 import { ExploreMenu } from "@/components/ui/ExploreMenu";
-import { memoriesText } from "@/data/memories";
 
 interface SkylineMemory {
   id: string;
@@ -21,9 +20,10 @@ const PROMPTS: string[] = [
 ];
 
 export default function SkylinePage() {
-  const [memoriesString, setMemoriesString] = useState<string>(memoriesText);
-  const [isLoadingMemories, setIsLoadingMemories] = useState<boolean>(false);
+  const [memories, setMemories] = useState<string[]>([]);
+  const [isLoadingMemories, setIsLoadingMemories] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [newMemoryIndex, setNewMemoryIndex] = useState<number | undefined>(undefined);
 
   const [showPromptModal, setShowPromptModal] = useState<boolean>(true);
   const [isIntroStep, setIsIntroStep] = useState<boolean>(true);
@@ -54,22 +54,17 @@ export default function SkylinePage() {
       }
 
       const data: { memories: SkylineMemory[] } = await res.json();
-      const dynamicText = (data.memories ?? [])
+      const memoriesArray = (data.memories ?? [])
         .map((m) => (m.text || "").trim())
-        .filter((t) => t.length > 0)
-        .join("\n");
+        .filter((t) => t.length > 0);
 
-      if (dynamicText.length > 0) {
-        setMemoriesString(`${memoriesText}\n${dynamicText}`);
-      } else {
-        setMemoriesString(memoriesText);
-      }
+      setMemories(memoriesArray);
     } catch (err) {
       console.error(err);
       setLoadError(
-        "Could not load all skyline memories. The city may be missing some lights."
+        "Could not load skyline memories. The city awaits its first lights."
       );
-      setMemoriesString(memoriesText);
+      setMemories([]);
     } finally {
       setIsLoadingMemories(false);
     }
@@ -118,13 +113,21 @@ export default function SkylinePage() {
 
       const data: { memory: SkylineMemory } = await res.json();
       const newText = data.memory?.text?.trim() ?? value;
-      setMemoriesString((prev) =>
-        prev && prev.length > 0 ? `${prev}\n${newText}` : newText
-      );
+      
+      // Add the new memory and track its index for animation
+      setMemories((prev) => {
+        const newMemories = [...prev, newText];
+        setNewMemoryIndex(newMemories.length - 1);
+        return newMemories;
+      });
+      
       setInputValue("");
       setShowPromptModal(false);
       setIsIntroStep(false);
-      setSubmitSuccess("Thank you — your memory has been added to the skyline.");
+      setSubmitSuccess("Your memory has risen in the skyline.");
+      
+      // Clear the new memory highlight after animation
+      setTimeout(() => setNewMemoryIndex(undefined), 3000);
     } catch (err) {
       console.error(err);
       setSubmitError(
@@ -138,7 +141,7 @@ export default function SkylinePage() {
   const combinedHelperText = useMemo(() => {
     if (validationError) return validationError;
     if (submitError) return submitError;
-    return "Your words will become part of the city's lights.";
+    return "Your words will become a building in the city.";
   }, [validationError, submitError]);
 
   // Clear success message after a short delay
@@ -170,53 +173,81 @@ export default function SkylinePage() {
         <ExploreMenu currentPage="skyline" />
       </div>
 
-      {/* Optional subtle status text */}
-      {isLoadingMemories && (
-        <div className="absolute bottom-64 left-4 z-[2] text-xs font-mono text-white/60">
-          Gathering memories for the skyline...
-        </div>
-      )}
+      {/* Memory count indicator */}
+      <div className="absolute top-4 left-4 z-[2] text-xs font-mono text-white/50">
+        {isLoadingMemories ? (
+          "Loading memories..."
+        ) : memories.length === 0 ? (
+          "No memories yet"
+        ) : (
+          `${memories.length} ${memories.length === 1 ? 'memory' : 'memories'} in the skyline`
+        )}
+      </div>
+
+      {/* Status messages */}
       {loadError && !isLoadingMemories && (
-        <div className="absolute bottom-64 left-4 z-[2] text-xs font-mono text-white/50 max-w-xs">
+        <div className="absolute bottom-72 left-4 z-[2] text-xs font-mono text-white/50 max-w-xs">
           {loadError}
         </div>
       )}
 
       {submitSuccess && (
-        <div className="absolute bottom-64 right-4 z-[2] text-xs font-mono text-white/70 max-w-xs text-right">
+        <div className="absolute bottom-72 right-4 z-[2] text-xs font-mono text-white/70 max-w-xs text-right">
           {submitSuccess}
         </div>
       )}
 
-      {/* Skyline positioned at bottom (matching landing page style) */}
-      <div className="absolute bottom-0 left-0 right-0 z-[2] h-64 flex items-end overflow-x-auto overflow-y-hidden touch-pan-x scroll-smooth pb-4">
-        {/* Allow horizontal scrolling across the skyline, especially on mobile */}
-        <div className="min-w-full">
-          <MemorySkyline memories={memoriesString} className="w-full" />
-        </div>
+      {/* Skyline positioned at bottom */}
+      <div className="absolute bottom-0 left-0 right-0 z-[2] h-64 flex items-end pb-4">
+        <InteractiveSkyline 
+          memories={memories} 
+          newMemoryIndex={newMemoryIndex}
+          className="w-full h-full" 
+        />
       </div>
+
+      {/* Add memory button (shown after modal is closed) */}
+      {!showPromptModal && (
+        <button
+          onClick={() => {
+            setShowPromptModal(true);
+            setIsIntroStep(false); // Go straight to input
+          }}
+          className="absolute bottom-72 left-1/2 -translate-x-1/2 z-[3] px-4 py-2 rounded-md border border-white/30 bg-black/60 hover:bg-black/80 text-xs sm:text-sm font-mono text-white/80 hover:text-white transition-all"
+        >
+          + Add a memory
+        </button>
+      )}
 
       {/* Skyline modal flow: intro step → prompt + text step */}
       {showPromptModal && (
         <div className="fixed inset-0 z-[20] flex items-center justify-center">
-          <div className="max-w-lg w-full mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-md p-6 sm:p-8 text-white">
+          <div 
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setShowPromptModal(false)}
+          />
+          <div className="relative max-w-lg w-full mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-md p-6 sm:p-8 text-white">
             {isIntroStep ? (
               <div className="space-y-4">
                 <h2 className="text-lg sm:text-xl font-mono font-semibold">
                   Welcome to the skyline
                 </h2>
                 <p className="text-sm sm:text-base text-white/80">
-                  The memory skyline is a city of memories that grows with each
-                  story added, creating an interconnected community of shared
-                  experiences.
+                  This city grows with each memory shared. Your words become a building,
+                  rising alongside others to form a collective skyline of experiences.
                 </p>
+                {memories.length > 0 && (
+                  <p className="text-xs text-white/50">
+                    {memories.length} {memories.length === 1 ? 'memory has' : 'memories have'} already shaped this city.
+                  </p>
+                )}
                 <div className="flex items-center justify-between gap-3 pt-2">
                   <button
                     type="button"
                     onClick={() => setShowPromptModal(false)}
                     className="text-xs sm:text-sm font-mono text-white/70 hover:text-white/90 underline underline-offset-4"
                   >
-                    Skip for now
+                    Explore first
                   </button>
                   <button
                     type="button"
@@ -242,6 +273,7 @@ export default function SkylinePage() {
                     onChange={(e) => setInputValue(e.target.value)}
                     className="w-full min-h-[120px] rounded-md border border-white/25 bg-black/40 text-sm sm:text-base text-white placeholder-white/40 p-3 resize-none focus:outline-none focus:ring-2 focus:ring-white/40"
                     placeholder="Type your memory here..."
+                    autoFocus
                   />
 
                   <p className="text-xs sm:text-[13px] text-white/70 min-h-[1.5rem]">
@@ -254,7 +286,7 @@ export default function SkylinePage() {
                       onClick={() => setShowPromptModal(false)}
                       className="text-xs sm:text-sm font-mono text-white/70 hover:text-white/90 underline underline-offset-4"
                     >
-                      Skip for now
+                      Cancel
                     </button>
 
                     <button
@@ -262,7 +294,7 @@ export default function SkylinePage() {
                       disabled={isSubmitting}
                       className="px-4 sm:px-5 py-2 rounded-md border border-white/40 bg-white/10 hover:bg-white/20 text-xs sm:text-sm font-mono font-semibold tracking-wide transition disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      {isSubmitting ? "Sharing..." : "Share memory"}
+                      {isSubmitting ? "Adding..." : "Add to skyline"}
                     </button>
                   </div>
                 </form>
@@ -274,4 +306,3 @@ export default function SkylinePage() {
     </div>
   );
 }
-
