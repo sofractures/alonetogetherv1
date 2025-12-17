@@ -535,7 +535,7 @@ export default function Home() {
                     <>
                       <div className="text-sm mb-1" style={{ color: '#e5ddc7' }}>Prompt:</div>
                       <div className="text-lg font-semibold mb-4" style={{ color: '#e5ddc7' }}>
-                        Share a time when you felt a part of something bigger than you
+                        Share a moment when music made you feel less alone
                       </div>
                     </>
                   )}
