@@ -15,7 +15,7 @@ interface SkylineMemory {
 const PROMPTS: string[] = [
   "Share a moment when music made you feel connected to others.",
   "Describe a time when a crowd felt like a single heartbeat.",
-  "Recall a night when a song made you feel less alone.",
+  "Share a memory that shaped you.",
   "Tell us about a moment when you felt the city listening with you.",
   "Share a memory of dancing where everyone moved as one.",
 ];
