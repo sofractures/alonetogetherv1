@@ -544,6 +544,12 @@
       - [x] User-submitted text is POSTed to `/api/skyline-memories` and appended live to the rendered skyline
       - [x] Skyline scrolls horizontally as it grows (city made from accumulated memories)
     - [x] **Mobile optimization**: Skyline anchored to bottom using `100dvh`, horizontal scrolling enabled to read entire skyline
+  - [x] **Skyline Exhibition Display** (branch: `feature/skyline-exhibition-display`):
+    - [x] New route **`/skyline/display`** for private installation/kiosk view at the exhibition
+    - [x] Display-only page: same video background (`video_clip_skyline.mp4`), same layout (full viewport, skyline at bottom), same **InteractiveSkyline** component and **GET `/api/skyline-memories`** API
+    - [x] No prompt modal, no intro modal, no “Add a memory” button or form; **ExploreMenu** hidden for clean kiosk look
+    - [x] Optional polling: refetch skyline memories every 45 seconds so the installation view shows new memories as they’re added via the public page
+    - [x] **URL usage:** Exhibition screen = `https://<domain>/skyline/display`; QR code (public participation) = `https://<domain>/skyline`
 - [x] **About Page & Info Architecture**:
   - [x] Created dedicated `/about` route with structured sections:
     - [x] Alone Together overview
