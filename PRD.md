@@ -170,6 +170,21 @@ Browsing Dense Locations:
 - **Location Filter:** Show only windows from specific regions/cities
 - **Random Journey:** Auto-play random memories while viewing the building
 
+### 3.5 Skyline Memory Wall & Exhibition Display
+
+**Public participation (QR code):**
+- **URL:** `/skyline` — target for the QR code at the exhibition.
+- Visitors scan the QR code to open the public skyline page: welcome intro, reflective prompt, and “Share a memory” / “Add a memory” flow.
+- Submitted text is POSTed to `/api/skyline-memories` and appears in the live skyline; the same skyline is shown on the exhibition screen.
+
+**Private display (exhibition screen):**
+- **URL:** `/skyline/display` — live display-only view for the screen at the exhibition.
+- Shows only the growing memory skyline: same video background, same skyline component, same data from GET `/api/skyline-memories`.
+- No prompt, no intro modal, no “Add a memory” button or form; ExploreMenu hidden for a clean kiosk/installation look.
+- Optional polling (e.g. every 45 seconds) so the installation view refreshes as new memories are added via the public page.
+
+**Summary:** One API and one skyline component serve both views; the difference is presence or absence of participation UI.
+
 ## 4. Technical Architecture
 
 ### Frontend Stack
@@ -486,6 +501,14 @@ POST /api/memory/[id]/download - Generate signed URL from Supabase Storage
 GET /api/prompts/current - Get active prompt from Supabase DB
 POST /api/process-audio - Trigger FFmpeg processing with instrumental.mp3
 GET /api/assets/[filename] - Serve static assets (windows, audio files)
+GET /api/skyline-memories - Get text skyline memories (used by /skyline and /skyline/display)
+POST /api/skyline-memories - Submit new text memory to the skyline (public page only)
+```
+
+### Skyline routes
+```
+/skyline         - Public participation: intro, prompt, add-memory flow (QR code target)
+/skyline/display - Exhibition display only: skyline + video, no prompts or add-memory UI
 ```
 
 ### File Structure
