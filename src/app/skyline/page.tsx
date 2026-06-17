@@ -24,6 +24,9 @@ export default function SkylinePage() {
   const [isLoadingMemories, setIsLoadingMemories] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [newMemoryIndex, setNewMemoryIndex] = useState<number | undefined>(undefined);
+  // Optional event tag from the URL (?event=slug). When present, submissions made
+  // here are labelled so they appear on that event's live display screen.
+  const [eventId, setEventId] = useState<string | null>(null);
 
   const [showPromptModal, setShowPromptModal] = useState<boolean>(true);
   const [isIntroStep, setIsIntroStep] = useState<boolean>(true);
@@ -40,6 +43,21 @@ export default function SkylinePage() {
       const idx = Math.floor(Math.random() * PROMPTS.length);
       setCurrentPrompt(PROMPTS[idx]);
     }
+
+    // Read an optional event tag from the URL so on-the-day submissions (e.g. via a
+    // QR code pointing at /skyline?event=summer-show-2026) can be tagged.
+    if (typeof window !== "undefined") {
+      const param = new URLSearchParams(window.location.search).get("event");
+      if (param) {
+        const slug = param
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9_-]/g, "")
+          .slice(0, 64);
+        if (slug) setEventId(slug);
+      }
+    }
+
     void fetchSkylineMemories();
   }, []);
 
@@ -99,6 +117,7 @@ export default function SkylinePage() {
         body: JSON.stringify({
           text: value,
           prompt: currentPrompt,
+          ...(eventId ? { event_id: eventId } : {}),
         }),
       });
 
