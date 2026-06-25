@@ -13,6 +13,10 @@ interface SkylineMemory {
 // How often the display screen checks for newly submitted memories.
 const POLL_INTERVAL_MS = 12000;
 
+// Patron credits shown as a scrolling marquee across the top of the display.
+const PATRON_CREDITS =
+  "Alone Together is made possible by a core group of patrons.  \u00B7  Executive Producer C.Y. Lee  \u00B7  Supported by Carl Tyingco + Tom Merry";
+
 /**
  * Display-only skyline for live events.
  *
@@ -108,8 +112,43 @@ export default function SkylineLivePage() {
         <source src="/assets/video_clip_skyline.mp4" type="video/mp4" />
       </video>
 
-      {/* Minimal display chrome: subtle live count */}
-      <div className="absolute top-4 left-4 z-[2] text-xs font-mono text-white/50">
+      {/* Patron credits — continuous marquee across the top of the screen */}
+      <div className="absolute top-0 left-0 right-0 z-[3] overflow-hidden bg-black/30 backdrop-blur-sm border-b border-white/10 py-2">
+        <div className="credits-track whitespace-nowrap will-change-transform">
+          {/* Two copies enable a seamless, gapless loop */}
+          <span className="text-xs sm:text-sm font-mono tracking-[0.15em] uppercase text-white/70 px-8">
+            {PATRON_CREDITS}
+          </span>
+          <span
+            className="text-xs sm:text-sm font-mono tracking-[0.15em] uppercase text-white/70 px-8"
+            aria-hidden="true"
+          >
+            {PATRON_CREDITS}
+          </span>
+        </div>
+        <style jsx>{`
+          .credits-track {
+            display: inline-block;
+            animation: credits-scroll 40s linear infinite;
+          }
+          @keyframes credits-scroll {
+            0% {
+              transform: translateX(0);
+            }
+            100% {
+              transform: translateX(-50%);
+            }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .credits-track {
+              animation: none;
+            }
+          }
+        `}</style>
+      </div>
+
+      {/* Minimal display chrome: subtle live count (offset below the credits bar) */}
+      <div className="absolute top-12 left-4 z-[2] text-xs font-mono text-white/50">
         {!hasLoaded
           ? "Loading memories…"
           : memoryTexts.length === 0
