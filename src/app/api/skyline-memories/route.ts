@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { rateLimit, getClientIP, RATE_LIMITS } from "@/lib/rate-limit";
 
+// SECURITY: Normalize an event identifier to a safe slug.
+// Allows letters, numbers, dashes and underscores only, capped in length.
+function sanitizeEventId(input: string): string {
+  return input
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "")
+    .slice(0, 64);
+}
+
 export async function GET(req: NextRequest) {
   // SECURITY: Rate limit read requests
   const clientIP = getClientIP(req.headers);
@@ -13,11 +23,23 @@ export async function GET(req: NextRequest) {
       { status: 429 }
     );
   }
-  const { data, error } = await supabaseServer
+
+  // Optional event filter: ?event=<slug> returns only that event's memories.
+  // When absent, returns the full public archive (unchanged behavior).
+  const rawEvent = req.nextUrl.searchParams.get("event") ?? "";
+  const eventId = rawEvent ? sanitizeEventId(rawEvent) : "";
+
+  let query = supabaseServer
     .from("skyline_memories")
-    .select("id, text, prompt, created_at")
+    .select("id, text, prompt, event_id, created_at")
     .order("created_at", { ascending: true })
     .limit(500);
+
+  if (eventId) {
+    query = query.eq("event_id", eventId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Error fetching skyline memories:", error);
@@ -55,6 +77,12 @@ export async function POST(req: NextRequest) {
         ? body.prompt.trim()
         : null;
 
+    // Optional event tag: labels this memory for a specific live event display.
+    const eventId =
+      typeof body.event_id === "string" && body.event_id.trim().length > 0
+        ? sanitizeEventId(body.event_id)
+        : null;
+
     // SECURITY: Sanitize user input
     const text = sanitizeText(rawText);
 
@@ -77,8 +105,8 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await supabaseServer
       .from("skyline_memories")
-      .insert({ text, prompt: sanitizedPrompt })
-      .select("id, text, prompt, created_at")
+      .insert({ text, prompt: sanitizedPrompt, event_id: eventId })
+      .select("id, text, prompt, event_id, created_at")
       .single();
 
     if (error) {
