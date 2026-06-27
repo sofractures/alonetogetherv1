@@ -145,11 +145,14 @@ export default function SkylineLivePage() {
             } in the skyline`}
       </div>
 
-      {/* Skyline anchored at the bottom */}
-      <div className="absolute bottom-0 left-0 right-0 z-[2] h-64 flex items-end pb-4">
+      {/* Skyline anchored at the bottom — taller strip + larger cells for event projection */}
+      <div className="absolute bottom-0 left-0 right-0 z-[2] h-[45vh] flex items-end pb-4">
         <InteractiveSkyline
           memories={memoryTexts}
           newMemoryIndex={newMemoryIndex}
+          cellWidth={12}
+          cellHeight={14}
+          fontSize={13}
           className="w-full h-full"
         />
       </div>

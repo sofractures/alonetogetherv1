@@ -6,6 +6,12 @@ interface InteractiveSkylineProps {
   memories: string[];
   className?: string;
   newMemoryIndex?: number; // Index of newly added memory to animate
+  /** Character cell width in px (default 8) */
+  cellWidth?: number;
+  /** Character cell height in px (default 10) */
+  cellHeight?: number;
+  /** Character font size in px (default 9) */
+  fontSize?: number;
 }
 
 const brickColors = ["#a68361", "#79504a", "#a2736c", "#b1827e"];
@@ -31,6 +37,9 @@ export function InteractiveSkyline({
   memories,
   className = "",
   newMemoryIndex,
+  cellWidth = 8,
+  cellHeight = 10,
+  fontSize = 9,
 }: InteractiveSkylineProps) {
   const [mounted, setMounted] = useState(false);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -87,19 +96,21 @@ export function InteractiveSkyline({
     setShowRightArrow(false);
   }, []);
 
+  const scrollStep = cellWidth * 30;
+
   const scrollLeft = useCallback(() => {
     const container = scrollContainerRef.current;
     if (container) {
-      container.scrollBy({ left: -300, behavior: 'smooth' });
+      container.scrollBy({ left: -scrollStep, behavior: 'smooth' });
     }
-  }, []);
+  }, [scrollStep]);
 
   const scrollRight = useCallback(() => {
     const container = scrollContainerRef.current;
     if (container) {
-      container.scrollBy({ left: 300, behavior: 'smooth' });
+      container.scrollBy({ left: scrollStep, behavior: 'smooth' });
     }
-  }, []);
+  }, [scrollStep]);
 
   // Generate buildings deterministically based on memories
   const buildings = useMemo(() => {
@@ -273,8 +284,8 @@ export function InteractiveSkyline({
               building.isNew ? 'ring-2 ring-white/40' : ''
             }`}
             style={{
-              minWidth: `${building.cols * 8}px`,
-              height: `${building.rows * 10}px`,
+              minWidth: `${building.cols * cellWidth}px`,
+              height: `${building.rows * cellHeight}px`,
               transform: mounted ? 'scaleY(1)' : 'scaleY(0)',
               opacity: mounted ? 1 : 0,
               transformOrigin: 'bottom',
@@ -293,8 +304,12 @@ export function InteractiveSkyline({
                     return (
                       <div
                         key={colIdx}
-                        className="text-[9px] leading-none font-mono flex items-center justify-center"
-                        style={{ width: '8px', height: '10px' }}
+                        className="leading-none font-mono flex items-center justify-center"
+                        style={{
+                          width: `${cellWidth}px`,
+                          height: `${cellHeight}px`,
+                          fontSize: `${fontSize}px`,
+                        }}
                       >
                         {charData ? renderChar(charData) : ''}
                       </div>
