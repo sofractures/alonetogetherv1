@@ -17,42 +17,32 @@ const POLL_INTERVAL_MS = 12000;
 const PATRON_CREDITS =
   "Alone Together is made possible by a core group of patrons.  \u00B7  Executive Producer C.Y. Lee  \u00B7  Supported by Carl Tyingco + Tom Merry";
 
+// Event start cutoff. The live display shows every memory created at/after this
+// time, regardless of how it was tagged — so anything entered on the main
+// skyline page during the event appears here. Update this for each new event.
+const EVENT_START_ISO = "2026-06-26T00:00:00+01:00";
+
 /**
  * Display-only skyline for live events.
  *
- * Reads an optional event tag from the URL (?event=slug) and shows only that
- * event's memories, polling so new submissions rise live throughout the day.
- * There is no submission UI here — this view is intended for projection.
+ * Shows all memories created since EVENT_START_ISO (regardless of event tag),
+ * polling so new submissions rise live throughout the event. There is no
+ * submission UI here — this view is intended for projection.
  */
 export default function SkylineLivePage() {
   const [items, setItems] = useState<SkylineMemory[]>([]);
   const [newMemoryIndex, setNewMemoryIndex] = useState<number | undefined>(undefined);
-  const [eventId, setEventId] = useState<string | null>(null);
-  const [eventResolved, setEventResolved] = useState<boolean>(false);
   const [hasLoaded, setHasLoaded] = useState<boolean>(false);
 
   // Track ids we've already rendered so polls can detect genuinely new memories.
   const knownIdsRef = useRef<Set<string>>(new Set());
   const clearHighlightRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Resolve the event tag from the URL once on mount.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const param = new URLSearchParams(window.location.search).get("event");
-    if (param) {
-      const slug = param
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9_-]/g, "")
-        .slice(0, 64);
-      setEventId(slug || null);
-    }
-    setEventResolved(true);
-  }, []);
-
   const fetchMemories = useCallback(async () => {
     try {
-      const qs = eventId ? `?event=${encodeURIComponent(eventId)}` : "";
+      // Show everything created since the event start, regardless of event tag,
+      // so memories entered on the main skyline page during the event appear here.
+      const qs = `?since=${encodeURIComponent(EVENT_START_ISO)}`;
       const res = await fetch(`/api/skyline-memories${qs}`, { cache: "no-store" });
       if (!res.ok) return;
 
@@ -80,13 +70,10 @@ export default function SkylineLivePage() {
     } finally {
       setHasLoaded(true);
     }
-  }, [eventId]);
+  }, []);
 
-  // Initial load + polling. Waits for the event tag to resolve to avoid a flicker
-  // of the full archive before the event filter is applied.
+  // Initial load + polling so new submissions rise live throughout the event.
   useEffect(() => {
-    if (!eventResolved) return;
-
     void fetchMemories();
     const interval = setInterval(() => void fetchMemories(), POLL_INTERVAL_MS);
 
@@ -94,7 +81,7 @@ export default function SkylineLivePage() {
       clearInterval(interval);
       if (clearHighlightRef.current) clearTimeout(clearHighlightRef.current);
     };
-  }, [eventResolved, fetchMemories]);
+  }, [fetchMemories]);
 
   const memoryTexts = items.map((m) => m.text.trim());
 
