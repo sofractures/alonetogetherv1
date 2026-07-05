@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   InteractiveSkyline,
   type InteractiveSkylineHandle,
+  type SkylineMemoryItem,
 } from "@/components/ui/InteractiveSkyline";
 import { ExploreMenu } from "@/components/ui/ExploreMenu";
 
@@ -54,6 +55,17 @@ function buildFilterQuery(filterId: SkylineFilterId): string {
   return qs ? `?${qs}` : "";
 }
 
+function formatMemoryDate(iso?: string): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 function ScrollArrow({
   direction,
   onClick,
@@ -96,7 +108,7 @@ function ScrollArrow({
 
 export default function SkylinePage() {
   const skylineRef = useRef<InteractiveSkylineHandle>(null);
-  const [memories, setMemories] = useState<string[]>([]);
+  const [memories, setMemories] = useState<SkylineMemoryItem[]>([]);
   const [isLoadingMemories, setIsLoadingMemories] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [newMemoryIndex, setNewMemoryIndex] = useState<number | undefined>(
@@ -106,6 +118,13 @@ export default function SkylinePage() {
   const [trailingGapPx, setTrailingGapPx] = useState(320);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [hasOverflow, setHasOverflow] = useState(false);
+  const [visibleRange, setVisibleRange] = useState<{
+    startIndex: number;
+    endIndex: number;
+    startDate?: string;
+    endDate?: string;
+  } | null>(null);
 
   const [eventId, setEventId] = useState<string | null>(null);
 
@@ -134,11 +153,15 @@ export default function SkylinePage() {
       }
 
       const data: { memories: SkylineMemory[] } = await res.json();
-      const memoriesArray = (data.memories ?? [])
-        .map((m) => (m.text || "").trim())
-        .filter((t) => t.length > 0);
+      const memoriesArray: SkylineMemoryItem[] = (data.memories ?? [])
+        .map((m) => ({
+          text: (m.text || "").trim(),
+          createdAt: m.created_at,
+        }))
+        .filter((m) => m.text.length > 0);
 
       setMemories(memoriesArray);
+      setVisibleRange(null);
     } catch (err) {
       console.error(err);
       setLoadError(
@@ -238,11 +261,14 @@ export default function SkylinePage() {
       }
 
       const data: { memory: SkylineMemory } = await res.json();
-      const newText = data.memory?.text?.trim() ?? value;
+      const newItem: SkylineMemoryItem = {
+        text: data.memory?.text?.trim() ?? value,
+        createdAt: data.memory?.created_at,
+      };
 
       if (activeFilter === "all") {
         setMemories((prev) => {
-          const newMemories = [...prev, newText];
+          const newMemories = [...prev, newItem];
           setNewMemoryIndex(newMemories.length - 1);
           return newMemories;
         });
@@ -254,9 +280,12 @@ export default function SkylinePage() {
         );
         if (filterRes.ok) {
           const filterData: { memories: SkylineMemory[] } = await filterRes.json();
-          const memoriesArray = (filterData.memories ?? [])
-            .map((m) => (m.text || "").trim())
-            .filter((t) => t.length > 0);
+          const memoriesArray: SkylineMemoryItem[] = (filterData.memories ?? [])
+            .map((m) => ({
+              text: (m.text || "").trim(),
+              createdAt: m.created_at,
+            }))
+            .filter((m) => m.text.length > 0);
           setMemories(memoriesArray);
           if (memoriesArray.length > prevCount) {
             setNewMemoryIndex(memoriesArray.length - 1);
@@ -293,6 +322,23 @@ export default function SkylinePage() {
   }, [submitSuccess]);
 
   const filterLabel = SKYLINE_FILTERS[activeFilter].label;
+
+  const visibleRangeLabel = useMemo(() => {
+    if (!visibleRange || memories.length === 0) return null;
+
+    const start = formatMemoryDate(visibleRange.startDate);
+    const end = formatMemoryDate(visibleRange.endDate);
+    const position = `buildings ${visibleRange.startIndex + 1}–${visibleRange.endIndex + 1} of ${memories.length}`;
+
+    if (start && end) {
+      if (start === end) {
+        return `On screen: ${start} · ${position}`;
+      }
+      return `On screen: ${start} – ${end} · ${position}`;
+    }
+
+    return `On screen: ${position}`;
+  }, [visibleRange, memories.length]);
 
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden bg-black">
@@ -357,21 +403,29 @@ export default function SkylinePage() {
               ? `No memories for ${filterLabel}`
               : `${memories.length} ${
                   memories.length === 1 ? "memory" : "memories"
-                } · ${filterLabel} · scroll to explore`}
+                } · ${filterLabel}`}
           </p>
+          {visibleRangeLabel && !isLoadingMemories && (
+            <p className="text-xs font-mono text-white/40">{visibleRangeLabel}</p>
+          )}
+          {hasOverflow && !isLoadingMemories && (
+            <p className="text-xs font-mono text-white/35">
+              Scroll or use arrows to pan — older memories are to the left
+            </p>
+          )}
         </div>
       )}
 
-      {isExploring && memories.length > 0 && (
+      {isExploring && hasOverflow && (
         <>
           <ScrollArrow
             direction="left"
-            onClick={() => skylineRef.current?.scrollLeft()}
+            onClick={() => skylineRef.current?.scrollOlder()}
             disabled={!canScrollLeft}
           />
           <ScrollArrow
             direction="right"
-            onClick={() => skylineRef.current?.scrollRight()}
+            onClick={() => skylineRef.current?.scrollNewer()}
             disabled={!canScrollRight}
           />
         </>
@@ -389,7 +443,7 @@ export default function SkylinePage() {
         </div>
       )}
 
-      <div className="absolute bottom-0 left-0 right-0 z-[2] h-64 flex items-end pb-4">
+      <div className="absolute bottom-0 left-0 right-0 z-[2] h-64 w-full min-w-0 flex items-end pb-4">
         <InteractiveSkyline
           ref={skylineRef}
           memories={memories}
@@ -397,11 +451,13 @@ export default function SkylinePage() {
           initialScrollToEnd
           trailingGapPx={trailingGapPx}
           hideBuiltInArrows
-          onScrollStateChange={({ canScrollLeft, canScrollRight }) => {
+          onScrollStateChange={({ canScrollLeft, canScrollRight, hasOverflow }) => {
             setCanScrollLeft(canScrollLeft);
             setCanScrollRight(canScrollRight);
+            setHasOverflow(hasOverflow);
           }}
-          className="w-full h-full touch-pan-x"
+          onVisibleRangeChange={setVisibleRange}
+          className="w-full min-w-0 h-full"
         />
       </div>
 
