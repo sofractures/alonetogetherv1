@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { InteractiveSkyline } from "@/components/ui/InteractiveSkyline";
 import { ExploreMenu } from "@/components/ui/ExploreMenu";
 
@@ -11,6 +11,27 @@ interface SkylineMemory {
   created_at: string;
 }
 
+type SkylineFilterId = "pilot" | "event2" | "all";
+
+const SKYLINE_FILTERS: Record<
+  SkylineFilterId,
+  { label: string; since?: string; until?: string }
+> = {
+  event2: {
+    label: "Event 2 · 27 Jun",
+    since: "2026-06-27T00:00:00+01:00",
+    until: "2026-06-28T00:00:00+01:00",
+  },
+  pilot: {
+    label: "Pilot · 19 Mar",
+    since: "2026-03-19T00:00:00Z",
+    until: "2026-03-20T00:00:00Z",
+  },
+  all: {
+    label: "All memories",
+  },
+};
+
 const PROMPTS: string[] = [
   "Share a moment when music made you feel connected to others.",
   "Describe a time when a crowd felt like a single heartbeat.",
@@ -19,11 +40,25 @@ const PROMPTS: string[] = [
   "Share a memory of dancing where everyone moved as one.",
 ];
 
+function buildFilterQuery(filterId: SkylineFilterId): string {
+  const filter = SKYLINE_FILTERS[filterId];
+  const params = new URLSearchParams();
+  if (filter.since) params.set("since", filter.since);
+  if (filter.until) params.set("until", filter.until);
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
 export default function SkylinePage() {
   const [memories, setMemories] = useState<string[]>([]);
   const [isLoadingMemories, setIsLoadingMemories] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [newMemoryIndex, setNewMemoryIndex] = useState<number | undefined>(undefined);
+  const [newMemoryIndex, setNewMemoryIndex] = useState<number | undefined>(
+    undefined
+  );
+  const [activeFilter, setActiveFilter] = useState<SkylineFilterId>("event2");
+  const [trailingGapPx, setTrailingGapPx] = useState(320);
+
   // Optional event tag from the URL (?event=slug). When present, submissions made
   // here are labelled so they appear on that event's live display screen.
   const [eventId, setEventId] = useState<string | null>(null);
@@ -37,36 +72,15 @@ export default function SkylinePage() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Choose a random prompt on first mount
-    if (PROMPTS.length > 0) {
-      const idx = Math.floor(Math.random() * PROMPTS.length);
-      setCurrentPrompt(PROMPTS[idx]);
-    }
-
-    // Read an optional event tag from the URL so on-the-day submissions (e.g. via a
-    // QR code pointing at /skyline?event=summer-show-2026) can be tagged.
-    if (typeof window !== "undefined") {
-      const param = new URLSearchParams(window.location.search).get("event");
-      if (param) {
-        const slug = param
-          .trim()
-          .toLowerCase()
-          .replace(/[^a-z0-9_-]/g, "")
-          .slice(0, 64);
-        if (slug) setEventId(slug);
-      }
-    }
-
-    void fetchSkylineMemories();
-  }, []);
-
-  const fetchSkylineMemories = async () => {
+  const fetchSkylineMemories = useCallback(async (filterId: SkylineFilterId) => {
     try {
       setIsLoadingMemories(true);
       setLoadError(null);
+      setNewMemoryIndex(undefined);
 
-      const res = await fetch("/api/skyline-memories");
+      const res = await fetch(`/api/skyline-memories${buildFilterQuery(filterId)}`, {
+        cache: "no-store",
+      });
       if (!res.ok) {
         throw new Error("Failed to fetch skyline memories");
       }
@@ -86,7 +100,40 @@ export default function SkylinePage() {
     } finally {
       setIsLoadingMemories(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (PROMPTS.length > 0) {
+      const idx = Math.floor(Math.random() * PROMPTS.length);
+      setCurrentPrompt(PROMPTS[idx]);
+    }
+
+    if (typeof window !== "undefined") {
+      const param = new URLSearchParams(window.location.search).get("event");
+      if (param) {
+        const slug = param
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9_-]/g, "")
+          .slice(0, 64);
+        if (slug) setEventId(slug);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchSkylineMemories(activeFilter);
+  }, [activeFilter, fetchSkylineMemories]);
+
+  // Trailing gap scales with viewport so the right edge always hints at room to grow
+  useEffect(() => {
+    const updateGap = () => {
+      setTrailingGapPx(Math.max(200, Math.round(window.innerWidth * 0.35)));
+    };
+    updateGap();
+    window.addEventListener("resize", updateGap);
+    return () => window.removeEventListener("resize", updateGap);
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -132,20 +179,36 @@ export default function SkylinePage() {
 
       const data: { memory: SkylineMemory } = await res.json();
       const newText = data.memory?.text?.trim() ?? value;
-      
-      // Add the new memory and track its index for animation
-      setMemories((prev) => {
-        const newMemories = [...prev, newText];
-        setNewMemoryIndex(newMemories.length - 1);
-        return newMemories;
-      });
-      
+
+      if (activeFilter === "all") {
+        setMemories((prev) => {
+          const newMemories = [...prev, newText];
+          setNewMemoryIndex(newMemories.length - 1);
+          return newMemories;
+        });
+      } else {
+        const prevCount = memories.length;
+        const filterRes = await fetch(
+          `/api/skyline-memories${buildFilterQuery(activeFilter)}`,
+          { cache: "no-store" }
+        );
+        if (filterRes.ok) {
+          const filterData: { memories: SkylineMemory[] } = await filterRes.json();
+          const memoriesArray = (filterData.memories ?? [])
+            .map((m) => (m.text || "").trim())
+            .filter((t) => t.length > 0);
+          setMemories(memoriesArray);
+          if (memoriesArray.length > prevCount) {
+            setNewMemoryIndex(memoriesArray.length - 1);
+          }
+        }
+      }
+
       setInputValue("");
       setShowPromptModal(false);
       setIsIntroStep(false);
       setSubmitSuccess("Your memory has risen in the skyline.");
-      
-      // Clear the new memory highlight after animation
+
       setTimeout(() => setNewMemoryIndex(undefined), 3000);
     } catch (err) {
       console.error(err);
@@ -163,16 +226,16 @@ export default function SkylinePage() {
     return "Your words will become a building in the city.";
   }, [validationError, submitError]);
 
-  // Clear success message after a short delay
   useEffect(() => {
     if (!submitSuccess) return;
     const timeout = setTimeout(() => setSubmitSuccess(null), 6000);
     return () => clearTimeout(timeout);
   }, [submitSuccess]);
 
+  const filterLabel = SKYLINE_FILTERS[activeFilter].label;
+
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden bg-black">
-      {/* Video Background */}
       <video
         autoPlay
         loop
@@ -186,24 +249,49 @@ export default function SkylinePage() {
       >
         <source src="/assets/video_clip_skyline.mp4" type="video/mp4" />
       </video>
-      
-      {/* Menu in top-right corner */}
+
       <div className="relative z-10">
         <ExploreMenu currentPage="skyline" />
       </div>
 
-      {/* Memory count indicator */}
-      <div className="absolute top-4 left-4 z-[2] text-xs font-mono text-white/50">
-        {isLoadingMemories ? (
-          "Loading memories..."
-        ) : memories.length === 0 ? (
-          "No memories yet"
-        ) : (
-          `${memories.length} ${memories.length === 1 ? 'memory' : 'memories'} in the skyline`
-        )}
+      {/* Event filter */}
+      <div className="absolute top-4 left-4 right-4 sm:right-auto z-[3] flex flex-col gap-2 max-w-xl">
+        <div
+          className="flex flex-wrap gap-1.5"
+          role="group"
+          aria-label="Filter skyline memories by event"
+        >
+          {(Object.keys(SKYLINE_FILTERS) as SkylineFilterId[]).map((id) => {
+            const isActive = activeFilter === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setActiveFilter(id)}
+                className={`px-3 py-1.5 rounded-md border text-xs font-mono transition-all ${
+                  isActive
+                    ? "border-white/50 bg-white/15 text-white"
+                    : "border-white/20 bg-black/50 text-white/60 hover:text-white/80 hover:border-white/30"
+                }`}
+                aria-pressed={isActive}
+              >
+                {SKYLINE_FILTERS[id].label}
+              </button>
+            );
+          })}
+        </div>
+
+        <p className="text-xs font-mono text-white/50">
+          {isLoadingMemories
+            ? "Loading memories..."
+            : memories.length === 0
+            ? `No memories for ${filterLabel}`
+            : `${memories.length} ${
+                memories.length === 1 ? "memory" : "memories"
+              } · ${filterLabel}`}
+        </p>
       </div>
 
-      {/* Status messages */}
       {loadError && !isLoadingMemories && (
         <div className="absolute bottom-72 left-4 z-[2] text-xs font-mono text-white/50 max-w-xs">
           {loadError}
@@ -216,21 +304,21 @@ export default function SkylinePage() {
         </div>
       )}
 
-      {/* Skyline positioned at bottom */}
       <div className="absolute bottom-0 left-0 right-0 z-[2] h-64 flex items-end pb-4">
-        <InteractiveSkyline 
-          memories={memories} 
+        <InteractiveSkyline
+          memories={memories}
           newMemoryIndex={newMemoryIndex}
-          className="w-full h-full" 
+          initialScrollToEnd
+          trailingGapPx={trailingGapPx}
+          className="w-full h-full"
         />
       </div>
 
-      {/* Add memory button (shown after modal is closed) */}
       {!showPromptModal && (
         <button
           onClick={() => {
             setShowPromptModal(true);
-            setIsIntroStep(false); // Go straight to input
+            setIsIntroStep(false);
           }}
           className="absolute bottom-72 left-1/2 -translate-x-1/2 z-[3] px-4 py-2 rounded-md border border-white/30 bg-black/60 hover:bg-black/80 text-xs sm:text-sm font-mono text-white/80 hover:text-white transition-all"
         >
@@ -238,10 +326,9 @@ export default function SkylinePage() {
         </button>
       )}
 
-      {/* Skyline modal flow: intro step → prompt + text step */}
       {showPromptModal && (
         <div className="fixed inset-0 z-[20] flex items-center justify-center">
-          <div 
+          <div
             className="absolute inset-0 bg-black/40"
             onClick={() => setShowPromptModal(false)}
           />
@@ -252,12 +339,15 @@ export default function SkylinePage() {
                   Welcome to the skyline
                 </h2>
                 <p className="text-sm sm:text-base text-white/80">
-                  This city grows with each memory shared. Your words become a building,
-                  rising alongside others to form a collective skyline of experiences.
+                  This city grows with each memory shared. Your words become a
+                  building, rising alongside others to form a collective skyline
+                  of experiences.
                 </p>
                 {memories.length > 0 && (
                   <p className="text-xs text-white/50">
-                    {memories.length} {memories.length === 1 ? 'memory has' : 'memories have'} already shaped this city.
+                    {memories.length}{" "}
+                    {memories.length === 1 ? "memory has" : "memories have"}{" "}
+                    already shaped this city ({filterLabel}).
                   </p>
                 )}
                 <div className="flex items-center justify-between gap-3 pt-2">

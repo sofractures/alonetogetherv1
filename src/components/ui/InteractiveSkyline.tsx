@@ -12,6 +12,10 @@ interface InteractiveSkylineProps {
   cellHeight?: number;
   /** Character font size in px (default 9) */
   fontSize?: number;
+  /** Extra empty space after the last building (px) — signals room for new memories */
+  trailingGapPx?: number;
+  /** Scroll to the newest buildings on load / when memories change */
+  initialScrollToEnd?: boolean;
 }
 
 const brickColors = ["#a68361", "#79504a", "#a2736c", "#b1827e"];
@@ -40,6 +44,8 @@ export function InteractiveSkyline({
   cellWidth = 8,
   cellHeight = 10,
   fontSize = 9,
+  trailingGapPx = 0,
+  initialScrollToEnd = false,
 }: InteractiveSkylineProps) {
   const [mounted, setMounted] = useState(false);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -210,17 +216,29 @@ export function InteractiveSkyline({
     return <span style={{ color: charData.color }}>{charData.char}</span>;
   };
 
+  const scrollToEnd = useCallback((smooth: boolean) => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    container.scrollTo({
+      left: container.scrollWidth,
+      behavior: smooth ? "smooth" : "auto",
+    });
+  }, []);
+
   // Scroll to end when new memory is added
   useEffect(() => {
-    if (newMemoryIndex !== undefined && scrollContainerRef.current) {
-      setTimeout(() => {
-        scrollContainerRef.current?.scrollTo({
-          left: scrollContainerRef.current.scrollWidth,
-          behavior: 'smooth',
-        });
-      }, 300);
+    if (newMemoryIndex !== undefined) {
+      const timeout = setTimeout(() => scrollToEnd(true), 300);
+      return () => clearTimeout(timeout);
     }
-  }, [newMemoryIndex, memories.length]);
+  }, [newMemoryIndex, memories.length, scrollToEnd]);
+
+  // Default view: newest buildings visible with trailing gap on the right
+  useEffect(() => {
+    if (!initialScrollToEnd || memories.length === 0) return;
+    const raf = requestAnimationFrame(() => scrollToEnd(false));
+    return () => cancelAnimationFrame(raf);
+  }, [memories, initialScrollToEnd, scrollToEnd]);
 
   if (memories.length === 0) {
     return (
@@ -279,7 +297,7 @@ export function InteractiveSkyline({
         
         {buildings.map((building) => (
           <div
-            key={building.id}
+            key={`${building.id}-${building.memoryIndex}`}
             className={`relative border-l border-r border-white/10 bg-black/30 flex-shrink-0 ${
               building.isNew ? 'ring-2 ring-white/40' : ''
             }`}
@@ -320,6 +338,13 @@ export function InteractiveSkyline({
             </div>
           </div>
         ))}
+        {trailingGapPx > 0 && (
+          <div
+            className="flex-shrink-0"
+            style={{ width: `${trailingGapPx}px` }}
+            aria-hidden
+          />
+        )}
       </div>
     </div>
   );
