@@ -443,14 +443,14 @@ export default function SkylinePage() {
         </div>
       )}
 
-      {/* Raised from viewport bottom with safe-area buffer so building text isn't clipped */}
+      {/* Skyline strip: fixed height, buildings aligned to a shared baseline above safe area */}
       <div
-        className="absolute left-0 right-0 z-[2] w-full min-w-0 flex items-end"
+        className="absolute left-0 right-0 z-[2] w-full min-w-0"
         style={{
           bottom: "max(2rem, env(safe-area-inset-bottom, 0px))",
           height: "min(420px, 44vh)",
-          minHeight: "280px",
-          paddingBottom: "max(1.25rem, env(safe-area-inset-bottom, 0px))",
+          minHeight: "300px",
+          paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))",
         }}
       >
         <InteractiveSkyline

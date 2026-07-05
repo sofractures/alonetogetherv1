@@ -301,7 +301,7 @@ export const InteractiveSkyline = forwardRef<
   }
 
   return (
-    <div className={`relative w-full min-w-0 ${className}`}>
+    <div className={`relative w-full min-w-0 h-full flex flex-col justify-end ${className}`}>
       <div
         ref={scrollContainerRef}
         className="flex items-end gap-1 px-2 sm:px-4 pb-1 w-full min-w-0 overflow-x-auto overflow-y-visible scroll-smooth overscroll-x-contain"
@@ -323,8 +323,8 @@ export const InteractiveSkyline = forwardRef<
             ref={(el) => {
               buildingRefs.current[i] = el;
             }}
-            className={`relative border-l border-r border-white/10 bg-black/30 flex-shrink-0 ${
-              building.isNew ? "ring-2 ring-white/40" : ""
+            className={`relative border-l border-r border-white/10 bg-black/30 flex-shrink-0 self-end ${
+              building.isNew ? "ring-2 ring-inset ring-white/40" : ""
             }`}
             style={{
               minWidth: `${building.cols * cellWidth}px`,
@@ -338,9 +338,9 @@ export const InteractiveSkyline = forwardRef<
                 : `transform 2000ms ease-out ${building.startDelay}ms, opacity 2000ms ease-out ${building.startDelay}ms`,
             }}
           >
-            <div className="flex flex-col-reverse">
+            <div className="flex flex-col">
               {Array.from({ length: building.rows }).map((_, rowIdx) => (
-                <div key={rowIdx} className="flex border-t border-white/5">
+                <div key={rowIdx} className="flex border-t border-white/5 first:border-t-0">
                   {Array.from({ length: building.cols }).map((_, colIdx) => {
                     const charIdx = rowIdx * building.cols + colIdx;
                     const charData = building.chars[charIdx];
@@ -367,8 +367,8 @@ export const InteractiveSkyline = forwardRef<
         ))}
         {trailingGapPx > 0 && (
           <div
-            className="flex-shrink-0"
-            style={{ width: `${trailingGapPx}px` }}
+            className="flex-shrink-0 self-end"
+            style={{ width: `${trailingGapPx}px`, height: 1 }}
             aria-hidden
           />
         )}
