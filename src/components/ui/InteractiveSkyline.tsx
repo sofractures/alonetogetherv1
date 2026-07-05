@@ -1,6 +1,14 @@
 "use client";
 
-import { useMemo, useState, useEffect, useRef, useCallback } from "react";
+import {
+  useMemo,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 
 interface InteractiveSkylineProps {
   memories: string[];
@@ -16,6 +24,17 @@ interface InteractiveSkylineProps {
   trailingGapPx?: number;
   /** Scroll to the newest buildings on load / when memories change */
   initialScrollToEnd?: boolean;
+  /** Hide hover arrows inside the component (use external screen-edge controls) */
+  hideBuiltInArrows?: boolean;
+  onScrollStateChange?: (state: {
+    canScrollLeft: boolean;
+    canScrollRight: boolean;
+  }) => void;
+}
+
+export interface InteractiveSkylineHandle {
+  scrollLeft: () => void;
+  scrollRight: () => void;
 }
 
 const brickColors = ["#a68361", "#79504a", "#a2736c", "#b1827e"];
@@ -37,16 +56,24 @@ function hashString(str: string): number {
   return Math.abs(hash);
 }
 
-export function InteractiveSkyline({
-  memories,
-  className = "",
-  newMemoryIndex,
-  cellWidth = 8,
-  cellHeight = 10,
-  fontSize = 9,
-  trailingGapPx = 0,
-  initialScrollToEnd = false,
-}: InteractiveSkylineProps) {
+export const InteractiveSkyline = forwardRef<
+  InteractiveSkylineHandle,
+  InteractiveSkylineProps
+>(function InteractiveSkyline(
+  {
+    memories,
+    className = "",
+    newMemoryIndex,
+    cellWidth = 8,
+    cellHeight = 10,
+    fontSize = 9,
+    trailingGapPx = 0,
+    initialScrollToEnd = false,
+    hideBuiltInArrows = false,
+    onScrollStateChange,
+  },
+  ref
+) {
   const [mounted, setMounted] = useState(false);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
@@ -117,6 +144,15 @@ export function InteractiveSkyline({
       container.scrollBy({ left: scrollStep, behavior: 'smooth' });
     }
   }, [scrollStep]);
+
+  useImperativeHandle(ref, () => ({ scrollLeft, scrollRight }), [
+    scrollLeft,
+    scrollRight,
+  ]);
+
+  useEffect(() => {
+    onScrollStateChange?.({ canScrollLeft, canScrollRight });
+  }, [canScrollLeft, canScrollRight, onScrollStateChange]);
 
   // Generate buildings deterministically based on memories
   const buildings = useMemo(() => {
@@ -252,31 +288,33 @@ export function InteractiveSkyline({
 
   return (
     <div className="relative">
-      {/* Left scroll arrow */}
-      <button
-        onClick={scrollLeft}
-        className={`absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-black/60 border border-white/30 text-white/80 hover:bg-black/80 hover:text-white transition-all duration-300 ${
-          showLeftArrow ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'
-        }`}
-        aria-label="Scroll left"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="15 18 9 12 15 6"></polyline>
-        </svg>
-      </button>
+      {!hideBuiltInArrows && (
+        <>
+          <button
+            onClick={scrollLeft}
+            className={`absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-black/60 border border-white/30 text-white/80 hover:bg-black/80 hover:text-white transition-all duration-300 ${
+              showLeftArrow ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'
+            }`}
+            aria-label="Scroll left"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
 
-      {/* Right scroll arrow */}
-      <button
-        onClick={scrollRight}
-        className={`absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-black/60 border border-white/30 text-white/80 hover:bg-black/80 hover:text-white transition-all duration-300 ${
-          showRightArrow ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'
-        }`}
-        aria-label="Scroll right"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="9 18 15 12 9 6"></polyline>
-        </svg>
-      </button>
+          <button
+            onClick={scrollRight}
+            className={`absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-black/60 border border-white/30 text-white/80 hover:bg-black/80 hover:text-white transition-all duration-300 ${
+              showRightArrow ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'
+            }`}
+            aria-label="Scroll right"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+        </>
+      )}
 
       {/* Scrollable container */}
       <div
@@ -348,5 +386,5 @@ export function InteractiveSkyline({
       </div>
     </div>
   );
-}
+});
 

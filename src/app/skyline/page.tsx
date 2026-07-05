@@ -1,7 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { InteractiveSkyline } from "@/components/ui/InteractiveSkyline";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  InteractiveSkyline,
+  type InteractiveSkylineHandle,
+} from "@/components/ui/InteractiveSkyline";
 import { ExploreMenu } from "@/components/ui/ExploreMenu";
 
 interface SkylineMemory {
@@ -11,24 +14,26 @@ interface SkylineMemory {
   created_at: string;
 }
 
-type SkylineFilterId = "pilot" | "event2" | "all";
+type SkylineFilterId = "all" | "pilot" | "event2";
+
+const SKYLINE_FILTER_ORDER: SkylineFilterId[] = ["all", "pilot", "event2"];
 
 const SKYLINE_FILTERS: Record<
   SkylineFilterId,
   { label: string; since?: string; until?: string }
 > = {
-  event2: {
-    label: "Event 2 · 27 Jun",
-    since: "2026-06-27T00:00:00+01:00",
-    until: "2026-06-28T00:00:00+01:00",
+  all: {
+    label: "All memories",
   },
   pilot: {
     label: "Pilot · 19 Mar",
     since: "2026-03-19T00:00:00Z",
     until: "2026-03-20T00:00:00Z",
   },
-  all: {
-    label: "All memories",
+  event2: {
+    label: "Event 2 · 27 Jun",
+    since: "2026-06-27T00:00:00+01:00",
+    until: "2026-06-28T00:00:00+01:00",
   },
 };
 
@@ -49,18 +54,59 @@ function buildFilterQuery(filterId: SkylineFilterId): string {
   return qs ? `?${qs}` : "";
 }
 
+function ScrollArrow({
+  direction,
+  onClick,
+  disabled,
+}: {
+  direction: "left" | "right";
+  onClick: () => void;
+  disabled: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`fixed top-1/2 -translate-y-1/2 z-[4] w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center rounded-full border border-white/35 bg-black/70 backdrop-blur-sm text-white/90 hover:bg-black/90 hover:text-white transition-all ${
+        direction === "left" ? "left-3 sm:left-4" : "right-3 sm:right-4"
+      } ${disabled ? "opacity-30 pointer-events-none" : "opacity-100"}`}
+      aria-label={direction === "left" ? "Scroll left" : "Scroll right"}
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {direction === "left" ? (
+          <polyline points="15 18 9 12 15 6" />
+        ) : (
+          <polyline points="9 18 15 12 9 6" />
+        )}
+      </svg>
+    </button>
+  );
+}
+
 export default function SkylinePage() {
+  const skylineRef = useRef<InteractiveSkylineHandle>(null);
   const [memories, setMemories] = useState<string[]>([]);
   const [isLoadingMemories, setIsLoadingMemories] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [newMemoryIndex, setNewMemoryIndex] = useState<number | undefined>(
     undefined
   );
-  const [activeFilter, setActiveFilter] = useState<SkylineFilterId>("event2");
+  const [activeFilter, setActiveFilter] = useState<SkylineFilterId>("all");
   const [trailingGapPx, setTrailingGapPx] = useState(320);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
-  // Optional event tag from the URL (?event=slug). When present, submissions made
-  // here are labelled so they appear on that event's live display screen.
   const [eventId, setEventId] = useState<string | null>(null);
 
   const [showPromptModal, setShowPromptModal] = useState<boolean>(true);
@@ -71,6 +117,8 @@ export default function SkylinePage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
+
+  const isExploring = !showPromptModal;
 
   const fetchSkylineMemories = useCallback(async (filterId: SkylineFilterId) => {
     try {
@@ -125,7 +173,6 @@ export default function SkylinePage() {
     void fetchSkylineMemories(activeFilter);
   }, [activeFilter, fetchSkylineMemories]);
 
-  // Trailing gap scales with viewport so the right edge always hints at room to grow
   useEffect(() => {
     const updateGap = () => {
       setTrailingGapPx(Math.max(200, Math.round(window.innerWidth * 0.35)));
@@ -134,6 +181,19 @@ export default function SkylinePage() {
     window.addEventListener("resize", updateGap);
     return () => window.removeEventListener("resize", updateGap);
   }, []);
+
+  const openAddMemoryFlow = () => {
+    setActiveFilter("all");
+    setShowPromptModal(true);
+    setIsIntroStep(false);
+    setSubmitError(null);
+    setValidationError(null);
+  };
+
+  const handleExploreFirst = () => {
+    setShowPromptModal(false);
+    setIsIntroStep(true);
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -254,51 +314,76 @@ export default function SkylinePage() {
         <ExploreMenu currentPage="skyline" />
       </div>
 
-      {/* Event filter */}
-      <div className="absolute top-4 left-4 right-4 sm:right-auto z-[3] flex flex-col gap-2 max-w-xl">
-        <div
-          className="flex flex-wrap gap-1.5"
-          role="group"
-          aria-label="Filter skyline memories by event"
-        >
-          {(Object.keys(SKYLINE_FILTERS) as SkylineFilterId[]).map((id) => {
-            const isActive = activeFilter === id;
-            return (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setActiveFilter(id)}
-                className={`px-3 py-1.5 rounded-md border text-xs font-mono transition-all ${
-                  isActive
-                    ? "border-white/50 bg-white/15 text-white"
-                    : "border-white/20 bg-black/50 text-white/60 hover:text-white/80 hover:border-white/30"
-                }`}
-                aria-pressed={isActive}
-              >
-                {SKYLINE_FILTERS[id].label}
-              </button>
-            );
-          })}
+      {/* Explore mode: add memory + filters top-left */}
+      {isExploring && (
+        <div className="absolute top-4 left-4 z-[3] flex flex-col gap-2 max-w-xl pr-16">
+          <button
+            type="button"
+            onClick={openAddMemoryFlow}
+            className="self-start px-4 py-2 rounded-md border border-white/30 bg-black/60 hover:bg-black/80 text-xs sm:text-sm font-mono text-white/80 hover:text-white transition-all"
+          >
+            + Add a memory
+          </button>
+
+          <div
+            className="flex flex-wrap gap-1.5"
+            role="group"
+            aria-label="Filter skyline memories by event"
+          >
+            {SKYLINE_FILTER_ORDER.map((id) => {
+              const isActive = activeFilter === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setActiveFilter(id)}
+                  className={`px-3 py-1.5 rounded-md border text-xs font-mono transition-all ${
+                    isActive
+                      ? "border-white/50 bg-white/15 text-white"
+                      : "border-white/20 bg-black/50 text-white/60 hover:text-white/80 hover:border-white/30"
+                  }`}
+                  aria-pressed={isActive}
+                >
+                  {SKYLINE_FILTERS[id].label}
+                </button>
+              );
+            })}
+          </div>
+
+          <p className="text-xs font-mono text-white/50">
+            {isLoadingMemories
+              ? "Loading memories..."
+              : memories.length === 0
+              ? `No memories for ${filterLabel}`
+              : `${memories.length} ${
+                  memories.length === 1 ? "memory" : "memories"
+                } · ${filterLabel} · scroll to explore`}
+          </p>
         </div>
+      )}
 
-        <p className="text-xs font-mono text-white/50">
-          {isLoadingMemories
-            ? "Loading memories..."
-            : memories.length === 0
-            ? `No memories for ${filterLabel}`
-            : `${memories.length} ${
-                memories.length === 1 ? "memory" : "memories"
-              } · ${filterLabel}`}
-        </p>
-      </div>
+      {isExploring && memories.length > 0 && (
+        <>
+          <ScrollArrow
+            direction="left"
+            onClick={() => skylineRef.current?.scrollLeft()}
+            disabled={!canScrollLeft}
+          />
+          <ScrollArrow
+            direction="right"
+            onClick={() => skylineRef.current?.scrollRight()}
+            disabled={!canScrollRight}
+          />
+        </>
+      )}
 
-      {loadError && !isLoadingMemories && (
+      {loadError && !isLoadingMemories && isExploring && (
         <div className="absolute bottom-72 left-4 z-[2] text-xs font-mono text-white/50 max-w-xs">
           {loadError}
         </div>
       )}
 
-      {submitSuccess && (
+      {submitSuccess && isExploring && (
         <div className="absolute bottom-72 right-4 z-[2] text-xs font-mono text-white/70 max-w-xs text-right">
           {submitSuccess}
         </div>
@@ -306,31 +391,25 @@ export default function SkylinePage() {
 
       <div className="absolute bottom-0 left-0 right-0 z-[2] h-64 flex items-end pb-4">
         <InteractiveSkyline
+          ref={skylineRef}
           memories={memories}
           newMemoryIndex={newMemoryIndex}
           initialScrollToEnd
           trailingGapPx={trailingGapPx}
-          className="w-full h-full"
+          hideBuiltInArrows
+          onScrollStateChange={({ canScrollLeft, canScrollRight }) => {
+            setCanScrollLeft(canScrollLeft);
+            setCanScrollRight(canScrollRight);
+          }}
+          className="w-full h-full touch-pan-x"
         />
       </div>
-
-      {!showPromptModal && (
-        <button
-          onClick={() => {
-            setShowPromptModal(true);
-            setIsIntroStep(false);
-          }}
-          className="absolute bottom-72 left-1/2 -translate-x-1/2 z-[3] px-4 py-2 rounded-md border border-white/30 bg-black/60 hover:bg-black/80 text-xs sm:text-sm font-mono text-white/80 hover:text-white transition-all"
-        >
-          + Add a memory
-        </button>
-      )}
 
       {showPromptModal && (
         <div className="fixed inset-0 z-[20] flex items-center justify-center">
           <div
             className="absolute inset-0 bg-black/40"
-            onClick={() => setShowPromptModal(false)}
+            onClick={handleExploreFirst}
           />
           <div className="relative max-w-lg w-full mx-4 rounded-xl border border-white/20 bg-black/80 backdrop-blur-md p-6 sm:p-8 text-white">
             {isIntroStep ? (
@@ -347,13 +426,13 @@ export default function SkylinePage() {
                   <p className="text-xs text-white/50">
                     {memories.length}{" "}
                     {memories.length === 1 ? "memory has" : "memories have"}{" "}
-                    already shaped this city ({filterLabel}).
+                    already shaped this city.
                   </p>
                 )}
                 <div className="flex items-center justify-between gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => setShowPromptModal(false)}
+                    onClick={handleExploreFirst}
                     className="text-xs sm:text-sm font-mono text-white/70 hover:text-white/90 underline underline-offset-4"
                   >
                     Explore first
@@ -392,10 +471,10 @@ export default function SkylinePage() {
                   <div className="flex items-center justify-between gap-3 pt-1">
                     <button
                       type="button"
-                      onClick={() => setShowPromptModal(false)}
+                      onClick={handleExploreFirst}
                       className="text-xs sm:text-sm font-mono text-white/70 hover:text-white/90 underline underline-offset-4"
                     >
-                      Cancel
+                      Explore first
                     </button>
 
                     <button
