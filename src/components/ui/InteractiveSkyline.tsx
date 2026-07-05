@@ -304,7 +304,7 @@ export const InteractiveSkyline = forwardRef<
     <div className={`relative w-full min-w-0 ${className}`}>
       <div
         ref={scrollContainerRef}
-        className="flex items-end gap-1 px-2 sm:px-4 w-full min-w-0 overflow-x-auto overflow-y-hidden scroll-smooth overscroll-x-contain"
+        className="flex items-end gap-1 px-2 sm:px-4 pb-1 w-full min-w-0 overflow-x-auto overflow-y-visible scroll-smooth overscroll-x-contain"
         style={{
           scrollbarWidth: "none",
           msOverflowStyle: "none",
@@ -348,11 +348,12 @@ export const InteractiveSkyline = forwardRef<
                     return (
                       <div
                         key={colIdx}
-                        className="leading-none font-mono flex items-center justify-center"
+                        className="leading-none font-mono flex items-center justify-center overflow-visible"
                         style={{
                           width: `${cellWidth}px`,
                           height: `${cellHeight}px`,
                           fontSize: `${fontSize}px`,
+                          lineHeight: 1,
                         }}
                       >
                         {charData ? renderChar(charData) : ""}

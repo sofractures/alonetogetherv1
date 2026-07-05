@@ -432,18 +432,27 @@ export default function SkylinePage() {
       )}
 
       {loadError && !isLoadingMemories && isExploring && (
-        <div className="absolute bottom-72 left-4 z-[2] text-xs font-mono text-white/50 max-w-xs">
+        <div className="absolute bottom-[44vh] left-4 z-[2] text-xs font-mono text-white/50 max-w-xs">
           {loadError}
         </div>
       )}
 
       {submitSuccess && isExploring && (
-        <div className="absolute bottom-72 right-4 z-[2] text-xs font-mono text-white/70 max-w-xs text-right">
+        <div className="absolute bottom-[44vh] right-4 z-[2] text-xs font-mono text-white/70 max-w-xs text-right">
           {submitSuccess}
         </div>
       )}
 
-      <div className="absolute bottom-0 left-0 right-0 z-[2] h-64 w-full min-w-0 flex items-end pb-4">
+      {/* Raised from viewport bottom with safe-area buffer so building text isn't clipped */}
+      <div
+        className="absolute left-0 right-0 z-[2] w-full min-w-0 flex items-end"
+        style={{
+          bottom: "max(2rem, env(safe-area-inset-bottom, 0px))",
+          height: "min(420px, 44vh)",
+          minHeight: "280px",
+          paddingBottom: "max(1.25rem, env(safe-area-inset-bottom, 0px))",
+        }}
+      >
         <InteractiveSkyline
           ref={skylineRef}
           memories={memories}
@@ -451,6 +460,9 @@ export default function SkylinePage() {
           initialScrollToEnd
           trailingGapPx={trailingGapPx}
           hideBuiltInArrows
+          cellWidth={11}
+          cellHeight={14}
+          fontSize={12}
           onScrollStateChange={({ canScrollLeft, canScrollRight, hasOverflow }) => {
             setCanScrollLeft(canScrollLeft);
             setCanScrollRight(canScrollRight);
