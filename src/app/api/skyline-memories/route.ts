@@ -29,10 +29,11 @@ export async function GET(req: NextRequest) {
   const rawEvent = req.nextUrl.searchParams.get("event") ?? "";
   const eventId = rawEvent ? sanitizeEventId(rawEvent) : "";
 
-  // Optional time filter: ?since=<ISO timestamp> returns only memories created
-  // at/after that time. Used by the live event display to show everything
-  // entered during the event, regardless of tag.
+  // Optional time filters:
+  // ?since=<ISO> — memories created at/after that time
+  // ?until=<ISO> — memories created before that time (exclusive upper bound)
   const rawSince = req.nextUrl.searchParams.get("since") ?? "";
+  const rawUntil = req.nextUrl.searchParams.get("until") ?? "";
 
   let query = supabaseServer
     .from("skyline_memories")
@@ -48,6 +49,13 @@ export async function GET(req: NextRequest) {
     const sinceDate = new Date(rawSince);
     if (!Number.isNaN(sinceDate.getTime())) {
       query = query.gte("created_at", sinceDate.toISOString());
+    }
+  }
+
+  if (rawUntil) {
+    const untilDate = new Date(rawUntil);
+    if (!Number.isNaN(untilDate.getTime())) {
+      query = query.lt("created_at", untilDate.toISOString());
     }
   }
 
