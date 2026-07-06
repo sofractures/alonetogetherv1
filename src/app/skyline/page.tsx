@@ -443,14 +443,14 @@ export default function SkylinePage() {
         </div>
       )}
 
-      {/* Skyline strip: fixed height, buildings aligned to a shared baseline above safe area */}
+      {/* Skyline strip — modest safe-area buffer; text clipping fixed in cell layout */}
       <div
         className="absolute left-0 right-0 z-[2] w-full min-w-0"
         style={{
-          bottom: "max(2rem, env(safe-area-inset-bottom, 0px))",
+          bottom: "max(1rem, env(safe-area-inset-bottom, 0px))",
           height: "min(420px, 44vh)",
           minHeight: "300px",
-          paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))",
+          paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))",
         }}
       >
         <InteractiveSkyline
@@ -460,8 +460,8 @@ export default function SkylinePage() {
           initialScrollToEnd
           trailingGapPx={trailingGapPx}
           hideBuiltInArrows
-          cellWidth={11}
-          cellHeight={14}
+          cellWidth={12}
+          cellHeight={16}
           fontSize={12}
           onScrollStateChange={({ canScrollLeft, canScrollRight, hasOverflow }) => {
             setCanScrollLeft(canScrollLeft);

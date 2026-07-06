@@ -257,10 +257,27 @@ export const InteractiveSkyline = forwardRef<
   const renderChar = (charData: { char: string; color?: string }) => {
     if (charData.char === " " || charData.char === "\n") {
       return (
-        <div className="w-full h-full border border-white/60 bg-transparent" />
+        <div
+          className="border border-white/60 bg-transparent"
+          style={{
+            width: Math.max(2, cellWidth - 2),
+            height: Math.max(2, cellHeight - 2),
+          }}
+        />
       );
     }
-    return <span style={{ color: charData.color }}>{charData.char}</span>;
+    return (
+      <span
+        style={{
+          color: charData.color,
+          display: "block",
+          lineHeight: 1,
+          transform: "translateY(-0.5px)",
+        }}
+      >
+        {charData.char}
+      </span>
+    );
   };
 
   const scrollToEnd = useCallback((smooth: boolean) => {
@@ -304,7 +321,7 @@ export const InteractiveSkyline = forwardRef<
     <div className={`relative w-full min-w-0 h-full flex flex-col justify-end ${className}`}>
       <div
         ref={scrollContainerRef}
-        className="flex items-end gap-1 px-2 sm:px-4 pb-1 w-full min-w-0 overflow-x-auto overflow-y-visible scroll-smooth overscroll-x-contain"
+        className="flex items-end gap-1 px-2 sm:px-4 w-full min-w-0 overflow-x-auto overflow-y-visible scroll-smooth overscroll-x-contain"
         style={{
           scrollbarWidth: "none",
           msOverflowStyle: "none",
@@ -323,7 +340,7 @@ export const InteractiveSkyline = forwardRef<
             ref={(el) => {
               buildingRefs.current[i] = el;
             }}
-            className={`relative border-l border-r border-white/10 bg-black/30 flex-shrink-0 self-end ${
+            className={`relative border-l border-r border-white/10 bg-black/30 flex-shrink-0 self-end overflow-visible ${
               building.isNew ? "ring-2 ring-inset ring-white/40" : ""
             }`}
             style={{
@@ -338,9 +355,13 @@ export const InteractiveSkyline = forwardRef<
                 : `transform 2000ms ease-out ${building.startDelay}ms, opacity 2000ms ease-out ${building.startDelay}ms`,
             }}
           >
-            <div className="flex flex-col">
+            <div className="flex flex-col h-full">
               {Array.from({ length: building.rows }).map((_, rowIdx) => (
-                <div key={rowIdx} className="flex border-t border-white/5 first:border-t-0">
+                <div
+                  key={rowIdx}
+                  className="flex"
+                  style={{ height: `${cellHeight}px` }}
+                >
                   {Array.from({ length: building.cols }).map((_, colIdx) => {
                     const charIdx = rowIdx * building.cols + colIdx;
                     const charData = building.chars[charIdx];
@@ -348,12 +369,13 @@ export const InteractiveSkyline = forwardRef<
                     return (
                       <div
                         key={colIdx}
-                        className="leading-none font-mono flex items-center justify-center overflow-visible"
+                        className="font-mono flex items-center justify-center overflow-visible box-border"
                         style={{
                           width: `${cellWidth}px`,
                           height: `${cellHeight}px`,
                           fontSize: `${fontSize}px`,
-                          lineHeight: 1,
+                          lineHeight: `${fontSize}px`,
+                          paddingBottom: 1,
                         }}
                       >
                         {charData ? renderChar(charData) : ""}
