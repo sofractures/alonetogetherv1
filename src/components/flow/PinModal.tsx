@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { LocationData, getCoordinatesFromCityCountry } from '@/lib/location';
+import { LocationData, getCoordinatesFromCityCountry, getBrowserLocation, getIPLocation } from '@/lib/location';
 
 interface PinModalProps {
   isOpen: boolean;
@@ -23,20 +23,63 @@ export default function PinModal({
   const [manualCountry, setManualCountry] = useState(initialLocation?.country || '');
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [detectedLocation, setDetectedLocation] = useState<LocationData | null>(null);
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [detectError, setDetectError] = useState<string | null>(null);
 
   // Email validation
   const isValidEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
+  const formatLocation = (loc: LocationData) => {
+    const label = [loc.city, loc.country].filter(Boolean).join(', ');
+    // Fall back to rounded coordinates if reverse geocoding returned no names
+    return label || `${loc.latitude.toFixed(2)}, ${loc.longitude.toFixed(2)}`;
+  };
+
   const handleUseCurrentLocation = async () => {
-    setIsSubmitting(true);
-    try {
-      // Let parent handle browser geolocation by passing null
-      onPin({ email, location: null, name: name.trim() || undefined });
-    } finally {
-      setIsSubmitting(false);
+    if (!isValidEmail(email)) {
+      alert('Please enter a valid email address.');
+      return;
     }
+    setIsDetecting(true);
+    setDetectError(null);
+    try {
+      // Browser geolocation first (accurate), IP lookup as fallback (approximate)
+      let location = await getBrowserLocation();
+      if (!location) {
+        location = await getIPLocation();
+      }
+      if (location) {
+        setDetectedLocation(location);
+      } else {
+        setDetectError("We couldn't detect your location. Please enter it manually or skip.");
+      }
+    } catch (error) {
+      console.warn('Location detection error:', error);
+      setDetectError("We couldn't detect your location. Please enter it manually or skip.");
+    } finally {
+      setIsDetecting(false);
+    }
+  };
+
+  const handleConfirmDetected = () => {
+    if (!detectedLocation) return;
+    setIsSubmitting(true);
+    onPin({
+      email,
+      location: { ...detectedLocation, name: name.trim() || undefined },
+      name: name.trim() || undefined,
+    });
+  };
+
+  const handleEditDetected = () => {
+    // Prefill manual entry with what we detected so the user can correct it
+    setManualCity(detectedLocation?.city || '');
+    setManualCountry(detectedLocation?.country || '');
+    setDetectedLocation(null);
+    setUseManual(true);
   };
 
   const handleManualSubmit = async () => {
@@ -136,7 +179,7 @@ export default function PinModal({
               disabled={isSubmitting || isGeocoding}
               required
             />
-            <p className="text-xs mt-1" style={{ color: '#e5ddc7' }}>We&apos;ll send you a link to your song</p>
+            <p className="text-xs mt-1" style={{ color: '#e5ddc7' }}>Lets you download your song from your window on the globe anytime</p>
           </div>
 
           {/* Name Input - Optional */}
@@ -159,18 +202,47 @@ export default function PinModal({
             <div>
               <label className="block text-sm mb-2" style={{ color: '#e5ddc7' }}>Location</label>
               
-              {!useManual ? (
+              {detectedLocation ? (
+                <div className="space-y-2">
+                  <div className="bg-white/10 border border-white/20 rounded p-3">
+                    <p className="text-sm" style={{ color: '#e5ddc7' }}>
+                      📍 We found you near: <strong>{formatLocation(detectedLocation)}</strong>
+                    </p>
+                    <p className="text-xs mt-1" style={{ color: '#e5ddc7', opacity: 0.7 }}>
+                      This is how your memory will be labelled on the globe.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleConfirmDetected}
+                    disabled={isSubmitting}
+                    className="w-full px-4 py-2 rounded bg-white text-black hover:bg-gray-100 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? 'Pinning...' : '✓ Looks Right — Pin My Memory'}
+                  </button>
+                  <button
+                    onClick={handleEditDetected}
+                    disabled={isSubmitting}
+                    className="w-full px-4 py-2 rounded border border-white/30 hover:bg-white/10 transition-colors disabled:opacity-50"
+                    style={{ color: '#e5ddc7' }}
+                  >
+                    Not quite — let me type it
+                  </button>
+                </div>
+              ) : !useManual ? (
                 <div className="space-y-2">
                   <button
                     onClick={handleUseCurrentLocation}
-                    disabled={!isValidEmail(email) || isSubmitting || isGeocoding}
+                    disabled={!isValidEmail(email) || isSubmitting || isGeocoding || isDetecting}
                     className="w-full px-4 py-2 rounded bg-white text-black hover:bg-gray-100 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    📍 Use Current Location
+                    {isDetecting ? 'Detecting your location...' : '📍 Use Current Location'}
                   </button>
+                  {detectError && (
+                    <p className="text-xs text-red-400">{detectError}</p>
+                  )}
                   <button
                     onClick={() => setUseManual(true)}
-                    disabled={isSubmitting || isGeocoding}
+                    disabled={isSubmitting || isGeocoding || isDetecting}
                     className="w-full px-4 py-2 rounded border border-white/30 hover:bg-white/10 transition-colors disabled:opacity-50"
                     style={{ color: '#e5ddc7' }}
                   >
@@ -178,7 +250,7 @@ export default function PinModal({
                   </button>
                   <button
                     onClick={handleSkipLocation}
-                    disabled={!isValidEmail(email) || isSubmitting || isGeocoding}
+                    disabled={!isValidEmail(email) || isSubmitting || isGeocoding || isDetecting}
                     className="w-full px-4 py-2 rounded transition-colors text-sm disabled:opacity-50"
                     style={{ color: '#e5ddc7' }}
                   >
