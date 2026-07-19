@@ -55,9 +55,16 @@ export async function POST(req: NextRequest) {
     }
 
     // SECURITY: Validate content type
+    // MediaRecorder blobs often carry codec parameters (e.g. "audio/webm;codecs=opus"),
+    // so compare against the base MIME type only.
     const contentType = file.type || 'audio/webm';
-    if (!ALLOWED_AUDIO_TYPES.includes(contentType)) {
-      return NextResponse.json({ error: 'Invalid file type' }, { status: 400 });
+    const baseType = contentType.split(';')[0].trim().toLowerCase();
+    if (!ALLOWED_AUDIO_TYPES.includes(baseType)) {
+      console.error('[v0] API: Rejected upload with content type:', contentType);
+      return NextResponse.json(
+        { error: `Invalid file type: ${baseType}` },
+        { status: 400 }
+      );
     }
 
     const arrayBuffer = await file.arrayBuffer();
@@ -67,7 +74,7 @@ export async function POST(req: NextRequest) {
       .storage
       .from('memory-songs')
       .upload(path, Buffer.from(arrayBuffer), {
-        contentType: file.type || 'audio/webm',
+        contentType: baseType,
         upsert: false,
       });
 
