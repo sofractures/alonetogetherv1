@@ -676,7 +676,6 @@ export default function Home() {
       {/* Celebration Screen - Step 10 */}
       <CelebrationScreen
         isOpen={flowState === 'celebrating'}
-        email={userEmail || ''}
         location={pinnedLocation || undefined}
         onDownload={handleDownload}
         onExploreGlobe={handleExploreGlobe}

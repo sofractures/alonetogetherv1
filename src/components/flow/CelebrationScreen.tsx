@@ -2,7 +2,6 @@
 
 interface CelebrationScreenProps {
   isOpen: boolean;
-  email: string;
   location?: string;
   onDownload: () => void;
   onExploreGlobe: () => void;
@@ -11,7 +10,6 @@ interface CelebrationScreenProps {
 
 export default function CelebrationScreen({
   isOpen,
-  email,
   location,
   onDownload,
   onExploreGlobe,
@@ -62,10 +60,6 @@ export default function CelebrationScreen({
           >
             ⬇ Download Your Song
           </button>
-          
-          <p className="text-xs" style={{ color: '#e5ddc7' }}>
-            Your song is linked to <strong>{email}</strong> — find your window on the globe anytime to download it again.
-          </p>
         </div>
 
         {/* Actions */}
