@@ -73,17 +73,6 @@ export default function PinModal({
     }
   };
 
-  const handleSkipLocation = async () => {
-    if (!isValidEmail(email)) {
-      alert('Please enter a valid email address.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    // Explicitly pass null to indicate user skipped location (don't auto-detect)
-    onPin({ email, location: null, name: name.trim() || undefined });
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -179,12 +168,12 @@ export default function PinModal({
                   {isGeocoding ? 'Finding location...' : isSubmitting ? 'Pinning...' : 'Pin My Memory'}
                 </button>
                 <button
-                  onClick={handleSkipLocation}
-                  disabled={!isValidEmail(email) || isSubmitting || isGeocoding}
+                  onClick={onCancel}
+                  disabled={isSubmitting || isGeocoding}
                   className="w-full px-4 py-2 rounded transition-colors text-sm disabled:opacity-50"
                   style={{ color: '#e5ddc7' }}
                 >
-                  Skip (No Location)
+                  Exit
                 </button>
               </div>
             </div>
