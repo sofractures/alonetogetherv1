@@ -13,6 +13,7 @@ import { getAudioController, onRecordingStartFadeOutBackground, onRecordingStopR
 import { useMemoryStore } from "@/store/memoryStore";
 import { getBrowserLocation, getIPLocation, LocationData } from "@/lib/location";
 import { Analytics } from "@/lib/analytics";
+import { toAttachmentUrl } from "@/lib/download";
 
 type FlowState = 
   | 'idle'
@@ -349,9 +350,10 @@ export default function Home() {
       // Track download event
       Analytics.songDownloaded(pinnedMemoryId || 'unknown');
       
+      const filename = `alone-together-${pinnedMemoryId || 'memory'}.mp3`;
       const link = document.createElement('a');
-      link.href = processedAudioUrl;
-      link.download = `alone-together-${pinnedMemoryId || 'memory'}.mp3`;
+      link.href = toAttachmentUrl(processedAudioUrl, filename);
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

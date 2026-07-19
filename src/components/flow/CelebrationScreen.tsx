@@ -64,7 +64,7 @@ export default function CelebrationScreen({
           </button>
           
           <p className="text-xs" style={{ color: '#e5ddc7' }}>
-            We&apos;ve also sent it to <strong>{email}</strong>
+            Your song is linked to <strong>{email}</strong> — find your window on the globe anytime to download it again.
           </p>
         </div>
 

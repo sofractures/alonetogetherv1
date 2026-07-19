@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { MemoryForMap } from '@/types/memory';
 import { onMemoryPlaybackStartMuteBackground, onMemoryPlaybackStopUnmuteBackground } from '@/lib/audio-context';
 import { Analytics } from '@/lib/analytics';
+import { toAttachmentUrl } from '@/lib/download';
 
 interface MemoryPlayerProps {
   memory: MemoryForMap | null;
@@ -155,7 +156,7 @@ export default function MemoryPlayer({ memory, isOpen, onClose }: MemoryPlayerPr
             {/* Only show download button if this is the user's memory */}
             {isUserMemory && (
               <a
-                href={audioUrl}
+                href={toAttachmentUrl(audioUrl, `memory-${currentMemory.id}.mp3`)}
                 download={`memory-${currentMemory.id}.mp3`}
                 className="mt-4 inline-block px-4 py-2 rounded bg-white text-black hover:bg-gray-100 transition-colors"
                 onClick={() => Analytics.songDownloaded(currentMemory.id)}
