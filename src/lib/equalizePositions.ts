@@ -22,8 +22,10 @@ import { MemoryForMap } from '@/types/memory';
  * 1 = strict geography (positions barely move, clusters stay stacked)
  * 0 = fully equalized (windows spread as far as needed, geography is loose)
  * Tune this live to find the sweet spot between "world map" and "readable".
+ * Kept high so distinct regions (e.g. Nigeria vs Italy vs UK) read as
+ * clearly separate places; hover-to-front handles residual overlap.
  */
-export const GEO_FIDELITY = 0.35;
+export const GEO_FIDELITY = 0.7;
 
 /** Relaxation iterations. More = closer to equilibrium; 120 is plenty for a few hundred points. */
 const ITERATIONS = 120;
@@ -95,8 +97,10 @@ export function equalizeMemoryPositions(
   const n = memories.length;
 
   // Target angular separation between window centres (radians).
-  // Capped at 0.3 rad (per PRD spatial spec); shrinks as the sphere fills up.
-  const minSep = Math.min(0.3, 1.8 / Math.sqrt(n));
+  // Modest cap: full separation would let dense clusters (e.g. UK) sprawl
+  // into neighbouring countries' space. Partial overlap is acceptable now
+  // that the hovered window lifts to the front.
+  const minSep = Math.min(0.18, 1.8 / Math.sqrt(n));
   // Repulsion compares chord lengths (cheaper than angles, equivalent for small separations)
   const minChord = 2 * Math.sin(minSep / 2);
 
