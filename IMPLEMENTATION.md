@@ -163,6 +163,7 @@
   - Create database entry with location data
   - Return memory ID (UUID) for processing
   ```
+- [x] **MIME validation fix:** validate against the base MIME type (strip codec params). MediaRecorder blobs carry codecs (e.g. `audio/webm;codecs=opus`), which failed the exact-match allowlist added during security hardening and rejected every upload with "Invalid file type". Rejections now log and return the received type.
 - [x] **Understanding `memoryId` in this flow:**
   - `memoryId` = UUID returned from database INSERT into `memories` table
   - **NOT** the geolocation, processed song file, or audio file path
@@ -352,6 +353,10 @@
   - [x] Include email in API response for memory data
   - [x] Conditional download button based on email match (case-insensitive)
   - [x] Celebration screen download still available (user just created it)
+- [x] **Forced attachment downloads** (`src/lib/download.ts`):
+  - [x] Supabase signed URLs serve inline and the HTML `download` attribute is ignored cross-origin, so downloads opened the MP3 in the browser tab (navigating away from the site)
+  - [x] `toAttachmentUrl()` appends Supabase's `download=<filename>` query param → `Content-Disposition: attachment` → file saves to the browser's Downloads folder
+  - [x] Applied to celebration screen download and MemoryPlayer download link
 - [ ] Add keyboard controls for playback
 
 ---
@@ -492,14 +497,16 @@
 - [x] **New Flow: Pin Modal** (`components/flow/PinModal.tsx`)
   - [x] Email capture (required) - needed to pin and get download
   - [x] Optional name field for display
-  - [x] Location entry: use current, custom (city/country), or skip
+  - [x] Location entry: **manual city/country only** (geolocation removed — permission prompt + confirm step added friction; "Use Current Location" also silently pinned with no coordinates, so memories never appeared on the globe)
   - [x] Forward geocoding for city/country to coordinates
+  - [x] **Exit button** backs out to the playback modal (replaced "Skip (No Location)" — skipping created invisible memories with no window on the globe; pinning with email + location is now the only path to a song)
   - [x] Streamlined UI: hides location section if already provided
 - [x] **New Flow: Celebration Screen** (`components/flow/CelebrationScreen.tsx`)
   - [x] "Your Memory is Live!" success message
   - [x] Shows pinned location
   - [x] Download offer: "Here's your copy to keep"
   - [x] "Explore the Globe" and "Create Another Memory" buttons
+  - [x] Removed "We've also sent it to your email" claim (no email automation exists; download is in-flow or via your window on the globe)
   - [x] **Modal Styling Updates**:
     - [x] Black background (`bg-black/80`) with visible blurred globe behind
     - [x] Backdrop: `bg-black/40` with `backdrop-blur-md` (globe visible)
@@ -532,6 +539,7 @@
     - [x] Implement navigation to skyline page using Next.js router
     - [x] "Listen" button placeholder (ready for future functionality)
     - [x] **Mobile optimization**: Tighter spacing between menu items (`gap-1.5` on mobile), smaller text size
+    - [x] **Create entry-point fix:** all Create buttons (menu, welcome modal, "Create Another Memory") route through a shared `openCreateOverlay()` that resets stale flow state (`pendingBlob`, processed URL, flow state) — previously Menu → Create reused leftover state and opened the overlay without the recorder
   - [x] **Skyline Page**:
     - [x] Create new page route for skyline view (`/app/skyline/page.tsx`)
     - [x] Display `MemorySkyline` component at bottom (matching landing page style)

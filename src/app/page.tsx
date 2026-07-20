@@ -13,6 +13,7 @@ import { getAudioController, onRecordingStartFadeOutBackground, onRecordingStopR
 import { useMemoryStore } from "@/store/memoryStore";
 import { getBrowserLocation, getIPLocation, LocationData } from "@/lib/location";
 import { Analytics } from "@/lib/analytics";
+import { toAttachmentUrl } from "@/lib/download";
 
 type FlowState = 
   | 'idle'
@@ -47,7 +48,6 @@ export default function Home() {
   
   // New flow state management
   const [flowState, setFlowState] = useState<FlowState>('idle');
-  const [userEmail, setUserEmail] = useState<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [userName, setUserName] = useState<string | null>(null);
   const [pinnedMemoryId, setPinnedMemoryId] = useState<string | null>(null);
@@ -274,7 +274,6 @@ export default function Home() {
   };
 
   const handlePinMemory = async (data: { email: string; location: LocationData | null; name?: string }) => {
-    setUserEmail(data.email);
     setUserName(data.name || null);
     // Store user email in localStorage for download permission checks
     if (typeof window !== 'undefined') {
@@ -349,9 +348,10 @@ export default function Home() {
       // Track download event
       Analytics.songDownloaded(pinnedMemoryId || 'unknown');
       
+      const filename = `alone-together-${pinnedMemoryId || 'memory'}.mp3`;
       const link = document.createElement('a');
-      link.href = processedAudioUrl;
-      link.download = `alone-together-${pinnedMemoryId || 'memory'}.mp3`;
+      link.href = toAttachmentUrl(processedAudioUrl, filename);
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -373,18 +373,29 @@ export default function Home() {
     fetchMemories();
   };
 
-  const handleCreateAnother = () => {
-    // Reset everything for a new recording
+  // Reset all state left over from a previous recording flow so the
+  // overlay opens on the record view instead of a stale intermediate step
+  const resetRecordingFlow = () => {
     setFlowState('idle');
     setPendingBlob(null);
     setPendingUrl(null);
     setProcessedAudioUrl(null);
-    setUserEmail(null);
+    setUploadError(null);
     setUserName(null);
     setPinnedMemoryId(null);
     setPinnedLocation(null);
+  };
+
+  const handleCreateAnother = () => {
+    resetRecordingFlow();
     setIsOverlayOpen(false);
     setIsWelcomeOpen(true);
+  };
+
+  const openCreateOverlay = () => {
+    Analytics.createOpened();
+    resetRecordingFlow();
+    setIsOverlayOpen(true);
   };
 
   return (
@@ -464,7 +475,7 @@ export default function Home() {
           {/* Menu - Top Right */}
           <ExploreMenu 
             currentPage="explore" 
-            onCreate={() => { Analytics.createOpened(); setIsOverlayOpen(true); }}
+            onCreate={openCreateOverlay}
           />
         </>
       )}
@@ -493,7 +504,7 @@ export default function Home() {
               <h2 className="text-2xl font-semibold mb-2" style={{ color: '#e5ddc7' }}>Welcome to Alone Together</h2>
               <p className="mb-6" style={{ color: '#e5ddc7' }}>Record your memory to create your own personal song, or explore others on the map.</p>
               <div className="flex gap-3 justify-center">
-                <button onClick={() => { Analytics.createOpened(); setIsWelcomeOpen(false); setShowWelcomeModal(false); setWelcomeModalVisible(false); setIsOverlayOpen(true); }} className="px-5 py-2 rounded border border-white/30 hover:bg-white/10" style={{ color: '#e5ddc7' }}>Create</button>
+                <button onClick={() => { setIsWelcomeOpen(false); setShowWelcomeModal(false); setWelcomeModalVisible(false); openCreateOverlay(); }} className="px-5 py-2 rounded border border-white/30 hover:bg-white/10" style={{ color: '#e5ddc7' }}>Create</button>
                 <button onClick={() => { Analytics.exploreOpened(); setIsWelcomeOpen(false); setShowWelcomeModal(false); setWelcomeModalVisible(false); setHasStartedExploring(true); }} className="px-5 py-2 rounded border border-white/30 hover:bg-white/10" style={{ color: '#e5ddc7' }}>Explore</button>
               </div>
             </div>
@@ -674,7 +685,6 @@ export default function Home() {
       {/* Celebration Screen - Step 10 */}
       <CelebrationScreen
         isOpen={flowState === 'celebrating'}
-        email={userEmail || ''}
         location={pinnedLocation || undefined}
         onDownload={handleDownload}
         onExploreGlobe={handleExploreGlobe}

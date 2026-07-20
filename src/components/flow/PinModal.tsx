@@ -18,7 +18,6 @@ export default function PinModal({
 }: PinModalProps) {
   const [email, setEmail] = useState('');
   const [name, setName] = useState(initialLocation?.name || '');
-  const [useManual, setUseManual] = useState(false);
   const [manualCity, setManualCity] = useState(initialLocation?.city || '');
   const [manualCountry, setManualCountry] = useState(initialLocation?.country || '');
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -27,16 +26,6 @@ export default function PinModal({
   // Email validation
   const isValidEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
-
-  const handleUseCurrentLocation = async () => {
-    setIsSubmitting(true);
-    try {
-      // Let parent handle browser geolocation by passing null
-      onPin({ email, location: null, name: name.trim() || undefined });
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   const handleManualSubmit = async () => {
@@ -84,17 +73,6 @@ export default function PinModal({
     }
   };
 
-  const handleSkipLocation = async () => {
-    if (!isValidEmail(email)) {
-      alert('Please enter a valid email address.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    // Explicitly pass null to indicate user skipped location (don't auto-detect)
-    onPin({ email, location: null, name: name.trim() || undefined });
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -136,7 +114,7 @@ export default function PinModal({
               disabled={isSubmitting || isGeocoding}
               required
             />
-            <p className="text-xs mt-1" style={{ color: '#e5ddc7' }}>We&apos;ll send you a link to your song</p>
+            <p className="text-xs mt-1" style={{ color: '#e5ddc7' }}>Lets you download your song from your window on the globe anytime</p>
           </div>
 
           {/* Name Input - Optional */}
@@ -157,75 +135,47 @@ export default function PinModal({
           {/* Location Section - Only show if location not already provided */}
           {!initialLocation && (
             <div>
-              <label className="block text-sm mb-2" style={{ color: '#e5ddc7' }}>Location</label>
-              
-              {!useManual ? (
-                <div className="space-y-2">
-                  <button
-                    onClick={handleUseCurrentLocation}
-                    disabled={!isValidEmail(email) || isSubmitting || isGeocoding}
-                    className="w-full px-4 py-2 rounded bg-white text-black hover:bg-gray-100 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    📍 Use Current Location
-                  </button>
-                  <button
-                    onClick={() => setUseManual(true)}
-                    disabled={isSubmitting || isGeocoding}
-                    className="w-full px-4 py-2 rounded border border-white/30 hover:bg-white/10 transition-colors disabled:opacity-50"
-                    style={{ color: '#e5ddc7' }}
-                  >
-                    Set Custom Location
-                  </button>
-                  <button
-                    onClick={handleSkipLocation}
-                    disabled={!isValidEmail(email) || isSubmitting || isGeocoding}
-                    className="w-full px-4 py-2 rounded transition-colors text-sm disabled:opacity-50"
-                    style={{ color: '#e5ddc7' }}
-                  >
-                    Skip (No Location)
-                  </button>
+              <label className="block text-sm mb-2" style={{ color: '#e5ddc7' }}>
+                Location <span className="text-gray-500">(where should your window glow?)</span>
+              </label>
+
+              <div className="space-y-3">
+                <div>
+                  <input
+                    type="text"
+                    value={manualCity}
+                    onChange={(e) => setManualCity(e.target.value)}
+                    placeholder="City (e.g., London)"
+                    className="w-full px-3 py-2 rounded bg-gray-900/50 border border-white/20 text-white placeholder-gray-500 focus:outline-none focus:border-white/40"
+                    disabled={isGeocoding || isSubmitting}
+                  />
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  <div>
-                    <input
-                      type="text"
-                      value={manualCity}
-                      onChange={(e) => setManualCity(e.target.value)}
-                      placeholder="City (e.g., London)"
-                      className="w-full px-3 py-2 rounded bg-gray-900/50 border border-white/20 text-white placeholder-gray-500 focus:outline-none focus:border-white/40"
-                      disabled={isGeocoding || isSubmitting}
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="text"
-                      value={manualCountry}
-                      onChange={(e) => setManualCountry(e.target.value)}
-                      placeholder="Country (e.g., United Kingdom)"
-                      className="w-full px-3 py-2 rounded bg-gray-900/50 border border-white/20 text-white placeholder-gray-500 focus:outline-none focus:border-white/40"
-                      disabled={isGeocoding || isSubmitting}
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleManualSubmit}
-                      disabled={isGeocoding || isSubmitting || !isValidEmail(email) || (!manualCity.trim() && !manualCountry.trim())}
-                      className="flex-1 px-4 py-2 rounded bg-white text-black hover:bg-gray-100 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isGeocoding ? 'Finding location...' : 'Pin My Memory'}
-                    </button>
-                    <button
-                      onClick={() => setUseManual(false)}
-                      disabled={isGeocoding || isSubmitting}
-                      className="px-4 py-2 rounded border border-gray-600 hover:bg-gray-800 transition-colors disabled:opacity-50"
-                      style={{ color: '#e5ddc7' }}
-                    >
-                      Back
-                    </button>
-                  </div>
+                <div>
+                  <input
+                    type="text"
+                    value={manualCountry}
+                    onChange={(e) => setManualCountry(e.target.value)}
+                    placeholder="Country (e.g., United Kingdom)"
+                    className="w-full px-3 py-2 rounded bg-gray-900/50 border border-white/20 text-white placeholder-gray-500 focus:outline-none focus:border-white/40"
+                    disabled={isGeocoding || isSubmitting}
+                  />
                 </div>
-              )}
+                <button
+                  onClick={handleManualSubmit}
+                  disabled={isGeocoding || isSubmitting || !isValidEmail(email) || (!manualCity.trim() && !manualCountry.trim())}
+                  className="w-full px-4 py-2 rounded bg-white text-black hover:bg-gray-100 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGeocoding ? 'Finding location...' : isSubmitting ? 'Pinning...' : 'Pin My Memory'}
+                </button>
+                <button
+                  onClick={onCancel}
+                  disabled={isSubmitting || isGeocoding}
+                  className="w-full px-4 py-2 rounded transition-colors text-sm disabled:opacity-50"
+                  style={{ color: '#e5ddc7' }}
+                >
+                  Exit
+                </button>
+              </div>
             </div>
           )}
           
