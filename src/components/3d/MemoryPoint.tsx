@@ -66,9 +66,12 @@ export default function MemoryPoint({
   // screen instead of just magnifying them. Normalised to 1.0 at the default
   // camera distance of 12.
   const distanceScale = Math.min(1, Math.max(0.2, (cameraDistance - 4) / 8));
-  
+
+  // Global window size: 15% smaller than the original 1.5-unit plane
+  const sizeScale = 0.85;
+
   const baseScale = highlighted ? 1.4 : hovered ? 1.3 : 1;
-  const scale = baseScale * distanceScale;
+  const scale = baseScale * distanceScale * sizeScale;
   const opacity = highlighted ? 1 : hovered ? 1 : 1; // Full opacity for all windows
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
