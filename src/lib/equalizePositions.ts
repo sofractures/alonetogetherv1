@@ -83,24 +83,35 @@ function jitterFor(id: string): Vec3 {
   ];
 }
 
+export interface EqualizeOptions {
+  /** Overrides GEO_FIDELITY (0..1). Lower = more spread, less geographic. */
+  fidelity?: number;
+  /** Cap on target angular separation between windows, radians. */
+  sepCap?: number;
+}
+
 /**
  * Compute display coordinates for all memories.
  * Deterministic: the same set of memories always produces the same layout.
  * O(n² · iterations) — fine for the hundreds of memories this app expects.
  */
 export function equalizeMemoryPositions(
-  memories: MemoryForMap[]
+  memories: MemoryForMap[],
+  options: EqualizeOptions = {}
 ): Map<string, { lat: number; lon: number }> {
+  const fidelity = options.fidelity ?? GEO_FIDELITY;
+  const sepCap = options.sepCap ?? 0.18;
+
   const result = new Map<string, { lat: number; lon: number }>();
   if (memories.length === 0) return result;
 
   const n = memories.length;
 
   // Target angular separation between window centres (radians).
-  // Modest cap: full separation would let dense clusters (e.g. UK) sprawl
-  // into neighbouring countries' space. Partial overlap is acceptable now
-  // that the hovered window lifts to the front.
-  const minSep = Math.min(0.18, 1.8 / Math.sqrt(n));
+  // Modest default cap: full separation would let dense clusters (e.g. UK)
+  // sprawl into neighbouring countries' space. Partial overlap is acceptable
+  // now that the hovered window lifts to the front.
+  const minSep = Math.min(sepCap, 1.8 / Math.sqrt(n));
   // Repulsion compares chord lengths (cheaper than angles, equivalent for small separations)
   const minChord = 2 * Math.sin(minSep / 2);
 
@@ -110,7 +121,7 @@ export function equalizeMemoryPositions(
     return normalize([anchors[i][0] + j[0], anchors[i][1] + j[1], anchors[i][2] + j[2]]);
   });
 
-  const anchorStep = ANCHOR_STEP * GEO_FIDELITY;
+  const anchorStep = ANCHOR_STEP * fidelity;
 
   for (let iter = 0; iter < ITERATIONS; iter++) {
     // Anchor springs first, separation last, so each iteration ends non-overlapping
@@ -152,4 +163,31 @@ export function equalizeMemoryPositions(
     result.set(memories[i].id, vecToLatLng(points[i]));
   }
   return result;
+}
+
+/**
+ * Spherical interpolation between two lat/lng positions (t: 0 = a, 1 = b).
+ * Used to blend between the zoomed-out and zoomed-in layouts without the
+ * dateline/pole artefacts of interpolating lat/lng directly.
+ */
+export function slerpLatLng(
+  a: { lat: number; lon: number },
+  b: { lat: number; lon: number },
+  t: number
+): { lat: number; lon: number } {
+  const va = latLngToVec(a.lat, a.lon);
+  const vb = latLngToVec(b.lat, b.lon);
+  const dot = Math.min(1, Math.max(-1, va[0] * vb[0] + va[1] * vb[1] + va[2] * vb[2]));
+  const omega = Math.acos(dot);
+  if (omega < 1e-6) return a;
+  const sinOmega = Math.sin(omega);
+  const wa = Math.sin((1 - t) * omega) / sinOmega;
+  const wb = Math.sin(t * omega) / sinOmega;
+  return vecToLatLng(
+    normalize([
+      va[0] * wa + vb[0] * wb,
+      va[1] * wa + vb[1] * wb,
+      va[2] * wa + vb[2] * wb,
+    ])
+  );
 }

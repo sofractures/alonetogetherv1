@@ -59,14 +59,13 @@ export default function MemoryPoint({
     }
   });
 
-  // Scale window size based on camera distance
-  // When zoomed out (far): larger windows (1.0x) - easier to see from far away
-  // When zoomed in (close): smaller windows (0.5x) - allows spread to be visible, prevents overlap
-  const minDist = 6;
-  const maxDist = 30;
-  const normalizedDist = Math.min(1, Math.max(0, (cameraDistance - minDist) / (maxDist - minDist)));
-  // Invert: closer camera = smaller windows (so spread is visible)
-  const distanceScale = 0.5 + normalizedDist * 0.5; // 0.5 → 1.0 (smaller when zoomed in)
+  // Keep windows a roughly CONSTANT SCREEN SIZE while zooming.
+  // Windows sit on a radius-4 sphere, so their distance to the camera is
+  // ~(cameraDistance - 4). Scaling world size proportionally to that distance
+  // cancels the perspective growth — zooming in then separates windows on
+  // screen instead of just magnifying them. Normalised to 1.0 at the default
+  // camera distance of 12.
+  const distanceScale = Math.min(1, Math.max(0.2, (cameraDistance - 4) / 8));
   
   const baseScale = highlighted ? 1.4 : hovered ? 1.3 : 1;
   const scale = baseScale * distanceScale;

@@ -8,7 +8,7 @@ import BuildingCube from './BuildingCube';
 import MemoryPoint from './MemoryPoint';
 import { MemoryForMap } from '@/types/memory';
 import { clusterAndSpreadMemories } from '@/lib/clustering';
-import { equalizeMemoryPositions } from '@/lib/equalizePositions';
+import { equalizeMemoryPositions, slerpLatLng } from '@/lib/equalizePositions';
 
 interface MemoryGlobeProps {
   memories?: MemoryForMap[];
@@ -153,14 +153,32 @@ export default function MemoryGlobe({
   // the world's shape but spill dense city clusters into surrounding empty
   // space (oceans) so windows stay individually visible. True locations are
   // untouched — labels and the database keep the real place.
-  const displayMemories = useMemo(() => {
-    if (memories.length < 2) return memories;
-    const equalized = equalizeMemoryPositions(memories);
-    return memories.map((m) => {
-      const pos = equalized.get(m.id);
-      return pos ? { ...m, latitude: pos.lat, longitude: pos.lon } : m;
-    });
+  //
+  // Two layouts are precomputed once per data load:
+  //  - far:  geography-faithful, modest spread (the zoomed-out world view)
+  //  - near: loose geography, generous spread (clusters fanned wide open)
+  // As the camera zooms in we blend between them, so the cluster you zoom
+  // toward visibly expands and windows separate.
+  const layouts = useMemo(() => {
+    if (memories.length < 2) return null;
+    return {
+      far: equalizeMemoryPositions(memories),
+      near: equalizeMemoryPositions(memories, { fidelity: 0.25, sepCap: 0.35 }),
+    };
   }, [memories]);
+
+  const displayMemories = useMemo(() => {
+    if (!layouts) return memories;
+    // Zoom expansion: 0 at camera distance >= 18 (far layout), 1 at <= 6 (near layout)
+    const t = Math.min(1, Math.max(0, (18 - camDistance) / 12));
+    return memories.map((m) => {
+      const far = layouts.far.get(m.id);
+      const near = layouts.near.get(m.id);
+      if (!far || !near) return m;
+      const pos = t <= 0 ? far : slerpLatLng(far, near, t);
+      return { ...m, latitude: pos.lat, longitude: pos.lon };
+    });
+  }, [memories, layouts, camDistance]);
 
   // Compute dynamic clustering: threshold ~100m; spread increases with cam distance
   // Base spread 40m at min zoom; up to 120m at far zoom
