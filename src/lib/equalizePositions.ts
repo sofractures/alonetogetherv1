@@ -25,7 +25,7 @@ import { MemoryForMap } from '@/types/memory';
  * Kept high so distinct regions (e.g. Nigeria vs Italy vs UK) read as
  * clearly separate places; hover-to-front handles residual overlap.
  */
-export const GEO_FIDELITY = 0.7;
+export const GEO_FIDELITY = 0.8;
 
 /** Relaxation iterations. More = closer to equilibrium; 120 is plenty for a few hundred points. */
 const ITERATIONS = 120;
@@ -100,7 +100,7 @@ export function equalizeMemoryPositions(
   options: EqualizeOptions = {}
 ): Map<string, { lat: number; lon: number }> {
   const fidelity = options.fidelity ?? GEO_FIDELITY;
-  const sepCap = options.sepCap ?? 0.18;
+  const sepCap = options.sepCap ?? 0.12;
 
   const result = new Map<string, { lat: number; lon: number }>();
   if (memories.length === 0) return result;

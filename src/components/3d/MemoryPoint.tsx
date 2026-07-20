@@ -67,8 +67,9 @@ export default function MemoryPoint({
   // camera distance of 12.
   const distanceScale = Math.min(1, Math.max(0.2, (cameraDistance - 4) / 8));
 
-  // Global window size: 15% smaller than the original 1.5-unit plane
-  const sizeScale = 0.85;
+  // Global window size: ~30% smaller than the original 1.5-unit plane
+  // so the default explore view has more breathing room before zoom fan-out
+  const sizeScale = 0.7;
 
   const baseScale = highlighted ? 1.4 : hovered ? 1.3 : 1;
   const scale = baseScale * distanceScale * sizeScale;

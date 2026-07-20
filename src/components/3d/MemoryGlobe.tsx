@@ -131,7 +131,7 @@ export default function MemoryGlobe({
   restoreSpiralId
 }: MemoryGlobeProps) {
   // Track camera distance to scale spread dynamically
-  const [camDistance, setCamDistance] = useState<number>(12); // Comfortable scale - globe fills ~50% of screen
+  const [camDistance, setCamDistance] = useState<number>(14); // Slightly pulled back so windows have room to breathe
   // Track which cluster is expanded (spiderfied)
   const [expandedClusterId, setExpandedClusterId] = useState<string | null>(null);
   // Track screen-space overlaps for playlist feature
@@ -163,14 +163,16 @@ export default function MemoryGlobe({
     if (memories.length < 2) return null;
     return {
       far: equalizeMemoryPositions(memories),
-      near: equalizeMemoryPositions(memories, { fidelity: 0.25, sepCap: 0.35 }),
+      // Near layout fans out, but not so wide that windows leave the viewport
+      near: equalizeMemoryPositions(memories, { fidelity: 0.4, sepCap: 0.26 }),
     };
   }, [memories]);
 
   const displayMemories = useMemo(() => {
     if (!layouts) return memories;
-    // Zoom expansion: 0 at camera distance >= 18 (far layout), 1 at <= 6 (near layout)
-    const t = Math.min(1, Math.max(0, (18 - camDistance) / 12));
+    // Zoom expansion: 0 at default camera (~14), 1 at closest zoom (~6)
+    // so the explore view starts on the compact far layout, then fans open
+    const t = Math.min(1, Math.max(0, (14 - camDistance) / 8));
     return memories.map((m) => {
       const far = layouts.far.get(m.id);
       const near = layouts.near.get(m.id);
@@ -373,7 +375,7 @@ export default function MemoryGlobe({
           <pointLight position={[-10, -10, -5]} intensity={0.8} color="#a78bfa" />
           
           {/* Camera */}
-          <PerspectiveCamera makeDefault position={[0, 0, 12]} fov={50} />
+          <PerspectiveCamera makeDefault position={[0, 0, 14]} fov={50} />
           
           {/* Central Building Cube */}
           <BuildingCube autoRotate={autoRotate} rotationSpeed={0.2} />
