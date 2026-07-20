@@ -8,6 +8,7 @@ import BuildingCube from './BuildingCube';
 import MemoryPoint from './MemoryPoint';
 import { MemoryForMap } from '@/types/memory';
 import { clusterAndSpreadMemories } from '@/lib/clustering';
+import { equalizeMemoryPositions } from '@/lib/equalizePositions';
 
 interface MemoryGlobeProps {
   memories?: MemoryForMap[];
@@ -148,10 +149,23 @@ export default function MemoryGlobe({
     }
   }, [restoreSpiralId, expandedOverlapId, onSpiralStateChange]);
 
+  // "Equalized globe": swap true coordinates for display coordinates that keep
+  // the world's shape but spill dense city clusters into surrounding empty
+  // space (oceans) so windows stay individually visible. True locations are
+  // untouched — labels and the database keep the real place.
+  const displayMemories = useMemo(() => {
+    if (memories.length < 2) return memories;
+    const equalized = equalizeMemoryPositions(memories);
+    return memories.map((m) => {
+      const pos = equalized.get(m.id);
+      return pos ? { ...m, latitude: pos.lat, longitude: pos.lon } : m;
+    });
+  }, [memories]);
+
   // Compute dynamic clustering: threshold ~100m; spread increases with cam distance
   // Base spread 40m at min zoom; up to 120m at far zoom
   const { positions: clusteredMemories, clusters } = useMemo(() => {
-    if (memories.length === 0) return { positions: [], clusters: new Map() };
+    if (displayMemories.length === 0) return { positions: [], clusters: new Map() };
     
     // Reduce threshold to only cluster very close memories (same building/block)
     // This prevents different cities from being grouped together
@@ -167,7 +181,7 @@ export default function MemoryGlobe({
     const spreadRadiusMeters = 200 + (t * t * t) * 1800; // 200m → 2000m (exponential curve for visible spread)
     
     const result = clusterAndSpreadMemories(
-      memories, 
+      displayMemories, 
       thresholdMeters, 
       spreadRadiusMeters,
       expandedClusterId,
@@ -243,7 +257,7 @@ export default function MemoryGlobe({
     }
     
     return result;
-  }, [memories, camDistance, expandedClusterId, expandedOverlapId, screenOverlaps]);
+  }, [displayMemories, camDistance, expandedClusterId, expandedOverlapId, screenOverlaps]);
   
   return (
     <>
