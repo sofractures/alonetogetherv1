@@ -239,6 +239,9 @@ export const InteractiveSkyline = forwardRef<
     let buildingId = 0;
     const MIN_ROWS = 8;
     const MAX_ROWS = 28;
+    // Fixed silhouette accents — used so every filter (even small ones)
+    // gets a skyline profile, not a flat row. Home MemorySkyline is separate.
+    const HEIGHT_BEATS = [22, 11, 26, 14, 19, 9, 24, 13, 17, 28, 12, 20, 10, 23, 15];
 
     while (cursor < stream.length) {
       const remaining = stream.length - cursor;
@@ -249,50 +252,45 @@ export const InteractiveSkyline = forwardRef<
           : null;
 
       let cols = Math.max(6, Math.min(13, 7 + Math.floor(seededRandom(seed) * 6)));
-      // Wide height range so the silhouette reads as a skyline
-      let rows =
-        MIN_ROWS +
-        Math.floor(seededRandom(seed + 1) * (MAX_ROWS - MIN_ROWS + 1));
 
-      // Push away from the previous building's height (min ±4 rows)
-      if (prevRows !== null && Math.abs(rows - prevRows) < 4) {
-        const preferTaller =
-          prevRows <= (MIN_ROWS + MAX_ROWS) / 2
-            ? true
-            : seededRandom(seed + 3) > 0.45;
-        rows = preferTaller
-          ? Math.min(
-              MAX_ROWS,
-              prevRows + 4 + Math.floor(seededRandom(seed + 4) * 10)
-            )
-          : Math.max(
-              MIN_ROWS,
-              prevRows - 4 - Math.floor(seededRandom(seed + 4) * 10)
-            );
-        if (Math.abs(rows - prevRows) < 4) {
-          rows =
-            prevRows >= (MIN_ROWS + MAX_ROWS) / 2
-              ? Math.max(MIN_ROWS, prevRows - 6)
-              : Math.min(MAX_ROWS, prevRows + 6);
+      // Start from a beat height, then jitter — always varies across filters
+      let rows = HEIGHT_BEATS[buildingId % HEIGHT_BEATS.length];
+      rows += Math.floor(seededRandom(seed + 1) * 5) - 2; // ±2 jitter
+      rows = Math.max(MIN_ROWS, Math.min(MAX_ROWS, rows));
+
+      // Hard rule: never match (or nearly match) the neighbour's height
+      if (prevRows !== null && Math.abs(rows - prevRows) < 5) {
+        const step = 5 + Math.floor(seededRandom(seed + 4) * 8);
+        if (prevRows + step <= MAX_ROWS) {
+          rows = prevRows + step;
+        } else if (prevRows - step >= MIN_ROWS) {
+          rows = prevRows - step;
+        } else {
+          rows = prevRows >= 18 ? MIN_ROWS + 1 : MAX_ROWS - 1;
         }
       }
 
-      // Last (or short) stretch: pack remaining chars solidly, but still
-      // prefer a height that differs from the neighbour so filters with
-      // little text don't produce a flat row of equal façades.
-      if (remaining <= rows * cols) {
-        let bestCols = Math.min(13, Math.max(6, remaining));
-        let bestRows = Math.max(1, Math.ceil(remaining / bestCols));
+      // Only shrink after at least one full skyline building exists (or the
+      // whole filter is too small for even one). This stops small event
+      // filters from packing every façade to the same flat height.
+      const tinyFilter = remaining < MIN_ROWS * 6;
+      const isLastStretch =
+        remaining <= rows * cols &&
+        (allBuildings.length > 0 || tinyFilter);
+      if (isLastStretch) {
+        // Keep the chosen height when possible; widen/narrow cols to pack solidly
+        let bestCols = cols;
+        let bestRows = Math.max(1, Math.ceil(remaining / cols));
         let bestScore = Infinity;
 
         for (let c = 6; c <= 13; c++) {
           const r = Math.ceil(remaining / c);
           if (r < 1 || r > MAX_ROWS) continue;
           const waste = r * c - remaining;
-          const heightDiff =
-            prevRows === null ? 8 : Math.min(12, Math.abs(r - prevRows));
-          // Prefer low waste, then strong height contrast with neighbour
-          const score = waste * 20 - heightDiff * 3;
+          const heightDiff = Math.abs(r - rows);
+          const neighbourPenalty =
+            prevRows !== null && Math.abs(r - prevRows) < 5 ? 50 : 0;
+          const score = waste * 15 + heightDiff * 2 + neighbourPenalty;
           if (score < bestScore) {
             bestScore = score;
             bestCols = c;
@@ -302,12 +300,12 @@ export const InteractiveSkyline = forwardRef<
         cols = bestCols;
         rows = bestRows;
 
-        // If packing still matched the neighbour, nudge cols to change height
-        if (prevRows !== null && Math.abs(rows - prevRows) < 3) {
+        // Final guard against a flat neighbour pair on short filters
+        if (prevRows !== null && Math.abs(rows - prevRows) < 4) {
           for (const c of [6, 7, 8, 9, 10, 11, 12, 13]) {
             const r = Math.ceil(remaining / c);
-            if (r < 1 || r > MAX_ROWS) continue;
-            if (Math.abs(r - prevRows) >= 4 && r * c - remaining <= 6) {
+            if (r < MIN_ROWS || r > MAX_ROWS) continue;
+            if (Math.abs(r - prevRows) >= 5 && r * c - remaining <= 8) {
               cols = c;
               rows = r;
               break;
