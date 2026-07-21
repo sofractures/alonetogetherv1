@@ -197,16 +197,18 @@ export const InteractiveSkyline = forwardRef<
   const buildings = useMemo(() => {
     if (normalizedMemories.length === 0) return [];
 
+    type Cell = { char: string; color?: string };
     type BuildingData = {
       id: number;
       rows: number;
       cols: number;
-      chars: Array<{ char: string; color?: string }>;
+      chars: Cell[];
       startDelay: number;
       isNew: boolean;
       memoryIndex: number;
     };
 
+    const EMPTY: Cell = { char: "" }; // unused cell — no white square
     const allBuildings: BuildingData[] = [];
     let buildingId = 0;
 
@@ -217,23 +219,19 @@ export const InteractiveSkyline = forwardRef<
 
       const words = text.split(" ").filter((w) => w.length > 0);
       let wordIndex = 0;
-      // If a previous building stopped mid-word, resume that word's remaining chars
       let pendingChars: string[] = [];
       let segment = 0;
 
+      // Each memory starts on a fresh building; overflow continues to the right
       while (wordIndex < words.length || pendingChars.length > 0) {
         const seed = hashString(text + memoryIndex + ":" + segment);
-
-        // City-block sizes — overflow continues into the next building
         const rows = Math.max(8, Math.min(28, 12 + Math.floor(seededRandom(seed) * 14)));
         const cols = Math.max(6, Math.min(13, 7 + Math.floor(seededRandom(seed + 1) * 6)));
 
-        const grid: Array<Array<{ char: string; color?: string }>> = [];
+        // Empty cells stay blank — only real word spaces become white squares
+        const grid: Cell[][] = [];
         for (let r = 0; r < rows; r++) {
-          grid[r] = Array.from({ length: cols }, () => ({
-            char: " ",
-            color: undefined,
-          }));
+          grid[r] = Array.from({ length: cols }, () => ({ ...EMPTY }));
         }
 
         let row = 0;
@@ -259,7 +257,6 @@ export const InteractiveSkyline = forwardRef<
           return true;
         };
 
-        // Finish any word that spilled from the previous building
         while (pendingChars.length > 0 && row < rows) {
           const next = pendingChars[0];
           if (!put(next)) break;
@@ -271,18 +268,18 @@ export const InteractiveSkyline = forwardRef<
           const needsLeadingSpace = col > 0;
           const span = (needsLeadingSpace ? 1 : 0) + word.length;
 
-          // Wrap to next line if the whole word fits there but not here
+          // Wrap to next line (leave rest of this line blank — not white squares)
           if (needsLeadingSpace && col + span > cols && word.length <= cols) {
             col = 0;
             row++;
             if (row >= rows) break;
           }
 
+          // Only an actual space between words gets a white square
           if (col > 0) {
             if (!put(" ")) break;
           }
 
-          // Place as much of the word as fits; remainder continues next building
           let charPos = 0;
           for (; charPos < word.length; charPos++) {
             if (row >= rows) break;
@@ -298,17 +295,12 @@ export const InteractiveSkyline = forwardRef<
           wordIndex++;
         }
 
-        // If we filled the building without finishing pendingChars from put failures,
-        // keep pendingChars for the next building (already set when mid-word)
-
-        // Don't emit an empty façade (can happen when a word wraps past the
-        // last row) — retry with the next segment seed instead.
         if (placed === 0) {
           segment++;
           continue;
         }
 
-        const buildingChars: Array<{ char: string; color?: string }> = [];
+        const buildingChars: Cell[] = [];
         for (let r = 0; r < rows; r++) {
           for (let c = 0; c < cols; c++) {
             buildingChars.push(grid[r][c]);
@@ -328,8 +320,6 @@ export const InteractiveSkyline = forwardRef<
 
         buildingId++;
         segment++;
-
-        // Safety valve against runaway segmentation
         if (segment > 40) break;
       }
     }
@@ -340,6 +330,11 @@ export const InteractiveSkyline = forwardRef<
   buildingRefs.current = buildingRefs.current.slice(0, buildings.length);
 
   const renderChar = (charData: { char: string; color?: string }) => {
+    // Unused cells: leave blank (building background only)
+    if (!charData.char) {
+      return null;
+    }
+    // Real word spaces only → white outlined squares
     if (charData.char === " " || charData.char === "\n") {
       return (
         <div
