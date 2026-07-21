@@ -197,131 +197,134 @@ export const InteractiveSkyline = forwardRef<
   const buildings = useMemo(() => {
     if (normalizedMemories.length === 0) return [];
 
-    type Cell = { char: string; color?: string };
+    type Cell = { char: string; color?: string; memoryIndex: number };
     type BuildingData = {
       id: number;
       rows: number;
       cols: number;
-      chars: Cell[];
+      chars: Array<{ char: string; color?: string }>;
       startDelay: number;
       isNew: boolean;
       memoryIndex: number;
     };
 
-    const EMPTY: Cell = { char: "" }; // unused cell — no white square
+    // Continuous character stream across all memories (book-page order).
+    // Spaces between words → white squares; no unused/empty cells.
+    const stream: Array<{ char: string; memoryIndex: number }> = [];
+    normalizedMemories.forEach((memory, memoryIndex) => {
+      const words = memory.text
+        .replace(/\s+/g, " ")
+        .trim()
+        .split(" ")
+        .filter((w) => w.length > 0);
+      if (words.length === 0) return;
+
+      // Single space between memories so the next one starts immediately
+      if (stream.length > 0) {
+        stream.push({ char: " ", memoryIndex });
+      }
+
+      words.forEach((word, wi) => {
+        if (wi > 0) stream.push({ char: " ", memoryIndex });
+        for (const char of word) {
+          stream.push({ char, memoryIndex });
+        }
+      });
+    });
+
+    if (stream.length === 0) return [];
+
     const allBuildings: BuildingData[] = [];
+    let cursor = 0;
     let buildingId = 0;
 
-    for (let memoryIndex = 0; memoryIndex < normalizedMemories.length; memoryIndex++) {
-      const memory = normalizedMemories[memoryIndex];
-      const text = memory.text.replace(/\s+/g, " ").trim();
-      if (!text) continue;
+    while (cursor < stream.length) {
+      const remaining = stream.length - cursor;
+      const seed = hashString(stream[cursor].char + cursor + ":" + buildingId);
 
-      const words = text.split(" ").filter((w) => w.length > 0);
-      let wordIndex = 0;
-      let pendingChars: string[] = [];
-      let segment = 0;
+      let cols = Math.max(6, Math.min(13, 7 + Math.floor(seededRandom(seed) * 6)));
+      let rows = Math.max(8, Math.min(28, 12 + Math.floor(seededRandom(seed + 1) * 14)));
 
-      // Each memory starts on a fresh building; overflow continues to the right
-      while (wordIndex < words.length || pendingChars.length > 0) {
-        const seed = hashString(text + memoryIndex + ":" + segment);
-        const rows = Math.max(8, Math.min(28, 12 + Math.floor(seededRandom(seed) * 14)));
-        const cols = Math.max(6, Math.min(13, 7 + Math.floor(seededRandom(seed + 1) * 6)));
+      // Last (or short) stretch: pick cols/rows that pack the remaining
+      // characters as tightly as possible so the façade stays solid
+      if (remaining <= rows * cols) {
+        let bestCols = Math.min(13, Math.max(6, remaining));
+        let bestRows = Math.max(1, Math.ceil(remaining / bestCols));
+        let bestWaste = bestRows * bestCols - remaining;
 
-        // Empty cells stay blank — only real word spaces become white squares
-        const grid: Cell[][] = [];
-        for (let r = 0; r < rows; r++) {
-          grid[r] = Array.from({ length: cols }, () => ({ ...EMPTY }));
+        for (let c = 6; c <= 13; c++) {
+          const r = Math.ceil(remaining / c);
+          if (r < 1 || r > 30) continue;
+          const waste = r * c - remaining;
+          const better =
+            waste < bestWaste ||
+            (waste === bestWaste && Math.abs(r - c) < Math.abs(bestRows - bestCols));
+          if (better) {
+            bestCols = c;
+            bestRows = r;
+            bestWaste = waste;
+          }
         }
+        cols = bestCols;
+        rows = bestRows;
+      }
 
-        let row = 0;
-        let col = 0;
-        let placed = 0;
+      const totalCells = rows * cols;
+      const grid: Cell[][] = [];
+      for (let r = 0; r < rows; r++) {
+        grid[r] = new Array(cols);
+      }
 
-        const put = (char: string) => {
-          if (row >= rows) return false;
-          const colorSeed = seed + placed + row * cols + col;
-          grid[row][col] = {
-            char,
+      const firstMemoryIndex = stream[cursor].memoryIndex;
+      let containsNew = false;
+
+      for (let i = 0; i < totalCells; i++) {
+        const r = Math.floor(i / cols);
+        const c = i % cols;
+
+        if (cursor < stream.length) {
+          const item = stream[cursor];
+          const colorSeed = seed + cursor + r * cols + c;
+          grid[r][c] = {
+            char: item.char,
             color:
-              char !== " "
+              item.char !== " "
                 ? brickColors[Math.floor(seededRandom(colorSeed) * brickColors.length)]
                 : undefined,
+            memoryIndex: item.memoryIndex,
           };
-          placed++;
-          col++;
-          if (col >= cols) {
-            col = 0;
-            row++;
+          if (
+            newMemoryIndex !== undefined &&
+            item.memoryIndex === newMemoryIndex
+          ) {
+            containsNew = true;
           }
-          return true;
-        };
-
-        while (pendingChars.length > 0 && row < rows) {
-          const next = pendingChars[0];
-          if (!put(next)) break;
-          pendingChars.shift();
+          cursor++;
+        } else {
+          // Rare packing remainder: reuse a brick letter so the façade stays solid
+          const wrap = stream[i % stream.length];
+          grid[r][c] = {
+            char: wrap.char === " " ? "a" : wrap.char,
+            color: brickColors[Math.floor(seededRandom(seed + i) * brickColors.length)],
+            memoryIndex: firstMemoryIndex,
+          };
         }
-
-        while (wordIndex < words.length && row < rows) {
-          const word = words[wordIndex];
-          const needsLeadingSpace = col > 0;
-          const span = (needsLeadingSpace ? 1 : 0) + word.length;
-
-          // Wrap to next line (leave rest of this line blank — not white squares)
-          if (needsLeadingSpace && col + span > cols && word.length <= cols) {
-            col = 0;
-            row++;
-            if (row >= rows) break;
-          }
-
-          // Only an actual space between words gets a white square
-          if (col > 0) {
-            if (!put(" ")) break;
-          }
-
-          let charPos = 0;
-          for (; charPos < word.length; charPos++) {
-            if (row >= rows) break;
-            if (!put(word[charPos])) break;
-          }
-
-          if (charPos < word.length) {
-            pendingChars = word.slice(charPos).split("");
-            wordIndex++;
-            break;
-          }
-
-          wordIndex++;
-        }
-
-        if (placed === 0) {
-          segment++;
-          continue;
-        }
-
-        const buildingChars: Cell[] = [];
-        for (let r = 0; r < rows; r++) {
-          for (let c = 0; c < cols; c++) {
-            buildingChars.push(grid[r][c]);
-          }
-        }
-
-        allBuildings.push({
-          id: buildingId,
-          rows,
-          cols,
-          chars: buildingChars,
-          startDelay: buildingId * 80,
-          isNew:
-            newMemoryIndex !== undefined && memoryIndex === newMemoryIndex,
-          memoryIndex,
-        });
-
-        buildingId++;
-        segment++;
-        if (segment > 40) break;
       }
+
+      const buildingChars = grid.flat().map(({ char, color }) => ({ char, color }));
+
+      allBuildings.push({
+        id: buildingId,
+        rows,
+        cols,
+        chars: buildingChars,
+        startDelay: buildingId * 80,
+        isNew: containsNew,
+        memoryIndex: firstMemoryIndex,
+      });
+
+      buildingId++;
+      if (buildingId > 500) break;
     }
 
     return allBuildings;
@@ -330,11 +333,7 @@ export const InteractiveSkyline = forwardRef<
   buildingRefs.current = buildingRefs.current.slice(0, buildings.length);
 
   const renderChar = (charData: { char: string; color?: string }) => {
-    // Unused cells: leave blank (building background only)
-    if (!charData.char) {
-      return null;
-    }
-    // Real word spaces only → white outlined squares
+    // Real word/memory spaces → white outlined squares
     if (charData.char === " " || charData.char === "\n") {
       return (
         <div
