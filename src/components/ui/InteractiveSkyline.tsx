@@ -125,11 +125,17 @@ export const InteractiveSkyline = forwardRef<
     });
 
     if (startIndex >= 0 && endIndex >= 0) {
+      const startEl = buildingRefs.current[startIndex];
+      const endEl = buildingRefs.current[endIndex];
+      const startMemoryIdx = Number(
+        startEl?.dataset.memoryIndex ?? startIndex
+      );
+      const endMemoryIdx = Number(endEl?.dataset.memoryIndex ?? endIndex);
       onVisibleRangeChange?.({
-        startIndex,
-        endIndex,
-        startDate: normalizedMemories[startIndex]?.createdAt,
-        endDate: normalizedMemories[endIndex]?.createdAt,
+        startIndex: startMemoryIdx,
+        endIndex: endMemoryIdx,
+        startDate: normalizedMemories[startMemoryIdx]?.createdAt,
+        endDate: normalizedMemories[endMemoryIdx]?.createdAt,
       });
     }
   }, [normalizedMemories, onVisibleRangeChange]);
@@ -191,96 +197,144 @@ export const InteractiveSkyline = forwardRef<
   const buildings = useMemo(() => {
     if (normalizedMemories.length === 0) return [];
 
-    return normalizedMemories.map((memory, memoryIndex) => {
+    type BuildingData = {
+      id: number;
+      rows: number;
+      cols: number;
+      chars: Array<{ char: string; color?: string }>;
+      startDelay: number;
+      isNew: boolean;
+      memoryIndex: number;
+    };
+
+    const allBuildings: BuildingData[] = [];
+    let buildingId = 0;
+
+    for (let memoryIndex = 0; memoryIndex < normalizedMemories.length; memoryIndex++) {
+      const memory = normalizedMemories[memoryIndex];
       const text = memory.text.replace(/\s+/g, " ").trim();
-      const seed = hashString(text + memoryIndex);
-
-      // Size the façade so the memory roughly fills it once (no looping)
-      const baseRows = Math.min(25, Math.max(8, Math.ceil(text.length / 10)));
-      const rowVariation = Math.floor(seededRandom(seed) * 8) - 4;
-      const rows = Math.max(5, Math.min(30, baseRows + rowVariation));
-
-      const baseCols = Math.min(12, Math.max(6, Math.floor(text.length / 15)));
-      const colVariation = Math.floor(seededRandom(seed + 1) * 4) - 2;
-      const cols = Math.max(6, Math.min(14, baseCols + colVariation));
-
-      // Book-page fill: top → bottom, left → right. Prefer wrapping whole
-      // words to the next line instead of splitting mid-word.
-      const grid: Array<Array<{ char: string; color?: string }>> = [];
-      for (let r = 0; r < rows; r++) {
-        grid[r] = Array.from({ length: cols }, () => ({
-          char: " ",
-          color: undefined,
-        }));
-      }
+      if (!text) continue;
 
       const words = text.split(" ").filter((w) => w.length > 0);
-      let row = 0;
-      let col = 0;
-      let placed = 0;
+      let wordIndex = 0;
+      // If a previous building stopped mid-word, resume that word's remaining chars
+      let pendingChars: string[] = [];
+      let segment = 0;
 
-      const put = (char: string) => {
-        if (row >= rows) return false;
-        const colorSeed = seed + placed + row * cols + col;
-        grid[row][col] = {
-          char,
-          color:
-            char !== " "
-              ? brickColors[Math.floor(seededRandom(colorSeed) * brickColors.length)]
-              : undefined,
-        };
-        placed++;
-        col++;
-        if (col >= cols) {
-          col = 0;
-          row++;
-        }
-        return true;
-      };
+      while (wordIndex < words.length || pendingChars.length > 0) {
+        const seed = hashString(text + memoryIndex + ":" + segment);
 
-      for (let w = 0; w < words.length && row < rows; w++) {
-        const word = words[w];
-        const needsLeadingSpace = col > 0;
-        const span = (needsLeadingSpace ? 1 : 0) + word.length;
+        // City-block sizes — overflow continues into the next building
+        const rows = Math.max(8, Math.min(28, 12 + Math.floor(seededRandom(seed) * 14)));
+        const cols = Math.max(6, Math.min(13, 7 + Math.floor(seededRandom(seed + 1) * 6)));
 
-        // Wrap to next line if the word fits there as a whole but not here
-        if (needsLeadingSpace && col + span > cols && word.length <= cols) {
-          col = 0;
-          row++;
-          if (row >= rows) break;
+        const grid: Array<Array<{ char: string; color?: string }>> = [];
+        for (let r = 0; r < rows; r++) {
+          grid[r] = Array.from({ length: cols }, () => ({
+            char: " ",
+            color: undefined,
+          }));
         }
 
-        if (col > 0 && !put(" ")) break;
+        let row = 0;
+        let col = 0;
+        let placed = 0;
 
-        for (const char of word) {
-          if (row >= rows) break;
-          // Very long words: continue onto the next row mid-word if needed
+        const put = (char: string) => {
+          if (row >= rows) return false;
+          const colorSeed = seed + placed + row * cols + col;
+          grid[row][col] = {
+            char,
+            color:
+              char !== " "
+                ? brickColors[Math.floor(seededRandom(colorSeed) * brickColors.length)]
+                : undefined,
+          };
+          placed++;
+          col++;
           if (col >= cols) {
+            col = 0;
+            row++;
+          }
+          return true;
+        };
+
+        // Finish any word that spilled from the previous building
+        while (pendingChars.length > 0 && row < rows) {
+          const next = pendingChars[0];
+          if (!put(next)) break;
+          pendingChars.shift();
+        }
+
+        while (wordIndex < words.length && row < rows) {
+          const word = words[wordIndex];
+          const needsLeadingSpace = col > 0;
+          const span = (needsLeadingSpace ? 1 : 0) + word.length;
+
+          // Wrap to next line if the whole word fits there but not here
+          if (needsLeadingSpace && col + span > cols && word.length <= cols) {
             col = 0;
             row++;
             if (row >= rows) break;
           }
-          if (!put(char)) break;
-        }
-      }
 
-      const buildingChars: Array<{ char: string; color?: string }> = [];
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          buildingChars.push(grid[r][c]);
-        }
-      }
+          if (col > 0) {
+            if (!put(" ")) break;
+          }
 
-      return {
-        id: memoryIndex,
-        rows,
-        cols,
-        chars: buildingChars,
-        startDelay: memoryIndex * 100,
-        isNew: newMemoryIndex !== undefined && memoryIndex === newMemoryIndex,
-        memoryIndex,
-      };
-    });
+          // Place as much of the word as fits; remainder continues next building
+          let charPos = 0;
+          for (; charPos < word.length; charPos++) {
+            if (row >= rows) break;
+            if (!put(word[charPos])) break;
+          }
+
+          if (charPos < word.length) {
+            pendingChars = word.slice(charPos).split("");
+            wordIndex++;
+            break;
+          }
+
+          wordIndex++;
+        }
+
+        // If we filled the building without finishing pendingChars from put failures,
+        // keep pendingChars for the next building (already set when mid-word)
+
+        // Don't emit an empty façade (can happen when a word wraps past the
+        // last row) — retry with the next segment seed instead.
+        if (placed === 0) {
+          segment++;
+          continue;
+        }
+
+        const buildingChars: Array<{ char: string; color?: string }> = [];
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            buildingChars.push(grid[r][c]);
+          }
+        }
+
+        allBuildings.push({
+          id: buildingId,
+          rows,
+          cols,
+          chars: buildingChars,
+          startDelay: buildingId * 80,
+          isNew:
+            newMemoryIndex !== undefined && memoryIndex === newMemoryIndex,
+          memoryIndex,
+        });
+
+        buildingId++;
+        segment++;
+
+        // Safety valve against runaway segmentation
+        if (segment > 40) break;
+      }
+    }
+
+    return allBuildings;
   }, [normalizedMemories, newMemoryIndex]);
 
   buildingRefs.current = buildingRefs.current.slice(0, buildings.length);
@@ -371,6 +425,7 @@ export const InteractiveSkyline = forwardRef<
             ref={(el) => {
               buildingRefs.current[i] = el;
             }}
+            data-memory-index={building.memoryIndex}
             className={`relative border-l border-r border-white/10 bg-black/30 flex-shrink-0 self-end overflow-visible ${
               building.isNew ? "ring-2 ring-inset ring-white/40" : ""
             }`}
