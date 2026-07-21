@@ -192,10 +192,11 @@ export const InteractiveSkyline = forwardRef<
     if (normalizedMemories.length === 0) return [];
 
     return normalizedMemories.map((memory, memoryIndex) => {
-      const text = memory.text;
+      const text = memory.text.replace(/\s+/g, " ").trim();
       const seed = hashString(text + memoryIndex);
 
-      const baseRows = Math.min(25, Math.max(8, Math.floor(text.length / 8)));
+      // Size the façade so the memory roughly fills it once (no looping)
+      const baseRows = Math.min(25, Math.max(8, Math.ceil(text.length / 10)));
       const rowVariation = Math.floor(seededRandom(seed) * 8) - 4;
       const rows = Math.max(5, Math.min(30, baseRows + rowVariation));
 
@@ -203,40 +204,70 @@ export const InteractiveSkyline = forwardRef<
       const colVariation = Math.floor(seededRandom(seed + 1) * 4) - 2;
       const cols = Math.max(6, Math.min(14, baseCols + colVariation));
 
-      const grid: Array<Array<{ char: string; color?: string } | null>> = [];
+      // Book-page fill: top → bottom, left → right. Prefer wrapping whole
+      // words to the next line instead of splitting mid-word.
+      const grid: Array<Array<{ char: string; color?: string }>> = [];
       for (let r = 0; r < rows; r++) {
-        grid[r] = new Array(cols).fill(null);
+        grid[r] = Array.from({ length: cols }, () => ({
+          char: " ",
+          color: undefined,
+        }));
       }
 
-      let charIndex = 0;
-      const chars = text.split("");
+      const words = text.split(" ").filter((w) => w.length > 0);
+      let row = 0;
+      let col = 0;
+      let placed = 0;
 
-      for (let r = rows - 1; r >= 0 && charIndex < chars.length * 3; r--) {
-        for (let c = 0; c < cols && charIndex < chars.length * 3; c++) {
-          const actualChar = chars[charIndex % chars.length];
-          const colorSeed = seed + charIndex + r * cols + c;
-          const color =
-            actualChar !== " "
+      const put = (char: string) => {
+        if (row >= rows) return false;
+        const colorSeed = seed + placed + row * cols + col;
+        grid[row][col] = {
+          char,
+          color:
+            char !== " "
               ? brickColors[Math.floor(seededRandom(colorSeed) * brickColors.length)]
-              : undefined;
-
-          grid[r][c] = { char: actualChar, color };
-          charIndex++;
+              : undefined,
+        };
+        placed++;
+        col++;
+        if (col >= cols) {
+          col = 0;
+          row++;
         }
-      }
+        return true;
+      };
 
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          if (grid[r][c] === null) {
-            grid[r][c] = { char: " ", color: undefined };
+      for (let w = 0; w < words.length && row < rows; w++) {
+        const word = words[w];
+        const needsLeadingSpace = col > 0;
+        const span = (needsLeadingSpace ? 1 : 0) + word.length;
+
+        // Wrap to next line if the word fits there as a whole but not here
+        if (needsLeadingSpace && col + span > cols && word.length <= cols) {
+          col = 0;
+          row++;
+          if (row >= rows) break;
+        }
+
+        if (col > 0 && !put(" ")) break;
+
+        for (const char of word) {
+          if (row >= rows) break;
+          // Very long words: continue onto the next row mid-word if needed
+          if (col >= cols) {
+            col = 0;
+            row++;
+            if (row >= rows) break;
           }
+          if (!put(char)) break;
         }
       }
 
       const buildingChars: Array<{ char: string; color?: string }> = [];
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-          buildingChars.push(grid[r][c] || { char: " ", color: undefined });
+          buildingChars.push(grid[r][c]);
         }
       }
 
