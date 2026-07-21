@@ -237,36 +237,83 @@ export const InteractiveSkyline = forwardRef<
     const allBuildings: BuildingData[] = [];
     let cursor = 0;
     let buildingId = 0;
+    const MIN_ROWS = 8;
+    const MAX_ROWS = 28;
 
     while (cursor < stream.length) {
       const remaining = stream.length - cursor;
       const seed = hashString(stream[cursor].char + cursor + ":" + buildingId);
+      const prevRows =
+        allBuildings.length > 0
+          ? allBuildings[allBuildings.length - 1].rows
+          : null;
 
       let cols = Math.max(6, Math.min(13, 7 + Math.floor(seededRandom(seed) * 6)));
-      let rows = Math.max(8, Math.min(28, 12 + Math.floor(seededRandom(seed + 1) * 14)));
+      // Wide height range so the silhouette reads as a skyline
+      let rows =
+        MIN_ROWS +
+        Math.floor(seededRandom(seed + 1) * (MAX_ROWS - MIN_ROWS + 1));
 
-      // Last (or short) stretch: pick cols/rows that pack the remaining
-      // characters as tightly as possible so the façade stays solid
+      // Push away from the previous building's height (min ±4 rows)
+      if (prevRows !== null && Math.abs(rows - prevRows) < 4) {
+        const preferTaller =
+          prevRows <= (MIN_ROWS + MAX_ROWS) / 2
+            ? true
+            : seededRandom(seed + 3) > 0.45;
+        rows = preferTaller
+          ? Math.min(
+              MAX_ROWS,
+              prevRows + 4 + Math.floor(seededRandom(seed + 4) * 10)
+            )
+          : Math.max(
+              MIN_ROWS,
+              prevRows - 4 - Math.floor(seededRandom(seed + 4) * 10)
+            );
+        if (Math.abs(rows - prevRows) < 4) {
+          rows =
+            prevRows >= (MIN_ROWS + MAX_ROWS) / 2
+              ? Math.max(MIN_ROWS, prevRows - 6)
+              : Math.min(MAX_ROWS, prevRows + 6);
+        }
+      }
+
+      // Last (or short) stretch: pack remaining chars solidly, but still
+      // prefer a height that differs from the neighbour so filters with
+      // little text don't produce a flat row of equal façades.
       if (remaining <= rows * cols) {
         let bestCols = Math.min(13, Math.max(6, remaining));
         let bestRows = Math.max(1, Math.ceil(remaining / bestCols));
-        let bestWaste = bestRows * bestCols - remaining;
+        let bestScore = Infinity;
 
         for (let c = 6; c <= 13; c++) {
           const r = Math.ceil(remaining / c);
-          if (r < 1 || r > 30) continue;
+          if (r < 1 || r > MAX_ROWS) continue;
           const waste = r * c - remaining;
-          const better =
-            waste < bestWaste ||
-            (waste === bestWaste && Math.abs(r - c) < Math.abs(bestRows - bestCols));
-          if (better) {
+          const heightDiff =
+            prevRows === null ? 8 : Math.min(12, Math.abs(r - prevRows));
+          // Prefer low waste, then strong height contrast with neighbour
+          const score = waste * 20 - heightDiff * 3;
+          if (score < bestScore) {
+            bestScore = score;
             bestCols = c;
             bestRows = r;
-            bestWaste = waste;
           }
         }
         cols = bestCols;
         rows = bestRows;
+
+        // If packing still matched the neighbour, nudge cols to change height
+        if (prevRows !== null && Math.abs(rows - prevRows) < 3) {
+          for (const c of [6, 7, 8, 9, 10, 11, 12, 13]) {
+            const r = Math.ceil(remaining / c);
+            if (r < 1 || r > MAX_ROWS) continue;
+            if (Math.abs(r - prevRows) >= 4 && r * c - remaining <= 6) {
+              cols = c;
+              rows = r;
+              break;
+            }
+          }
+        }
       }
 
       const totalCells = rows * cols;
