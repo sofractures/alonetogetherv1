@@ -125,11 +125,17 @@ export const InteractiveSkyline = forwardRef<
     });
 
     if (startIndex >= 0 && endIndex >= 0) {
+      const startEl = buildingRefs.current[startIndex];
+      const endEl = buildingRefs.current[endIndex];
+      const startMemoryIdx = Number(
+        startEl?.dataset.memoryIndex ?? startIndex
+      );
+      const endMemoryIdx = Number(endEl?.dataset.memoryIndex ?? endIndex);
       onVisibleRangeChange?.({
-        startIndex,
-        endIndex,
-        startDate: normalizedMemories[startIndex]?.createdAt,
-        endDate: normalizedMemories[endIndex]?.createdAt,
+        startIndex: startMemoryIdx,
+        endIndex: endMemoryIdx,
+        startDate: normalizedMemories[startMemoryIdx]?.createdAt,
+        endDate: normalizedMemories[endMemoryIdx]?.createdAt,
       });
     }
   }, [normalizedMemories, onVisibleRangeChange]);
@@ -191,70 +197,188 @@ export const InteractiveSkyline = forwardRef<
   const buildings = useMemo(() => {
     if (normalizedMemories.length === 0) return [];
 
-    return normalizedMemories.map((memory, memoryIndex) => {
-      const text = memory.text;
-      const seed = hashString(text + memoryIndex);
+    type Cell = { char: string; color?: string; memoryIndex: number };
+    type BuildingData = {
+      id: number;
+      rows: number;
+      cols: number;
+      chars: Array<{ char: string; color?: string }>;
+      startDelay: number;
+      isNew: boolean;
+      memoryIndex: number;
+    };
 
-      const baseRows = Math.min(25, Math.max(8, Math.floor(text.length / 8)));
-      const rowVariation = Math.floor(seededRandom(seed) * 8) - 4;
-      const rows = Math.max(5, Math.min(30, baseRows + rowVariation));
+    // Continuous character stream across all memories (book-page order).
+    // Spaces between words → white squares; no unused/empty cells.
+    const stream: Array<{ char: string; memoryIndex: number }> = [];
+    normalizedMemories.forEach((memory, memoryIndex) => {
+      const words = memory.text
+        .replace(/\s+/g, " ")
+        .trim()
+        .split(" ")
+        .filter((w) => w.length > 0);
+      if (words.length === 0) return;
 
-      const baseCols = Math.min(12, Math.max(6, Math.floor(text.length / 15)));
-      const colVariation = Math.floor(seededRandom(seed + 1) * 4) - 2;
-      const cols = Math.max(6, Math.min(14, baseCols + colVariation));
-
-      const grid: Array<Array<{ char: string; color?: string } | null>> = [];
-      for (let r = 0; r < rows; r++) {
-        grid[r] = new Array(cols).fill(null);
+      // Single space between memories so the next one starts immediately
+      if (stream.length > 0) {
+        stream.push({ char: " ", memoryIndex });
       }
 
-      let charIndex = 0;
-      const chars = text.split("");
+      words.forEach((word, wi) => {
+        if (wi > 0) stream.push({ char: " ", memoryIndex });
+        for (const char of word) {
+          stream.push({ char, memoryIndex });
+        }
+      });
+    });
 
-      for (let r = rows - 1; r >= 0 && charIndex < chars.length * 3; r--) {
-        for (let c = 0; c < cols && charIndex < chars.length * 3; c++) {
-          const actualChar = chars[charIndex % chars.length];
-          const colorSeed = seed + charIndex + r * cols + c;
-          const color =
-            actualChar !== " "
-              ? brickColors[Math.floor(seededRandom(colorSeed) * brickColors.length)]
-              : undefined;
+    if (stream.length === 0) return [];
 
-          grid[r][c] = { char: actualChar, color };
-          charIndex++;
+    const allBuildings: BuildingData[] = [];
+    let cursor = 0;
+    let buildingId = 0;
+    const MIN_ROWS = 8;
+    const MAX_ROWS = 28;
+    // Fixed silhouette accents — used so every filter (even small ones)
+    // gets a skyline profile, not a flat row. Home MemorySkyline is separate.
+    const HEIGHT_BEATS = [22, 11, 26, 14, 19, 9, 24, 13, 17, 28, 12, 20, 10, 23, 15];
+
+    while (cursor < stream.length) {
+      const remaining = stream.length - cursor;
+      const seed = hashString(stream[cursor].char + cursor + ":" + buildingId);
+      const prevRows =
+        allBuildings.length > 0
+          ? allBuildings[allBuildings.length - 1].rows
+          : null;
+
+      let cols = Math.max(6, Math.min(13, 7 + Math.floor(seededRandom(seed) * 6)));
+
+      // Start from a beat height, then jitter — always varies across filters
+      let rows = HEIGHT_BEATS[buildingId % HEIGHT_BEATS.length];
+      rows += Math.floor(seededRandom(seed + 1) * 5) - 2; // ±2 jitter
+      rows = Math.max(MIN_ROWS, Math.min(MAX_ROWS, rows));
+
+      // Hard rule: never match (or nearly match) the neighbour's height
+      if (prevRows !== null && Math.abs(rows - prevRows) < 5) {
+        const step = 5 + Math.floor(seededRandom(seed + 4) * 8);
+        if (prevRows + step <= MAX_ROWS) {
+          rows = prevRows + step;
+        } else if (prevRows - step >= MIN_ROWS) {
+          rows = prevRows - step;
+        } else {
+          rows = prevRows >= 18 ? MIN_ROWS + 1 : MAX_ROWS - 1;
         }
       }
 
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          if (grid[r][c] === null) {
-            grid[r][c] = { char: " ", color: undefined };
+      // Only shrink after at least one full skyline building exists (or the
+      // whole filter is too small for even one). This stops small event
+      // filters from packing every façade to the same flat height.
+      const tinyFilter = remaining < MIN_ROWS * 6;
+      const isLastStretch =
+        remaining <= rows * cols &&
+        (allBuildings.length > 0 || tinyFilter);
+      if (isLastStretch) {
+        // Keep the chosen height when possible; widen/narrow cols to pack solidly
+        let bestCols = cols;
+        let bestRows = Math.max(1, Math.ceil(remaining / cols));
+        let bestScore = Infinity;
+
+        for (let c = 6; c <= 13; c++) {
+          const r = Math.ceil(remaining / c);
+          if (r < 1 || r > MAX_ROWS) continue;
+          const waste = r * c - remaining;
+          const heightDiff = Math.abs(r - rows);
+          const neighbourPenalty =
+            prevRows !== null && Math.abs(r - prevRows) < 5 ? 50 : 0;
+          const score = waste * 15 + heightDiff * 2 + neighbourPenalty;
+          if (score < bestScore) {
+            bestScore = score;
+            bestCols = c;
+            bestRows = r;
+          }
+        }
+        cols = bestCols;
+        rows = bestRows;
+
+        // Final guard against a flat neighbour pair on short filters
+        if (prevRows !== null && Math.abs(rows - prevRows) < 4) {
+          for (const c of [6, 7, 8, 9, 10, 11, 12, 13]) {
+            const r = Math.ceil(remaining / c);
+            if (r < MIN_ROWS || r > MAX_ROWS) continue;
+            if (Math.abs(r - prevRows) >= 5 && r * c - remaining <= 8) {
+              cols = c;
+              rows = r;
+              break;
+            }
           }
         }
       }
 
-      const buildingChars: Array<{ char: string; color?: string }> = [];
+      const totalCells = rows * cols;
+      const grid: Cell[][] = [];
       for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          buildingChars.push(grid[r][c] || { char: " ", color: undefined });
+        grid[r] = new Array(cols);
+      }
+
+      const firstMemoryIndex = stream[cursor].memoryIndex;
+      let containsNew = false;
+
+      for (let i = 0; i < totalCells; i++) {
+        const r = Math.floor(i / cols);
+        const c = i % cols;
+
+        if (cursor < stream.length) {
+          const item = stream[cursor];
+          const colorSeed = seed + cursor + r * cols + c;
+          grid[r][c] = {
+            char: item.char,
+            color:
+              item.char !== " "
+                ? brickColors[Math.floor(seededRandom(colorSeed) * brickColors.length)]
+                : undefined,
+            memoryIndex: item.memoryIndex,
+          };
+          if (
+            newMemoryIndex !== undefined &&
+            item.memoryIndex === newMemoryIndex
+          ) {
+            containsNew = true;
+          }
+          cursor++;
+        } else {
+          // Rare packing remainder: reuse a brick letter so the façade stays solid
+          const wrap = stream[i % stream.length];
+          grid[r][c] = {
+            char: wrap.char === " " ? "a" : wrap.char,
+            color: brickColors[Math.floor(seededRandom(seed + i) * brickColors.length)],
+            memoryIndex: firstMemoryIndex,
+          };
         }
       }
 
-      return {
-        id: memoryIndex,
+      const buildingChars = grid.flat().map(({ char, color }) => ({ char, color }));
+
+      allBuildings.push({
+        id: buildingId,
         rows,
         cols,
         chars: buildingChars,
-        startDelay: memoryIndex * 100,
-        isNew: newMemoryIndex !== undefined && memoryIndex === newMemoryIndex,
-        memoryIndex,
-      };
-    });
+        startDelay: buildingId * 80,
+        isNew: containsNew,
+        memoryIndex: firstMemoryIndex,
+      });
+
+      buildingId++;
+      if (buildingId > 500) break;
+    }
+
+    return allBuildings;
   }, [normalizedMemories, newMemoryIndex]);
 
   buildingRefs.current = buildingRefs.current.slice(0, buildings.length);
 
   const renderChar = (charData: { char: string; color?: string }) => {
+    // Real word/memory spaces → white outlined squares
     if (charData.char === " " || charData.char === "\n") {
       return (
         <div
@@ -340,6 +464,7 @@ export const InteractiveSkyline = forwardRef<
             ref={(el) => {
               buildingRefs.current[i] = el;
             }}
+            data-memory-index={building.memoryIndex}
             className={`relative border-l border-r border-white/10 bg-black/30 flex-shrink-0 self-end overflow-visible ${
               building.isNew ? "ring-2 ring-inset ring-white/40" : ""
             }`}
