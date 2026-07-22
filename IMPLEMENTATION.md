@@ -551,6 +551,12 @@
       - [x] Show modal prompt ("Add a memory to the skyline") when user visits `/skyline`, with rotating reflective prompts
       - [x] User-submitted text is POSTed to `/api/skyline-memories` and appended live to the rendered skyline
       - [x] Skyline scrolls horizontally as it grows (city made from accumulated memories)
+    - [x] **InteractiveSkyline text layout** (`components/ui/InteractiveSkyline.tsx` — `/skyline`, `/skyline/live`, `/skyline/display` only; hero `MemorySkyline` unchanged):
+      - [x] Book-page reading: left → right, top → bottom within each façade
+      - [x] Continuous character stream across memories; overflow continues at the top of the next building to the right
+      - [x] White outlined squares only for real word spaces (no padding gaps / no empty black cells)
+      - [x] Words may split across line/building edges so every cell stays filled (solid buildings)
+      - [x] Varied building heights on **all** filter options (height beat + neighbour contrast); packing/shrink only on the final leftover façade so event filters don’t flatten into equal-height rows
     - [x] **Mobile optimization**: Skyline anchored to bottom using `100dvh`, horizontal scrolling enabled to read entire skyline
   - [x] **Skyline Exhibition Display** (branch: `feature/skyline-exhibition-display`):
     - [x] New route **`/skyline/display`** for private installation/kiosk view at the exhibition
