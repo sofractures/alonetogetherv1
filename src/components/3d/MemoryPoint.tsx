@@ -1,22 +1,26 @@
 "use client";
 
-import { useRef, useState } from 'react';
-import { useFrame, ThreeEvent } from '@react-three/fiber';
+import { useRef, useState, useMemo } from 'react';
+import { useFrame, useThree, ThreeEvent } from '@react-three/fiber';
 import { Group, Mesh } from 'three';
-import { Billboard, Text } from '@react-three/drei';
-import { useTexture } from '@react-three/drei';
+import { Billboard, Text, useTexture } from '@react-three/drei';
 
 interface MemoryPointProps {
   position: [number, number, number];
   windowVariant: 1 | 2;
   location?: string;
-  name?: string; // Creator name
+  name?: string;
   onClick?: () => void;
   highlighted?: boolean;
-  cameraDistance?: number; // Optional camera distance for scaling
-  showLabelAlways?: boolean; // If true, always show location label (for expanded overlaps)
-  hideLabelInSpiral?: boolean; // If true, hide label even on hover (for spiral mode)
-  onHoverChange?: (isHovered: boolean) => void; // Callback when hover state changes
+  showLabelAlways?: boolean;
+  hideLabelInSpiral?: boolean;
+  onHoverChange?: (isHovered: boolean) => void;
+}
+
+/** Stable hash → float phase so windows don't bob in sync. */
+function phaseFromPosition(position: [number, number, number]): number {
+  const n = Math.abs(position[0] * 12.9898 + position[1] * 78.233 + position[2] * 37.719) * 43758.5453;
+  return (n - Math.floor(n)) * Math.PI * 2;
 }
 
 export default function MemoryPoint({
@@ -26,54 +30,56 @@ export default function MemoryPoint({
   name,
   onClick,
   highlighted = false,
-  cameraDistance = 18, // Default camera distance
-  showLabelAlways = false, // Default to only show on hover
-  hideLabelInSpiral = false, // Default to show labels normally
+  showLabelAlways = false,
+  hideLabelInSpiral = false,
   onHoverChange,
 }: MemoryPointProps) {
   const meshRef = useRef<Mesh>(null);
   const groupRef = useRef<Group>(null);
+  const outerRef = useRef<Group>(null);
+  const targetPos = useRef(position);
+  const startPos = useRef(position);
   const [hovered, setHovered] = useState(false);
-  
-  // Load the appropriate window texture
+  const { camera } = useThree();
+
   const texture = useTexture(
     windowVariant === 1 ? '/assets/window.jpg' : '/assets/window2.jpg'
   );
 
+  const floatPhase = useMemo(
+    () => phaseFromPosition(startPos.current),
+    []
+  );
   const isFront = hovered || highlighted;
 
-  // Floating animation (sine wave on Y-axis)
-  // Note: Billboard handles positioning, so we animate within the Billboard's local space
+  targetPos.current = position;
+
+  // Scale, float, hover lift, and soft position lerp all run in the render
+  // loop so parent React state does not remount materials every tick.
   useFrame((state) => {
-    if (meshRef.current) {
-      const time = state.clock.getElapsedTime();
-      // Animate in local space (relative to Billboard position)
-      meshRef.current.position.y = Math.sin(time * 0.5) * 0.1;
-    }
-    // Bring hovered/highlighted window toward the camera so its name and
-    // location stay readable even when windows overlap. The Billboard's
-    // local +Z always faces the camera, so easing local Z lifts it forward.
-    if (groupRef.current) {
-      const targetZ = isFront ? 0.6 : 0;
-      groupRef.current.position.z += (targetZ - groupRef.current.position.z) * 0.15;
-    }
+    const mesh = meshRef.current;
+    const group = groupRef.current;
+    const outer = outerRef.current;
+    if (!mesh || !group || !outer) return;
+
+    const [tx, ty, tz] = targetPos.current;
+    outer.position.x += (tx - outer.position.x) * 0.12;
+    outer.position.y += (ty - outer.position.y) * 0.12;
+    outer.position.z += (tz - outer.position.z) * 0.12;
+
+    const camDist = camera.position.length();
+    const distanceScale = Math.min(1, Math.max(0.2, (camDist - 4) / 8));
+    const sizeScale = 0.7;
+    const baseScale = highlighted ? 1.4 : hovered ? 1.3 : 1;
+    mesh.scale.setScalar(baseScale * distanceScale * sizeScale);
+
+    const time = state.clock.getElapsedTime();
+    mesh.position.y = Math.sin(time * 0.45 + floatPhase) * 0.08;
+
+    // Lift toward camera without disabling depthTest (that caused z-flicker)
+    const targetZ = isFront ? 0.45 : 0;
+    group.position.z += (targetZ - group.position.z) * 0.18;
   });
-
-  // Keep windows a roughly CONSTANT SCREEN SIZE while zooming.
-  // Windows sit on a radius-4 sphere, so their distance to the camera is
-  // ~(cameraDistance - 4). Scaling world size proportionally to that distance
-  // cancels the perspective growth — zooming in then separates windows on
-  // screen instead of just magnifying them. Normalised to 1.0 at the default
-  // camera distance of 12.
-  const distanceScale = Math.min(1, Math.max(0.2, (cameraDistance - 4) / 8));
-
-  // Global window size: ~30% smaller than the original 1.5-unit plane
-  // so the default explore view has more breathing room before zoom fan-out
-  const sizeScale = 0.7;
-
-  const baseScale = highlighted ? 1.4 : hovered ? 1.3 : 1;
-  const scale = baseScale * distanceScale * sizeScale;
-  const opacity = highlighted ? 1 : hovered ? 1 : 1; // Full opacity for all windows
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
@@ -82,83 +88,85 @@ export default function MemoryPoint({
 
   const handlePointerOver = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
+    document.body.style.cursor = 'pointer';
     setHovered(true);
     onHoverChange?.(true);
   };
 
   const handlePointerOut = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
+    document.body.style.cursor = 'auto';
     setHovered(false);
     onHoverChange?.(false);
   };
 
   return (
-    <Billboard position={position} follow={true} lockX={false} lockY={false} lockZ={false}>
-      <group ref={groupRef}>
-        <mesh
-          ref={meshRef}
-          scale={scale}
-          renderOrder={isFront ? 999 : 0}
-          onClick={handleClick}
-          onPointerOver={handlePointerOver}
-          onPointerOut={handlePointerOut}
-        >
-          <planeGeometry args={[1.5, 1.5]} />
-          <meshStandardMaterial
-            map={texture}
-            transparent
-            opacity={opacity}
-            // Draw the hovered window on top of overlapping neighbours
-            depthTest={!isFront}
-            // On hover, brighten the window using a warm light tone instead of adding a new color
-            emissive={highlighted ? '#f59e0b' : hovered ? '#e5ddc7' : '#000000'}
-            emissiveIntensity={highlighted ? 1.2 : hovered ? 0.4 : 0}
-            side={2} // DoubleSide - render both sides
-          />
-        </mesh>
-        {/* Don't show label in spiral mode - only center label shows */}
-        {!hideLabelInSpiral && (hovered || showLabelAlways || highlighted) && (name || location) && (
-          <group position={[0, -1, 0]}>
-            {/* Creator Name - Geist Sans-like, small all-caps label */}
-            {name && (
-              <Text
-                position={[0, 0.15, 0]}
-                fontSize={0.14}
-                letterSpacing={0.02}
-                color="#e5ddc7" // Match cream UI text color
-                anchorX="center"
-                anchorY="middle"
-                outlineWidth={0.02}
-                outlineColor="#000000"
-                maxWidth={2}
-                renderOrder={1000}
-                material-depthTest={false}
-              >
-                {name}
-              </Text>
-            )}
-            {/* Location - smaller, muted label */}
-            {location && (
-              <Text
-                position={[0, -0.05, 0]}
-                fontSize={0.12}
-                letterSpacing={0.02}
-                color="#a5a5a5" // Approximate oklch(0.65 0.02 270) at 80% opacity
-                anchorX="center"
-                anchorY="middle"
-                outlineWidth={0.02}
-                outlineColor="#000000"
-                maxWidth={2}
-                renderOrder={1000}
-                material-depthTest={false}
-              >
-                {location}
-              </Text>
-            )}
-          </group>
-        )}
-      </group>
-    </Billboard>
+    <group ref={outerRef} position={startPos.current}>
+      <Billboard follow lockX={false} lockY={false} lockZ={false}>
+        <group ref={groupRef}>
+          <mesh
+            ref={meshRef}
+            renderOrder={isFront ? 20 : 1}
+            onClick={handleClick}
+            onPointerOver={handlePointerOver}
+            onPointerOut={handlePointerOut}
+          >
+            <planeGeometry args={[1.5, 1.5]} />
+            <meshStandardMaterial
+              map={texture}
+              transparent
+              opacity={1}
+              depthTest
+              depthWrite={false}
+              polygonOffset
+              polygonOffsetFactor={-2}
+              polygonOffsetUnits={-2}
+              emissive={highlighted ? '#f59e0b' : hovered ? '#e5ddc7' : '#000000'}
+              emissiveIntensity={highlighted ? 1.0 : hovered ? 0.35 : 0}
+              side={2}
+              toneMapped={false}
+            />
+          </mesh>
+          {!hideLabelInSpiral && (hovered || showLabelAlways || highlighted) && (name || location) && (
+            <group position={[0, -1, 0.05]}>
+              {name && (
+                <Text
+                  position={[0, 0.15, 0]}
+                  fontSize={0.14}
+                  letterSpacing={0.02}
+                  color="#e5ddc7"
+                  anchorX="center"
+                  anchorY="middle"
+                  outlineWidth={0.02}
+                  outlineColor="#000000"
+                  maxWidth={2}
+                  renderOrder={30}
+                  depthOffset={-2}
+                >
+                  {name}
+                </Text>
+              )}
+              {location && (
+                <Text
+                  position={[0, -0.05, 0]}
+                  fontSize={0.12}
+                  letterSpacing={0.02}
+                  color="#a5a5a5"
+                  anchorX="center"
+                  anchorY="middle"
+                  outlineWidth={0.02}
+                  outlineColor="#000000"
+                  maxWidth={2}
+                  renderOrder={30}
+                  depthOffset={-2}
+                >
+                  {location}
+                </Text>
+              )}
+            </group>
+          )}
+        </group>
+      </Billboard>
+    </group>
   );
 }
-
