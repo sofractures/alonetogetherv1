@@ -197,13 +197,17 @@
   - [x] Load both window textures (`window.jpeg`, `window2.jpeg`)
   - [x] Implement texture selection based on `window_variant`
   - [x] Set up billboard effect (always face camera)
-  - [x] Add floating animation (sine wave on Y-axis)
+  - [x] Add floating animation (sine wave on Y-axis; per-window phase so bobbing isn’t synchronized)
   - [x] Implement hover effects:
     - [x] Scale to 130%
-    - [x] Opacity change (85% → 100%)
-    - [x] Purple glow (#a78bfa)
+    - [x] Full opacity (1.0)
+    - [x] Cream/warm emissive glow (not purple)
     - [x] Show location label
   - [x] Add click handler for audio playback
+- [x] **Globe window flicker fix** (branch: `fix/globe-window-flicker`, PR #32):
+  - [x] Scale, float, and hover lift run in `useFrame` (not driven by parent React `cameraDistance` props) so materials aren’t remounted while orbiting/zooming
+  - [x] Soft-lerp world position toward layout targets so quantized zoom steps ease instead of jump
+  - [x] Keep `depthTest` on; use `depthWrite={false}` + polygon offset + `renderOrder` for bring-to-front (toggling `depthTest` caused transparent z-fighting / texture flicker)
 - [ ] Create texture preloading system
 - [ ] Test performance with multiple windows
 
@@ -224,11 +228,15 @@
     autoRotate: true (default)
     autoRotateSpeed: 0.5 (slow, contemplative)
     ```
-  - [x] Camera settings: position [0, 0, 12], fov 50 (globe fills ~50% of screen)
+  - [x] Camera settings: position [0, 0, 14], fov 50 (slightly pulled back so windows have room)
   - [x] Globe radius: 4.0 units (reduced from 4.5 for comfortable scale)
   - [x] Add touch controls for mobile
   - [x] Implement zoom limits
-  - [x] Dynamic window scaling: windows get smaller when zoomed in (allows spread to be visible)
+  - [x] Dynamic window scaling: windows get smaller when zoomed in (allows spread to be visible; scale applied inside `MemoryPoint` `useFrame`)
+  - [x] **Stable camera / overlap React updates** (flicker fix):
+    - [x] Quantize camera distance (0.5-unit steps, ~250ms throttle) so zoom-blend layout doesn’t rebuild every frame
+    - [x] Quantize far→near layout blend factor (0.1 steps)
+    - [x] Overlap detector only calls `setScreenOverlaps` when group membership signature changes (~400ms check)
 - [x] **Globe Auto-Rotation:**
   - [x] Slow, continuous auto-rotation (0.5 speed) for contemplative feel
   - [x] Users can grab and spin faster, returns to gentle rotation when released
@@ -604,6 +612,7 @@
   - [x] Removed black background from MemoryGlobe container to allow video to show through
   - [x] Updated window hover emissive color to use the cream palette tone instead of blue for a more cohesive look
   - [x] Refined Drei `Text` labels under windows (creator + location) to better match Geist Sans styling (sizes, letter spacing, color hierarchy)
+  - [x] Smooth explore/pin globe windows: no texture flicker from React state thrash or depthTest toggling (see Memory Windows / 3D Scene Assembly)
 
 ### Mobile Optimization
 - [x] **Touch Controls for 3D Scene**:
