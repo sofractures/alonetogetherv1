@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useFrame, ThreeEvent } from '@react-three/fiber';
-import { Mesh } from 'three';
+import { Group, Mesh } from 'three';
 import { Billboard, Text } from '@react-three/drei';
 import { useTexture } from '@react-three/drei';
 
@@ -32,12 +32,15 @@ export default function MemoryPoint({
   onHoverChange,
 }: MemoryPointProps) {
   const meshRef = useRef<Mesh>(null);
+  const groupRef = useRef<Group>(null);
   const [hovered, setHovered] = useState(false);
   
   // Load the appropriate window texture
   const texture = useTexture(
     windowVariant === 1 ? '/assets/window.jpg' : '/assets/window2.jpg'
   );
+
+  const isFront = hovered || highlighted;
 
   // Floating animation (sine wave on Y-axis)
   // Note: Billboard handles positioning, so we animate within the Billboard's local space
@@ -47,19 +50,29 @@ export default function MemoryPoint({
       // Animate in local space (relative to Billboard position)
       meshRef.current.position.y = Math.sin(time * 0.5) * 0.1;
     }
+    // Bring hovered/highlighted window toward the camera so its name and
+    // location stay readable even when windows overlap. The Billboard's
+    // local +Z always faces the camera, so easing local Z lifts it forward.
+    if (groupRef.current) {
+      const targetZ = isFront ? 0.6 : 0;
+      groupRef.current.position.z += (targetZ - groupRef.current.position.z) * 0.15;
+    }
   });
 
-  // Scale window size based on camera distance
-  // When zoomed out (far): larger windows (1.0x) - easier to see from far away
-  // When zoomed in (close): smaller windows (0.5x) - allows spread to be visible, prevents overlap
-  const minDist = 6;
-  const maxDist = 30;
-  const normalizedDist = Math.min(1, Math.max(0, (cameraDistance - minDist) / (maxDist - minDist)));
-  // Invert: closer camera = smaller windows (so spread is visible)
-  const distanceScale = 0.5 + normalizedDist * 0.5; // 0.5 → 1.0 (smaller when zoomed in)
-  
+  // Keep windows a roughly CONSTANT SCREEN SIZE while zooming.
+  // Windows sit on a radius-4 sphere, so their distance to the camera is
+  // ~(cameraDistance - 4). Scaling world size proportionally to that distance
+  // cancels the perspective growth — zooming in then separates windows on
+  // screen instead of just magnifying them. Normalised to 1.0 at the default
+  // camera distance of 12.
+  const distanceScale = Math.min(1, Math.max(0.2, (cameraDistance - 4) / 8));
+
+  // Global window size: ~30% smaller than the original 1.5-unit plane
+  // so the default explore view has more breathing room before zoom fan-out
+  const sizeScale = 0.7;
+
   const baseScale = highlighted ? 1.4 : hovered ? 1.3 : 1;
-  const scale = baseScale * distanceScale;
+  const scale = baseScale * distanceScale * sizeScale;
   const opacity = highlighted ? 1 : hovered ? 1 : 1; // Full opacity for all windows
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
@@ -81,10 +94,11 @@ export default function MemoryPoint({
 
   return (
     <Billboard position={position} follow={true} lockX={false} lockY={false} lockZ={false}>
-      <group>
+      <group ref={groupRef}>
         <mesh
           ref={meshRef}
           scale={scale}
+          renderOrder={isFront ? 999 : 0}
           onClick={handleClick}
           onPointerOver={handlePointerOver}
           onPointerOut={handlePointerOut}
@@ -94,6 +108,8 @@ export default function MemoryPoint({
             map={texture}
             transparent
             opacity={opacity}
+            // Draw the hovered window on top of overlapping neighbours
+            depthTest={!isFront}
             // On hover, brighten the window using a warm light tone instead of adding a new color
             emissive={highlighted ? '#f59e0b' : hovered ? '#e5ddc7' : '#000000'}
             emissiveIntensity={highlighted ? 1.2 : hovered ? 0.4 : 0}
@@ -115,6 +131,8 @@ export default function MemoryPoint({
                 outlineWidth={0.02}
                 outlineColor="#000000"
                 maxWidth={2}
+                renderOrder={1000}
+                material-depthTest={false}
               >
                 {name}
               </Text>
@@ -131,6 +149,8 @@ export default function MemoryPoint({
                 outlineWidth={0.02}
                 outlineColor="#000000"
                 maxWidth={2}
+                renderOrder={1000}
+                material-depthTest={false}
               >
                 {location}
               </Text>

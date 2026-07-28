@@ -8,6 +8,7 @@ import BuildingCube from './BuildingCube';
 import MemoryPoint from './MemoryPoint';
 import { MemoryForMap } from '@/types/memory';
 import { clusterAndSpreadMemories } from '@/lib/clustering';
+import { equalizeMemoryPositions, slerpLatLng } from '@/lib/equalizePositions';
 
 interface MemoryGlobeProps {
   memories?: MemoryForMap[];
@@ -130,7 +131,7 @@ export default function MemoryGlobe({
   restoreSpiralId
 }: MemoryGlobeProps) {
   // Track camera distance to scale spread dynamically
-  const [camDistance, setCamDistance] = useState<number>(12); // Comfortable scale - globe fills ~50% of screen
+  const [camDistance, setCamDistance] = useState<number>(14); // Slightly pulled back so windows have room to breathe
   // Track which cluster is expanded (spiderfied)
   const [expandedClusterId, setExpandedClusterId] = useState<string | null>(null);
   // Track screen-space overlaps for playlist feature
@@ -148,10 +149,43 @@ export default function MemoryGlobe({
     }
   }, [restoreSpiralId, expandedOverlapId, onSpiralStateChange]);
 
+  // "Equalized globe": swap true coordinates for display coordinates that keep
+  // the world's shape but spill dense city clusters into surrounding empty
+  // space (oceans) so windows stay individually visible. True locations are
+  // untouched — labels and the database keep the real place.
+  //
+  // Two layouts are precomputed once per data load:
+  //  - far:  geography-faithful, modest spread (the zoomed-out world view)
+  //  - near: loose geography, generous spread (clusters fanned wide open)
+  // As the camera zooms in we blend between them, so the cluster you zoom
+  // toward visibly expands and windows separate.
+  const layouts = useMemo(() => {
+    if (memories.length < 2) return null;
+    return {
+      far: equalizeMemoryPositions(memories),
+      // Near layout fans out, but not so wide that windows leave the viewport
+      near: equalizeMemoryPositions(memories, { fidelity: 0.4, sepCap: 0.26 }),
+    };
+  }, [memories]);
+
+  const displayMemories = useMemo(() => {
+    if (!layouts) return memories;
+    // Zoom expansion: 0 at default camera (~14), 1 at closest zoom (~6)
+    // so the explore view starts on the compact far layout, then fans open
+    const t = Math.min(1, Math.max(0, (14 - camDistance) / 8));
+    return memories.map((m) => {
+      const far = layouts.far.get(m.id);
+      const near = layouts.near.get(m.id);
+      if (!far || !near) return m;
+      const pos = t <= 0 ? far : slerpLatLng(far, near, t);
+      return { ...m, latitude: pos.lat, longitude: pos.lon };
+    });
+  }, [memories, layouts, camDistance]);
+
   // Compute dynamic clustering: threshold ~100m; spread increases with cam distance
   // Base spread 40m at min zoom; up to 120m at far zoom
   const { positions: clusteredMemories, clusters } = useMemo(() => {
-    if (memories.length === 0) return { positions: [], clusters: new Map() };
+    if (displayMemories.length === 0) return { positions: [], clusters: new Map() };
     
     // Reduce threshold to only cluster very close memories (same building/block)
     // This prevents different cities from being grouped together
@@ -167,7 +201,7 @@ export default function MemoryGlobe({
     const spreadRadiusMeters = 200 + (t * t * t) * 1800; // 200m → 2000m (exponential curve for visible spread)
     
     const result = clusterAndSpreadMemories(
-      memories, 
+      displayMemories, 
       thresholdMeters, 
       spreadRadiusMeters,
       expandedClusterId,
@@ -243,7 +277,7 @@ export default function MemoryGlobe({
     }
     
     return result;
-  }, [memories, camDistance, expandedClusterId, expandedOverlapId, screenOverlaps]);
+  }, [displayMemories, camDistance, expandedClusterId, expandedOverlapId, screenOverlaps]);
   
   return (
     <>
@@ -341,7 +375,7 @@ export default function MemoryGlobe({
           <pointLight position={[-10, -10, -5]} intensity={0.8} color="#a78bfa" />
           
           {/* Camera */}
-          <PerspectiveCamera makeDefault position={[0, 0, 12]} fov={50} />
+          <PerspectiveCamera makeDefault position={[0, 0, 14]} fov={50} />
           
           {/* Central Building Cube */}
           <BuildingCube autoRotate={autoRotate} rotationSpeed={0.2} />
