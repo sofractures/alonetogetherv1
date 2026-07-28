@@ -36,21 +36,37 @@ function latLngToPosition(lat: number, lng: number, radius: number = 4.0): [numb
   return [x, y, z];
 }
 
+/** Quantize camera distance so zoom-blend layout only updates in coarse steps. */
+function quantizeCamDistance(dist: number): number {
+  // 0.5-unit steps ≈ ~6 layout steps across the default zoom range
+  return Math.round(dist * 2) / 2;
+}
+
+function overlapsSignature(overlaps: Map<string, MemoryForMap[]>): string {
+  if (overlaps.size === 0) return '';
+  return Array.from(overlaps.entries())
+    .map(([k, v]) => `${k}:${v.map((m) => m.id).sort().join(',')}`)
+    .sort()
+    .join('|');
+}
+
 // Internal component to track camera distance (must be inside Canvas)
 function CameraDistanceTracker({ onDistanceChange }: { onDistanceChange: (distance: number) => void }) {
   const { camera } = useThree();
   const lastUpdateRef = useRef<number>(0);
-  const lastDistRef = useRef<number>(camera.position.length());
+  const lastQuantizedRef = useRef<number>(quantizeCamDistance(camera.position.length()));
 
   useFrame(() => {
     const now = performance.now();
-    const dist = camera.position.length();
-    // Throttle updates to reduce re-clustering jitter
-    if (now - lastUpdateRef.current > 120 && Math.abs(dist - lastDistRef.current) > 0.05) {
-      lastUpdateRef.current = now;
-      lastDistRef.current = dist;
-      onDistanceChange(dist);
-    }
+    // Coarse throttle — layout only needs infrequent updates; window scale
+    // is handled inside MemoryPoint's useFrame, not via this state.
+    if (now - lastUpdateRef.current < 250) return;
+    lastUpdateRef.current = now;
+
+    const quantized = quantizeCamDistance(camera.position.length());
+    if (quantized === lastQuantizedRef.current) return;
+    lastQuantizedRef.current = quantized;
+    onDistanceChange(quantized);
   });
 
   return null;
@@ -66,11 +82,12 @@ function OverlapDetector({
 }) {
   const { camera, size } = useThree();
   const lastUpdateRef = useRef<number>(0);
+  const lastSignatureRef = useRef<string>('');
 
   useFrame(() => {
     const now = performance.now();
-    // Check overlaps every 200ms (less frequent than camera tracking)
-    if (now - lastUpdateRef.current < 200) return;
+    // Check overlaps every 400ms — membership rarely changes mid-orbit
+    if (now - lastUpdateRef.current < 400) return;
     lastUpdateRef.current = now;
 
     // Convert 3D positions to screen space and detect overlaps
@@ -115,7 +132,10 @@ function OverlapDetector({
         overlaps.set(id1, overlapping);
       }
     }
-    
+
+    const signature = overlapsSignature(overlaps);
+    if (signature === lastSignatureRef.current) return;
+    lastSignatureRef.current = signature;
     onOverlapsDetected(overlaps);
   });
 
@@ -171,8 +191,9 @@ export default function MemoryGlobe({
   const displayMemories = useMemo(() => {
     if (!layouts) return memories;
     // Zoom expansion: 0 at default camera (~14), 1 at closest zoom (~6)
-    // so the explore view starts on the compact far layout, then fans open
-    const t = Math.min(1, Math.max(0, (14 - camDistance) / 8));
+    // Quantize blend factor so positions don't thrash every camera tick
+    const rawT = Math.min(1, Math.max(0, (14 - camDistance) / 8));
+    const t = Math.round(rawT * 10) / 10;
     return memories.map((m) => {
       const far = layouts.far.get(m.id);
       const near = layouts.near.get(m.id);
@@ -504,7 +525,6 @@ export default function MemoryGlobe({
                   location={memory.location}
                   name={memory.name}
                   highlighted={highlightId === memory.id}
-                  cameraDistance={camDistance}
                   hideLabelInSpiral={isInExpandedOverlap} // Hide individual labels when in spiral mode
                   onHoverChange={(isHovered) => {
                     // Track hover state for center label
