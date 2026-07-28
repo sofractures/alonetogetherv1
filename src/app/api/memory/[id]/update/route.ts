@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
+import { rateLimit, getClientIP, RATE_LIMITS } from '@/lib/rate-limit';
 import { captureApiError } from '@/lib/sentry';
 
 export const runtime = 'nodejs';
@@ -26,6 +27,20 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const clientIP = getClientIP(req.headers);
+    const rateLimitResult = rateLimit(`update:${clientIP}`, RATE_LIMITS.WRITE);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please wait a moment and try again.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
     const { id: memoryId } = await params;
     const body = await req.json();
 
@@ -106,19 +121,32 @@ export async function PATCH(
       }
     }
 
-    // Update the memory record
-    const { data, error } = await supabaseServer
+    // Atomic claim: only update rows that still have no email (prevents race hijack)
+    let query = supabaseServer
       .from('memories')
       .update(updateData)
-      .eq('id', memoryId)
+      .eq('id', memoryId);
+
+    if (updateData.email) {
+      query = query.is('email', null);
+    }
+
+    const { data, error } = await query
       .select('id, latitude, longitude, location_city, location_country')
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('[v0] API: Error updating memory:', error.code);
       return NextResponse.json(
         { error: 'Failed to update memory' },
         { status: 500 }
+      );
+    }
+
+    if (!data) {
+      return NextResponse.json(
+        { error: 'This memory has already been claimed and cannot be modified' },
+        { status: 403 }
       );
     }
 
@@ -140,4 +168,3 @@ export async function PATCH(
     );
   }
 }
-

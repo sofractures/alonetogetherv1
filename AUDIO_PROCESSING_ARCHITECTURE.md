@@ -15,10 +15,12 @@
 7) API returns signed URL for playback
 
 ## Env contracts
-- App (Vercel): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AUDIO_PROCESSOR_URL`
-- Processor (Droplet): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PORT=8080`
+- App (Vercel): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AUDIO_PROCESSOR_URL`, `AUDIO_PROCESSOR_SECRET`
+- Processor (Droplet): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `AUDIO_PROCESSOR_SECRET`, `DIAG_SECRET_TOKEN`, `NODE_ENV=production`, `PORT=8080`
 
 ## Health & Diagnostics
-- `GET /health` → `configured:true`
-- `GET /diag` → confirms env presence (no secrets)
+- `GET /health` → `configured`, `authConfigured`, `busy`
+- `GET /diag` → confirms env presence (no secrets; token required in production)
+
+See `GO_LIVE_HARDENING.md` for go-live steps.
 

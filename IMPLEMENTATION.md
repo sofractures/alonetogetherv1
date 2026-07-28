@@ -410,10 +410,11 @@
 - [x] Rotate/revoke any previously exposed keys; use legacy JWT service_role key for server-side operations
 
 ### Deployment Notes
-- [x] Vercel env vars set: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AUDIO_PROCESSOR_URL`
-- [x] Droplet container run with: `-e SUPABASE_URL` and `-e SUPABASE_SERVICE_ROLE_KEY` (legacy JWT format) and correct port mapping
-- [x] Health check OK at `http://165.22.122.171/health`
+- [x] Vercel env vars set: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AUDIO_PROCESSOR_URL`, `AUDIO_PROCESSOR_SECRET` (shared with droplet)
+- [x] Droplet container run with: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `AUDIO_PROCESSOR_SECRET`, `NODE_ENV=production`, `DIAG_SECRET_TOKEN`, Docker `--memory`/`--cpus`, port mapping
+- [x] Health check OK (`configured` + `authConfigured`)
 - [x] End-to-end processing tested and verified working ✅
+- [x] See `GO_LIVE_HARDENING.md` for go-live secret/firewall/bucket checklist
 - [x] Processed audio successfully uploaded to `processed-songs` bucket
 - [x] Signed URLs generated for playback
 
@@ -686,12 +687,12 @@
 - [x] **Email Privacy**: User emails hashed (SHA256) before sending to client, never exposed in API
 - [x] **Authorization**: Memory update endpoint prevents modification of already-claimed memories
 - [x] **UUID Validation**: All API routes validate memory ID format to prevent injection
-- [x] **Rate Limiting**: In-memory rate limiter (5 uploads/min, 3 processes/min, 60 reads/min, 10 writes/min)
+- [x] **Rate Limiting**: In-memory rate limiter (5 uploads/min, 3 processes/min, 60 reads/min including map+audio, 10 writes/min including claim/update)
 - [x] **Input Sanitization**: All user inputs validated and sanitized (email, names, locations, coordinates)
-- [x] **Path Traversal Protection**: Storage paths validated to prevent directory traversal attacks
+- [x] **Path Traversal Protection**: Storage paths validated; process-audio limited to `recordings/*`
 - [x] **Security Headers**: Added X-Frame-Options, HSTS, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy
 - [x] **Error Sanitization**: Internal details removed from error responses
-- [x] **Audio Processor Secured**: Diagnostic endpoint requires auth token in production
+- [x] **Audio Processor Secured**: Shared `AUDIO_PROCESSOR_SECRET` on `/process-audio`; `/diag` token in production; single-flight FFmpeg; Privacy section on `/about` (see `GO_LIVE_HARDENING.md`)
 
 ### Deployment Preparation
 - [ ] Optimize build size:

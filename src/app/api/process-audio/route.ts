@@ -4,6 +4,8 @@ import { rateLimit, getClientIP, RATE_LIMITS } from '@/lib/rate-limit';
 import { captureProcessingError, captureApiError } from '@/lib/sentry';
 
 export const runtime = 'nodejs';
+/** Allow long FFmpeg mixes (droplet timeout is 5 min). */
+export const maxDuration = 300;
 
 // SECURITY: Validate UUID format
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -12,15 +14,14 @@ function isValidUUID(id: string): boolean {
   return UUID_REGEX.test(id);
 }
 
-// SECURITY: Validate storage path format to prevent path traversal
-function isValidStoragePath(path: string): boolean {
-  // Only allow alphanumeric, hyphens, underscores, periods, and forward slashes
-  // Must not contain .. (directory traversal)
-  const pathRegex = /^[a-zA-Z0-9\-_./]+$/;
+// SECURITY: Only process uploads under recordings/ — prevents arbitrary bucket path processing
+function isValidRecordingPath(path: string): boolean {
+  const pathRegex = /^recordings\/[a-zA-Z0-9\-_]+\.(webm|ogg|mp4|mpeg|wav|m4a)$/;
   return pathRegex.test(path) && !path.includes('..') && !path.startsWith('/');
 }
 
 export async function POST(req: NextRequest) {
+  let memoryId: string | null = null;
   try {
     // SECURITY: Rate limit processing requests to prevent abuse
     const clientIP = getClientIP(req.headers);
@@ -39,15 +40,15 @@ export async function POST(req: NextRequest) {
     }
     const body = await req.json();
     const inputPath = body?.path as string | undefined;
-    const memoryId = (body?.memoryId as string | null) ?? null;
+    memoryId = (body?.memoryId as string | null) ?? null;
     
     // SECURITY: Validate input path
     if (!inputPath) {
       return NextResponse.json({ error: 'Missing path' }, { status: 400 });
     }
     
-    // SECURITY: Validate path format to prevent path traversal attacks
-    if (!isValidStoragePath(inputPath)) {
+    // SECURITY: Validate path format — recordings/ only
+    if (!isValidRecordingPath(inputPath)) {
       return NextResponse.json({ error: 'Invalid path format' }, { status: 400 });
     }
     
@@ -64,21 +65,36 @@ export async function POST(req: NextRequest) {
       }, { status: 500 });
     }
 
-    const fullUrl = `${processorUrl}/process-audio`;
+    const processorSecret = (process.env.AUDIO_PROCESSOR_SECRET || '').trim();
+    if (!processorSecret && process.env.NODE_ENV === 'production') {
+      console.error('[process-audio] AUDIO_PROCESSOR_SECRET missing in production');
+      return NextResponse.json({
+        error: 'Audio processor is not securely configured.',
+      }, { status: 503 });
+    }
+
+    const fullUrl = `${processorUrl.replace(/\/$/, '')}/process-audio`;
     console.log('[process-audio] Calling processor:', fullUrl, 'with path:', inputPath);
 
-    // Invoke audio processor service
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (processorSecret) {
+      headers['Authorization'] = `Bearer ${processorSecret}`;
+      headers['x-processor-secret'] = processorSecret;
+    }
+
+    // Invoke audio processor service (abort before Vercel hard-kills the function)
     try {
       const processorResponse = await fetch(fullUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           inputPath,
           instrumentalPath: 'instrumental.mp3',
           memoryId,
         }),
+        signal: AbortSignal.timeout(290_000),
       });
 
       const processorData = await processorResponse.json();
@@ -137,13 +153,18 @@ export async function POST(req: NextRequest) {
       });
       const errorMsg = processorError instanceof Error ? processorError.message : 'Processor invocation failed';
       console.error('[process-audio] Processor fetch failed:', errorMsg, 'URL was:', fullUrl);
+      const timedOut =
+        processorError instanceof Error &&
+        (processorError.name === 'TimeoutError' || processorError.name === 'AbortError');
       return NextResponse.json({
-        error: 'Failed to invoke audio processor service',
+        error: timedOut
+          ? 'Audio processing timed out. Please try again.'
+          : 'Failed to invoke audio processor service',
         details: errorMsg,
-      }, { status: 500 });
+      }, { status: timedOut ? 504 : 500 });
     }
   } catch (e) {
-    // Track error with Sentry (outer catch - memoryId not in scope)
+    // Track error with Sentry
     captureApiError(e, {
       route: '/api/process-audio',
       method: 'POST',

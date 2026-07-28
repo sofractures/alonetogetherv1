@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
 import { Memory, MemoryForMap } from '@/types/memory';
 import crypto from 'crypto';
 import { captureApiError } from '@/lib/sentry';
+import { rateLimit, getClientIP, RATE_LIMITS } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 
@@ -11,8 +12,22 @@ function hashEmail(email: string): string {
   return crypto.createHash('sha256').update(email.toLowerCase().trim()).digest('hex').slice(0, 16);
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const clientIP = getClientIP(req.headers);
+    const rateLimitResult = rateLimit(`map:${clientIP}`, RATE_LIMITS.READ);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many requests' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
     console.log('[v0] API: Starting memory fetch...');
     
     // Check if Supabase client is initialized
@@ -24,84 +39,31 @@ export async function GET() {
       );
     }
 
-    // Fetch all memories - we know audio_url exists because playback works
-    // Filter in JavaScript to avoid PostgREST syntax issues
+    // Explicit columns — avoid select('*'); email used only for hashing
     const { data: allMemories, error: queryError } = await supabaseServer
       .from('memories')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('id, latitude, longitude, window_variant, location_city, location_country, audio_url, display_name, created_at, email')
+      .order('created_at', { ascending: false })
+      .limit(2000);
     
     if (queryError) {
       console.error('[v0] API: Query failed:', queryError);
-      console.error('[v0] API: Error code:', queryError.code);
-      console.error('[v0] API: Error message:', queryError.message);
-      console.error('[v0] API: Error details:', queryError.details);
-      console.error('[v0] API: Error hint:', queryError.hint);
       return NextResponse.json(
-        { 
-          error: 'Failed to fetch memories from database',
-          details: queryError.message || 'Unknown error',
-          code: queryError.code,
-          hint: queryError.hint
-        },
+        { error: 'Failed to fetch memories from database' },
         { status: 500 }
       );
     }
     
     console.log('[v0] API: Fetched', allMemories?.length || 0, 'total memories from database');
     
-    // Filter for memories with location and audio_url (we know these exist since playback works)
-    const memories = (allMemories || []).filter((m: Memory) => {
+    const memories = ((allMemories || []) as Memory[]).filter((m) => {
       const hasLocation = m.latitude != null && m.longitude != null;
       const hasAudio = m.audio_url != null && m.audio_url.trim() !== '';
-      
-      if (!hasLocation) {
-        console.log('[v0] API: ❌ Filtered out memory (no location):', {
-          id: m.id,
-          lat: m.latitude,
-          lng: m.longitude,
-          city: m.location_city,
-          country: m.location_country,
-          hasAudio: hasAudio,
-          audio_url: m.audio_url
-        });
-      }
-      if (!hasAudio) {
-        console.log('[v0] API: ❌ Filtered out memory (no audio_url):', {
-          id: m.id,
-          audio_url: m.audio_url,
-          hasLocation: hasLocation,
-          lat: m.latitude,
-          lng: m.longitude
-        });
-      }
-      
-      if (hasLocation && hasAudio) {
-        console.log('[v0] API: ✅ Memory passed filter:', {
-          id: m.id,
-          location: `${m.location_city || ''}, ${m.location_country || ''}`,
-          lat: m.latitude,
-          lng: m.longitude,
-          audio_url: m.audio_url
-        });
-      }
-      
       return hasLocation && hasAudio;
-    }) as Memory[];
+    });
     
     console.log('[v0] API: After filtering,', memories.length, 'memories have both location and audio');
-    
-    if (memories && memories.length > 0) {
-      console.log('[v0] API: Memory details:', memories.map((m: Memory) => ({
-        id: m.id,
-        audio_url: m.audio_url,
-        latitude: m.latitude,
-        longitude: m.longitude,
-        location_city: m.location_city
-      })));
-    }
 
-    // Transform to format needed for 3D map (memories are already filtered)
     // SECURITY: Do NOT expose email addresses publicly - hash them for ownership check
     const memoriesForMap: MemoryForMap[] = memories.map((m: Memory) => ({
         id: m.id,
@@ -113,8 +75,7 @@ export async function GET() {
           : undefined,
         audioUrl: m.audio_url,
         name: m.display_name,
-        createdAt: m.created_at, // Include creation timestamp for sorting
-        // SECURITY: Hash email for client-side ownership comparison instead of exposing raw email
+        createdAt: m.created_at,
         emailHash: m.email ? hashEmail(m.email) : undefined,
       }));
     
@@ -128,38 +89,17 @@ export async function GET() {
       { status: 200 }
     );
   } catch (e) {
-    // Track error with Sentry
     captureApiError(e, {
       route: '/api/memories/map',
       method: 'GET',
     });
     
     const message = e instanceof Error ? e.message : 'Failed to fetch memories';
-    const stack = e instanceof Error ? e.stack : undefined;
     console.error('[v0] API: Exception fetching memories:', message);
-    console.error('[v0] API: Stack trace:', stack);
-    
-    // If it's a Supabase error, include more details
-    interface SupabaseError {
-      message?: string;
-      code?: string;
-      hint?: string;
-    }
-    const supabaseError = e as SupabaseError;
-    const errorDetails = supabaseError?.message || message;
-    const errorCode = supabaseError?.code;
-    const errorHint = supabaseError?.hint;
     
     return NextResponse.json(
-      { 
-        error: 'Exception while fetching memories',
-        details: errorDetails,
-        code: errorCode,
-        hint: errorHint,
-        stack: process.env.NODE_ENV === 'development' ? stack : undefined
-      },
+      { error: 'Exception while fetching memories' },
       { status: 500 }
     );
   }
 }
-

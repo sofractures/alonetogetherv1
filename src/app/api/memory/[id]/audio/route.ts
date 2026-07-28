@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
+import { rateLimit, getClientIP, RATE_LIMITS } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 
@@ -15,6 +16,20 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const clientIP = getClientIP(req.headers);
+    const rateLimitResult = rateLimit(`audio:${clientIP}`, RATE_LIMITS.READ);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many requests' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
     const { id: memoryId } = await params;
 
     // SECURITY: Validate UUID format
@@ -83,4 +98,3 @@ export async function GET(
     );
   }
 }
-

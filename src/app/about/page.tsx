@@ -121,6 +121,35 @@ export default function AboutPage() {
             </p>
           </div>
         </section>
+
+        <section className="space-y-3">
+          <h2 className="text-xl sm:text-2xl font-semibold" style={{ color: '#e5ddc7' }}>
+            Privacy
+          </h2>
+          <div className="space-y-3 text-sm sm:text-base" style={{ color: '#e5ddc7' }}>
+            <p>
+              When you pin a memory song, we store your email so we can associate the track with you,
+              along with your display name and the city/country you enter. Your voice recording is mixed
+              into a memory song that can be listened to on the public globe. Name and location appear
+              with the window; your email is not shown publicly.
+            </p>
+            <p>
+              Skyline text memories are public contributions and may be shown on the platform and at
+              exhibition displays. Raw recordings and emails are kept to operate the project; contact us
+              if you want a contribution removed.
+            </p>
+            <p>
+              Questions or removal requests:{" "}
+              <a
+                href="mailto:hello@soundoffractures.com"
+                className="underline hover:opacity-80 transition-opacity"
+              >
+                hello@soundoffractures.com
+              </a>
+              .
+            </p>
+          </div>
+        </section>
       </div>
     </main>
   );

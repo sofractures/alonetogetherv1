@@ -5,22 +5,88 @@ const { promisify } = require('util');
 const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
+const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 
 const execFileAsync = promisify(execFile);
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
 const PORT = process.env.PORT || 3001;
 
 // Make sure we listen on 0.0.0.0 (Railway requirement)
 const HOST = '0.0.0.0';
 
+// Single-flight: only one FFmpeg job at a time on this small droplet
+let processingBusy = false;
+
 // Log env presence (no secrets)
 const hasSupabaseUrl = !!process.env.SUPABASE_URL;
 const hasSupabaseKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
-console.log('Env check: SUPABASE_URL:', hasSupabaseUrl, ' SUPABASE_SERVICE_ROLE_KEY:', hasSupabaseKey);
+const hasProcessorSecret = !!process.env.AUDIO_PROCESSOR_SECRET;
+console.log(
+  'Env check: SUPABASE_URL:',
+  hasSupabaseUrl,
+  ' SUPABASE_SERVICE_ROLE_KEY:',
+  hasSupabaseKey,
+  ' AUDIO_PROCESSOR_SECRET:',
+  hasProcessorSecret
+);
+
+function timingSafeEqualString(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+function extractBearerOrHeader(req) {
+  const headerSecret = req.headers['x-processor-secret'];
+  if (typeof headerSecret === 'string' && headerSecret.length > 0) {
+    return headerSecret;
+  }
+  const auth = req.headers.authorization;
+  if (typeof auth === 'string' && auth.toLowerCase().startsWith('bearer ')) {
+    return auth.slice(7).trim();
+  }
+  return null;
+}
+
+/** Require shared secret on mutating endpoints. Fail closed if secret unset in production. */
+function requireProcessorAuth(req, res, next) {
+  const expected = (process.env.AUDIO_PROCESSOR_SECRET || '').trim();
+  const isProd = process.env.NODE_ENV === 'production';
+
+  if (!expected) {
+    if (isProd) {
+      console.error('[SECURITY] AUDIO_PROCESSOR_SECRET is not set in production');
+      return res.status(503).json({ error: 'Processor not configured' });
+    }
+    console.warn('[SECURITY] AUDIO_PROCESSOR_SECRET unset — allowing request (non-production)');
+    return next();
+  }
+
+  const provided = extractBearerOrHeader(req);
+  if (!provided || !timingSafeEqualString(provided, expected)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  return next();
+}
+
+function isValidRecordingPath(inputPath) {
+  // Only allow recordings/{uuid}.webm (or similar safe audio extension)
+  const pathRegex = /^recordings\/[a-zA-Z0-9\-_]+\.(webm|ogg|mp4|mpeg|wav|m4a)$/;
+  return pathRegex.test(inputPath) && !inputPath.includes('..');
+}
+
+function isValidInstrumentalPath(inputPath) {
+  const pathRegex = /^[a-zA-Z0-9\-_.]+\.(mp3|wav|m4a)$/;
+  return pathRegex.test(inputPath) && !inputPath.includes('..') && !inputPath.includes('/');
+}
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 // Initialize Supabase client (will be set when processing requests)
 let supabase = null;
@@ -71,8 +137,16 @@ async function toBuffer(data) {
   throw new Error('Unsupported download data type');
 }
 
-app.post('/process-audio', async (req, res) => {
+app.post('/process-audio', requireProcessorAuth, async (req, res) => {
   let tmpdir;
+
+  if (processingBusy) {
+    return res.status(503).json({
+      error: 'Processor busy',
+      details: 'Another mix is in progress. Please try again in a moment.',
+    });
+  }
+  processingBusy = true;
   
   try {
     const { inputPath, instrumentalPath = 'instrumental.mp3', memoryId } = req.body;
@@ -81,6 +155,18 @@ app.post('/process-audio', async (req, res) => {
 
     if (!normalizedInputPath) {
       return res.status(400).json({ error: 'Missing inputPath' });
+    }
+
+    if (!isValidRecordingPath(normalizedInputPath)) {
+      return res.status(400).json({ error: 'Invalid inputPath — expected recordings/{id}.webm' });
+    }
+
+    if (!isValidInstrumentalPath(normalizedInstPath)) {
+      return res.status(400).json({ error: 'Invalid instrumentalPath' });
+    }
+
+    if (memoryId != null && memoryId !== '' && !UUID_REGEX.test(String(memoryId))) {
+      return res.status(400).json({ error: 'Invalid memoryId format' });
     }
 
     // Get Supabase client (validates env vars)
@@ -385,6 +471,7 @@ app.post('/process-audio', async (req, res) => {
       details: error.message 
     });
   } finally {
+    processingBusy = false;
     // Clean up temporary directory
     if (tmpdir) {
       try {
@@ -399,10 +486,13 @@ app.post('/process-audio', async (req, res) => {
 app.get('/health', (req, res) => {
   // Check if environment variables are set (but don't fail if not - just warn)
   const hasConfig = !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const hasSecret = !!process.env.AUDIO_PROCESSOR_SECRET;
   res.json({ 
     status: 'ok', 
     service: 'audio-processor',
-    configured: hasConfig
+    configured: hasConfig,
+    authConfigured: hasSecret,
+    busy: processingBusy,
   });
 });
 
