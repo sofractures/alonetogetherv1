@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useMemo } from 'react';
+import { useRef, useState, useMemo, Suspense } from 'react';
 import { useFrame, useThree, ThreeEvent } from '@react-three/fiber';
 import { Color, Group, Mesh, MeshStandardMaterial } from 'three';
 import { Billboard, Text, useTexture } from '@react-three/drei';
@@ -47,7 +47,6 @@ export default function MemoryPoint({
   // 0 = idle, 1 = hover/highlight — drives scale, glow, lift, labels smoothly
   const focusBlend = useRef(highlighted ? 1 : 0);
   const [hovered, setHovered] = useState(false);
-  const [labelsVisible, setLabelsVisible] = useState(false);
   const { camera } = useThree();
 
   const texture = useTexture(
@@ -60,9 +59,14 @@ export default function MemoryPoint({
   );
 
   const wantFocus = hovered || highlighted;
+  const hasLabelContent = !!(name || location);
+  // Keep Text mounted (hidden) so first hover doesn't suspend the globe Suspense tree
+  const mountLabels = hasLabelContent && !hideLabelInSpiral;
+
   targetPos.current = position;
 
   // Scale, float, glow, lift, and soft position lerp all run in the render loop.
+  // No setState here — remounting Text mid-hover blanked the whole canvas.
   useFrame((state, delta) => {
     const mesh = meshRef.current;
     const group = groupRef.current;
@@ -111,17 +115,13 @@ export default function MemoryPoint({
 
     mesh.renderOrder = ease > 0.15 ? 20 : 1;
 
-    // Fade labels in after focus has started (avoids pop-in with the first hover)
     if (labelRef.current) {
-      const labelTarget = (!hideLabelInSpiral && (wantFocus || showLabelAlways) && ease > 0.35) ? 1 : 0;
+      const labelTarget =
+        (wantFocus || showLabelAlways) && ease > 0.35 ? 1 : 0;
       const cur = labelRef.current.scale.x;
       const next = cur + (labelTarget - cur) * (1 - Math.exp(-10 * dt));
       labelRef.current.scale.setScalar(Math.max(0.001, next));
       labelRef.current.visible = next > 0.05;
-    } else if (!hideLabelInSpiral && (wantFocus || showLabelAlways) && ease > 0.25 && !labelsVisible) {
-      setLabelsVisible(true);
-    } else if (!wantFocus && !showLabelAlways && labelsVisible && ease < 0.08) {
-      setLabelsVisible(false);
     }
   });
 
@@ -143,11 +143,6 @@ export default function MemoryPoint({
     setHovered(false);
     onHoverChange?.(false);
   };
-
-  const showLabels =
-    !hideLabelInSpiral &&
-    (labelsVisible || showLabelAlways || highlighted) &&
-    (name || location);
 
   return (
     <group ref={outerRef} position={startPos.current}>
@@ -175,43 +170,47 @@ export default function MemoryPoint({
               toneMapped={false}
             />
           </mesh>
-          {showLabels && (
-            <group ref={labelRef} position={[0, -1, 0.05]} scale={0.001}>
-              {name && (
-                <Text
-                  position={[0, 0.15, 0]}
-                  fontSize={0.14}
-                  letterSpacing={0.02}
-                  color="#e5ddc7"
-                  anchorX="center"
-                  anchorY="middle"
-                  outlineWidth={0.02}
-                  outlineColor="#000000"
-                  maxWidth={2}
-                  renderOrder={30}
-                  depthOffset={-2}
-                >
-                  {name}
-                </Text>
-              )}
-              {location && (
-                <Text
-                  position={[0, -0.05, 0]}
-                  fontSize={0.12}
-                  letterSpacing={0.02}
-                  color="#a5a5a5"
-                  anchorX="center"
-                  anchorY="middle"
-                  outlineWidth={0.02}
-                  outlineColor="#000000"
-                  maxWidth={2}
-                  renderOrder={30}
-                  depthOffset={-2}
-                >
-                  {location}
-                </Text>
-              )}
-            </group>
+          {mountLabels && (
+            // Nested Suspense: font load must not fall through to MemoryGlobe's
+            // Suspense fallback={null}, which blanked the whole scene on first hover.
+            <Suspense fallback={null}>
+              <group ref={labelRef} position={[0, -1, 0.05]} scale={0.001} visible={false}>
+                {name && (
+                  <Text
+                    position={[0, 0.15, 0]}
+                    fontSize={0.14}
+                    letterSpacing={0.02}
+                    color="#e5ddc7"
+                    anchorX="center"
+                    anchorY="middle"
+                    outlineWidth={0.02}
+                    outlineColor="#000000"
+                    maxWidth={2}
+                    renderOrder={30}
+                    depthOffset={-2}
+                  >
+                    {name}
+                  </Text>
+                )}
+                {location && (
+                  <Text
+                    position={[0, -0.05, 0]}
+                    fontSize={0.12}
+                    letterSpacing={0.02}
+                    color="#a5a5a5"
+                    anchorX="center"
+                    anchorY="middle"
+                    outlineWidth={0.02}
+                    outlineColor="#000000"
+                    maxWidth={2}
+                    renderOrder={30}
+                    depthOffset={-2}
+                  >
+                    {location}
+                  </Text>
+                )}
+              </group>
+            </Suspense>
           )}
         </group>
       </Billboard>

@@ -355,6 +355,13 @@ export default function MemoryGlobe({
         }}
       >
         <Suspense fallback={null}>
+          {/* Warm default Drei font once so window labels don't suspend the scene later */}
+          <Suspense fallback={null}>
+            <Text position={[0, -999, 0]} fontSize={0.01} visible={false}>
+              .
+            </Text>
+          </Suspense>
+
           {/* Camera distance tracker (must be inside Canvas) */}
           <CameraDistanceTracker onDistanceChange={setCamDistance} />
           
