@@ -7,6 +7,7 @@ import {
   type SkylineMemoryItem,
 } from "@/components/ui/InteractiveSkyline";
 import { ExploreMenu } from "@/components/ui/ExploreMenu";
+import { SKYLINE_PROMPTS } from "@/data/skylinePrompts";
 
 interface SkylineMemory {
   id: string;
@@ -37,14 +38,6 @@ const SKYLINE_FILTERS: Record<
     until: "2026-06-28T00:00:00+01:00",
   },
 };
-
-const PROMPTS: string[] = [
-  "Share a moment when music made you feel connected to others.",
-  "Describe a time when a crowd felt like a single heartbeat.",
-  "Share a memory that shaped you.",
-  "Tell us about a moment when you felt the city listening with you.",
-  "Share a memory of dancing where everyone moved as one.",
-];
 
 function buildFilterQuery(filterId: SkylineFilterId): string {
   const filter = SKYLINE_FILTERS[filterId];
@@ -130,7 +123,7 @@ export default function SkylinePage() {
 
   const [showPromptModal, setShowPromptModal] = useState<boolean>(true);
   const [isIntroStep, setIsIntroStep] = useState<boolean>(true);
-  const [currentPrompt, setCurrentPrompt] = useState<string>(PROMPTS[0]);
+  const [promptIndex, setPromptIndex] = useState(0);
   const [inputValue, setInputValue] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -138,6 +131,27 @@ export default function SkylinePage() {
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
 
   const isExploring = !showPromptModal;
+  const promptCount = SKYLINE_PROMPTS.length;
+  const currentPrompt = SKYLINE_PROMPTS[promptIndex] ?? SKYLINE_PROMPTS[0];
+
+  const goToPrevPrompt = () => {
+    setPromptIndex((i) => (i - 1 + promptCount) % promptCount);
+  };
+
+  const goToNextPrompt = () => {
+    setPromptIndex((i) => (i + 1) % promptCount);
+  };
+
+  const tryAnotherPrompt = () => {
+    if (promptCount < 2) return;
+    setPromptIndex((i) => {
+      let next = i;
+      while (next === i) {
+        next = Math.floor(Math.random() * promptCount);
+      }
+      return next;
+    });
+  };
 
   const fetchSkylineMemories = useCallback(async (filterId: SkylineFilterId) => {
     try {
@@ -174,9 +188,8 @@ export default function SkylinePage() {
   }, []);
 
   useEffect(() => {
-    if (PROMPTS.length > 0) {
-      const idx = Math.floor(Math.random() * PROMPTS.length);
-      setCurrentPrompt(PROMPTS[idx]);
+    if (promptCount > 0) {
+      setPromptIndex(Math.floor(Math.random() * promptCount));
     }
 
     if (typeof window !== "undefined") {
@@ -190,7 +203,7 @@ export default function SkylinePage() {
         if (slug) setEventId(slug);
       }
     }
-  }, []);
+  }, [promptCount]);
 
   useEffect(() => {
     void fetchSkylineMemories(activeFilter);
@@ -519,9 +532,47 @@ export default function SkylinePage() {
                 <h2 className="text-lg sm:text-xl font-mono font-semibold mb-3">
                   Add a memory to the skyline
                 </h2>
-                <p className="text-sm sm:text-base text-white/80 mb-4">
-                  {currentPrompt}
-                </p>
+                <div className="mb-4">
+                  <div className="flex items-baseline justify-between gap-2 mb-1">
+                    <p className="text-xs font-mono text-white/50 uppercase tracking-wide">
+                      Prompt
+                    </p>
+                    <p className="text-xs tabular-nums text-white/50">
+                      {promptIndex + 1} / {promptCount}
+                    </p>
+                  </div>
+                  <p
+                    className="text-sm sm:text-base text-white/80 mb-3 min-h-[3rem]"
+                    aria-live="polite"
+                  >
+                    {currentPrompt}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={goToPrevPrompt}
+                      className="px-3 py-2 rounded-md border border-white/30 bg-white/5 hover:bg-white/15 text-base leading-none transition"
+                      aria-label="Previous prompt"
+                    >
+                      ‹
+                    </button>
+                    <button
+                      type="button"
+                      onClick={tryAnotherPrompt}
+                      className="flex-1 px-4 py-2 rounded-md border border-white/30 bg-white/5 hover:bg-white/15 text-xs sm:text-sm font-mono transition"
+                    >
+                      Try another
+                    </button>
+                    <button
+                      type="button"
+                      onClick={goToNextPrompt}
+                      className="px-3 py-2 rounded-md border border-white/30 bg-white/5 hover:bg-white/15 text-base leading-none transition"
+                      aria-label="Next prompt"
+                    >
+                      ›
+                    </button>
+                  </div>
+                </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <textarea
