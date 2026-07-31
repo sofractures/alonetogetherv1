@@ -7,7 +7,7 @@ import {
   type SkylineMemoryItem,
 } from "@/components/ui/InteractiveSkyline";
 import { ExploreMenu } from "@/components/ui/ExploreMenu";
-import { SKYLINE_PROMPTS } from "@/data/skylinePrompts";
+import { SKYLINE_PROMPT } from "@/data/skylinePrompts";
 
 interface SkylineMemory {
   id: string;
@@ -123,7 +123,6 @@ export default function SkylinePage() {
 
   const [showPromptModal, setShowPromptModal] = useState<boolean>(true);
   const [isIntroStep, setIsIntroStep] = useState<boolean>(true);
-  const [promptIndex, setPromptIndex] = useState(0);
   const [inputValue, setInputValue] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -131,27 +130,7 @@ export default function SkylinePage() {
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
 
   const isExploring = !showPromptModal;
-  const promptCount = SKYLINE_PROMPTS.length;
-  const currentPrompt = SKYLINE_PROMPTS[promptIndex] ?? SKYLINE_PROMPTS[0];
-
-  const goToPrevPrompt = () => {
-    setPromptIndex((i) => (i - 1 + promptCount) % promptCount);
-  };
-
-  const goToNextPrompt = () => {
-    setPromptIndex((i) => (i + 1) % promptCount);
-  };
-
-  const tryAnotherPrompt = () => {
-    if (promptCount < 2) return;
-    setPromptIndex((i) => {
-      let next = i;
-      while (next === i) {
-        next = Math.floor(Math.random() * promptCount);
-      }
-      return next;
-    });
-  };
+  const currentPrompt = SKYLINE_PROMPT;
 
   const fetchSkylineMemories = useCallback(async (filterId: SkylineFilterId) => {
     try {
@@ -188,10 +167,6 @@ export default function SkylinePage() {
   }, []);
 
   useEffect(() => {
-    if (promptCount > 0) {
-      setPromptIndex(Math.floor(Math.random() * promptCount));
-    }
-
     if (typeof window !== "undefined") {
       const param = new URLSearchParams(window.location.search).get("event");
       if (param) {
@@ -203,7 +178,7 @@ export default function SkylinePage() {
         if (slug) setEventId(slug);
       }
     }
-  }, [promptCount]);
+  }, []);
 
   useEffect(() => {
     void fetchSkylineMemories(activeFilter);
@@ -532,47 +507,9 @@ export default function SkylinePage() {
                 <h2 className="text-lg sm:text-xl font-mono font-semibold mb-3">
                   Add a memory to the skyline
                 </h2>
-                <div className="mb-4">
-                  <div className="flex items-baseline justify-between gap-2 mb-1">
-                    <p className="text-xs font-mono text-white/50 uppercase tracking-wide">
-                      Prompt
-                    </p>
-                    <p className="text-xs tabular-nums text-white/50">
-                      {promptIndex + 1} / {promptCount}
-                    </p>
-                  </div>
-                  <p
-                    className="text-sm sm:text-base text-white/80 mb-3 min-h-[3rem]"
-                    aria-live="polite"
-                  >
-                    {currentPrompt}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={goToPrevPrompt}
-                      className="px-3 py-2 rounded-md border border-white/30 bg-white/5 hover:bg-white/15 text-base leading-none transition"
-                      aria-label="Previous prompt"
-                    >
-                      ‹
-                    </button>
-                    <button
-                      type="button"
-                      onClick={tryAnotherPrompt}
-                      className="flex-1 px-4 py-2 rounded-md border border-white/30 bg-white/5 hover:bg-white/15 text-xs sm:text-sm font-mono transition"
-                    >
-                      Try another
-                    </button>
-                    <button
-                      type="button"
-                      onClick={goToNextPrompt}
-                      className="px-3 py-2 rounded-md border border-white/30 bg-white/5 hover:bg-white/15 text-base leading-none transition"
-                      aria-label="Next prompt"
-                    >
-                      ›
-                    </button>
-                  </div>
-                </div>
+                <p className="text-sm sm:text-base text-white/80 mb-4">
+                  {currentPrompt}
+                </p>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <textarea
