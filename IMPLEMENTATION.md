@@ -735,6 +735,7 @@
 
 ### Launch Day Checklist
 - [ ] ✅ All assets uploaded and accessible
+- [ ] Clear pre-launch globe pins for a blank public map (keep skyline): see `scripts/CLEAR_GLOBE_MEMORIES.md` / `scripts/clear-globe-memories.sql` (branch: `chore/clear-globe-memories-for-launch`)
 - [ ] ✅ Database seeded with initial content
 - [ ] ✅ Processing pipeline tested end-to-end
 - [ ] ✅ 3D scene performs well on target devices
