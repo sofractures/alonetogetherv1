@@ -7,6 +7,7 @@ import {
   type SkylineMemoryItem,
 } from "@/components/ui/InteractiveSkyline";
 import { ExploreMenu } from "@/components/ui/ExploreMenu";
+import { SKYLINE_PROMPT } from "@/data/skylinePrompts";
 
 interface SkylineMemory {
   id: string;
@@ -37,14 +38,6 @@ const SKYLINE_FILTERS: Record<
     until: "2026-06-28T00:00:00+01:00",
   },
 };
-
-const PROMPTS: string[] = [
-  "Share a moment when music made you feel connected to others.",
-  "Describe a time when a crowd felt like a single heartbeat.",
-  "Share a memory that shaped you.",
-  "Tell us about a moment when you felt the city listening with you.",
-  "Share a memory of dancing where everyone moved as one.",
-];
 
 function buildFilterQuery(filterId: SkylineFilterId): string {
   const filter = SKYLINE_FILTERS[filterId];
@@ -130,7 +123,6 @@ export default function SkylinePage() {
 
   const [showPromptModal, setShowPromptModal] = useState<boolean>(true);
   const [isIntroStep, setIsIntroStep] = useState<boolean>(true);
-  const [currentPrompt, setCurrentPrompt] = useState<string>(PROMPTS[0]);
   const [inputValue, setInputValue] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -138,6 +130,7 @@ export default function SkylinePage() {
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
 
   const isExploring = !showPromptModal;
+  const currentPrompt = SKYLINE_PROMPT;
 
   const fetchSkylineMemories = useCallback(async (filterId: SkylineFilterId) => {
     try {
@@ -174,11 +167,6 @@ export default function SkylinePage() {
   }, []);
 
   useEffect(() => {
-    if (PROMPTS.length > 0) {
-      const idx = Math.floor(Math.random() * PROMPTS.length);
-      setCurrentPrompt(PROMPTS[idx]);
-    }
-
     if (typeof window !== "undefined") {
       const param = new URLSearchParams(window.location.search).get("event");
       if (param) {

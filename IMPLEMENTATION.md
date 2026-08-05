@@ -493,8 +493,12 @@
 - **Future Enhancement:** Can replace static `memories.ts` with real-time data from database for dynamic skyline updates
 
 - [x] Recording overlay (full-screen mobile, centered desktop)
-  - [x] Static instruction and prompt:
-        "Share a time when you felt a part of something bigger than you"
+  - [x] **Prompt choice** (branch: `feature/recording-prompt-choice`):
+    - [x] Prompts live in `src/data/recordingPrompts.ts` (4 options)
+    - [x] Overlay shows current prompt with `‹` / **Try another** / `›` and `n / 4` counter
+    - [x] Arrows step sequentially; Try another picks a random different prompt
+    - [x] Controls only before recording starts (hidden after a take is captured)
+    - [x] Options: “Share a moment when music made you feel less alone.” / present-moment music memory / song takes you back / “What does music do for you that nothing else can?”
   - [x] Pause/mute background audio on open; resume on close/finish
   - [x] Recording interface (30s cap, level meter)
   - [x] Preview with Accept / Re-record
@@ -560,7 +564,8 @@
     - [x] Black background matching landing page
     - [x] **Interactive skyline memories**:
       - [x] On page load, fetch existing skyline text memories from Supabase via `/api/skyline-memories` and combine with static `memoriesText`
-      - [x] Show modal prompt ("Add a memory to the skyline") when user visits `/skyline`, with rotating reflective prompts
+      - [x] Show modal prompt ("Add a memory to the skyline") when user visits `/skyline`
+      - [x] **Single stock prompt** (kept simple for live events): “Share a moment when music made you feel connected to others.” (`src/data/skylinePrompts.ts`)
       - [x] User-submitted text is POSTed to `/api/skyline-memories` and appended live to the rendered skyline
       - [x] Skyline scrolls horizontally as it grows (city made from accumulated memories)
     - [x] **InteractiveSkyline text layout** (`components/ui/InteractiveSkyline.tsx` — `/skyline`, `/skyline/live`, `/skyline/display` only; hero `MemorySkyline` unchanged):

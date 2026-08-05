@@ -14,6 +14,7 @@ import { useMemoryStore } from "@/store/memoryStore";
 import { getBrowserLocation, getIPLocation, LocationData } from "@/lib/location";
 import { Analytics } from "@/lib/analytics";
 import { toAttachmentUrl } from "@/lib/download";
+import { RECORDING_PROMPTS } from "@/data/recordingPrompts";
 
 type FlowState = 
   | 'idle'
@@ -52,9 +53,33 @@ export default function Home() {
   const [userName, setUserName] = useState<string | null>(null);
   const [pinnedMemoryId, setPinnedMemoryId] = useState<string | null>(null);
   const [pinnedLocation, setPinnedLocation] = useState<string | null>(null);
+  const [promptIndex, setPromptIndex] = useState(0);
   
   // Memory store
   const { memories, fetchMemories, selectMemory, selectedMemory } = useMemoryStore();
+
+  const currentPrompt = RECORDING_PROMPTS[promptIndex] ?? RECORDING_PROMPTS[0];
+  const promptCount = RECORDING_PROMPTS.length;
+
+  const goToPrevPrompt = () => {
+    setPromptIndex((i) => (i - 1 + promptCount) % promptCount);
+  };
+
+  const goToNextPrompt = () => {
+    setPromptIndex((i) => (i + 1) % promptCount);
+  };
+
+  /** Jump to a different prompt (not the current one). */
+  const tryAnotherPrompt = () => {
+    if (promptCount < 2) return;
+    setPromptIndex((i) => {
+      let next = i;
+      while (next === i) {
+        next = Math.floor(Math.random() * promptCount);
+      }
+      return next;
+    });
+  };
 
   // Fetch memories on mount
   useEffect(() => {
@@ -384,6 +409,7 @@ export default function Home() {
     setUserName(null);
     setPinnedMemoryId(null);
     setPinnedLocation(null);
+    setPromptIndex(0);
   };
 
   const handleCreateAnother = () => {
@@ -543,12 +569,52 @@ export default function Home() {
                   {/* Show prompt only on the main record view, or on desktop preview. 
                       On mobile preview we hide it to keep things visually simpler. */}
                   {(!isMobile || !pendingBlob) && (
-                    <>
-                      <div className="text-sm mb-1" style={{ color: '#e5ddc7' }}>Prompt:</div>
-                      <div className="text-lg font-semibold mb-4" style={{ color: '#e5ddc7' }}>
-                        Share a moment when music made you feel less alone
+                    <div className="mb-4">
+                      <div className="flex items-baseline justify-between gap-2 mb-1">
+                        <div className="text-sm" style={{ color: '#e5ddc7' }}>Prompt:</div>
+                        <div className="text-xs tabular-nums opacity-70" style={{ color: '#e5ddc7' }}>
+                          {promptIndex + 1} / {promptCount}
+                        </div>
                       </div>
-                    </>
+                      <div
+                        className="text-lg font-semibold mb-3 min-h-[3.5rem]"
+                        style={{ color: '#e5ddc7' }}
+                        aria-live="polite"
+                      >
+                        {currentPrompt}
+                      </div>
+                      {/* Only allow changing prompts before recording starts */}
+                      {!pendingBlob && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={goToPrevPrompt}
+                            className="px-3 py-2 rounded border border-white/30 hover:bg-white/10 transition-colors text-base leading-none"
+                            style={{ color: '#e5ddc7' }}
+                            aria-label="Previous prompt"
+                          >
+                            ‹
+                          </button>
+                          <button
+                            type="button"
+                            onClick={tryAnotherPrompt}
+                            className="flex-1 px-4 py-2 rounded border border-white/30 hover:bg-white/10 transition-colors text-sm"
+                            style={{ color: '#e5ddc7' }}
+                          >
+                            Try another
+                          </button>
+                          <button
+                            type="button"
+                            onClick={goToNextPrompt}
+                            className="px-3 py-2 rounded border border-white/30 hover:bg-white/10 transition-colors text-base leading-none"
+                            style={{ color: '#e5ddc7' }}
+                            aria-label="Next prompt"
+                          >
+                            ›
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )}
 
                   {!pendingBlob && (
