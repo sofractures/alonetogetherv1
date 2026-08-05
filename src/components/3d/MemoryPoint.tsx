@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useState, useMemo } from 'react';
+import { useRef, useState, useMemo, Suspense } from 'react';
 import { useFrame, useThree, ThreeEvent } from '@react-three/fiber';
-import { Group, Mesh } from 'three';
+import { Color, Group, Mesh, MeshStandardMaterial } from 'three';
 import { Billboard, Text, useTexture } from '@react-three/drei';
 
 interface MemoryPointProps {
@@ -23,6 +23,10 @@ function phaseFromPosition(position: [number, number, number]): number {
   return (n - Math.floor(n)) * Math.PI * 2;
 }
 
+const EMISSIVE_IDLE = new Color('#000000');
+const EMISSIVE_HOVER = new Color('#e5ddc7');
+const EMISSIVE_HIGHLIGHT = new Color('#f59e0b');
+
 export default function MemoryPoint({
   position,
   windowVariant,
@@ -37,8 +41,11 @@ export default function MemoryPoint({
   const meshRef = useRef<Mesh>(null);
   const groupRef = useRef<Group>(null);
   const outerRef = useRef<Group>(null);
+  const labelRef = useRef<Group>(null);
   const targetPos = useRef(position);
   const startPos = useRef(position);
+  // 0 = idle, 1 = hover/highlight — drives scale, glow, lift, labels smoothly
+  const focusBlend = useRef(highlighted ? 1 : 0);
   const [hovered, setHovered] = useState(false);
   const { camera } = useThree();
 
@@ -50,17 +57,31 @@ export default function MemoryPoint({
     () => phaseFromPosition(startPos.current),
     []
   );
-  const isFront = hovered || highlighted;
+
+  const wantFocus = hovered || highlighted;
+  const hasLabelContent = !!(name || location);
+  // Keep Text mounted (hidden) so first hover doesn't suspend the globe Suspense tree
+  const mountLabels = hasLabelContent && !hideLabelInSpiral;
 
   targetPos.current = position;
 
-  // Scale, float, hover lift, and soft position lerp all run in the render
-  // loop so parent React state does not remount materials every tick.
-  useFrame((state) => {
+  // Scale, float, glow, lift, and soft position lerp all run in the render loop.
+  // No setState here — remounting Text mid-hover blanked the whole canvas.
+  useFrame((state, delta) => {
     const mesh = meshRef.current;
     const group = groupRef.current;
     const outer = outerRef.current;
     if (!mesh || !group || !outer) return;
+
+    const dt = Math.min(delta, 0.05);
+    // Ease toward focus — slower settle feels less jerky than a hard snap
+    const focusTarget = wantFocus ? 1 : 0;
+    const focusSpeed = wantFocus ? 7 : 5; // slightly snappier in, softer out
+    focusBlend.current += (focusTarget - focusBlend.current) * (1 - Math.exp(-focusSpeed * dt));
+    const t = focusBlend.current;
+
+    // Smoothstep for a softer ease-in-out curve
+    const ease = t * t * (3 - 2 * t);
 
     const [tx, ty, tz] = targetPos.current;
     outer.position.x += (tx - outer.position.x) * 0.12;
@@ -70,15 +91,38 @@ export default function MemoryPoint({
     const camDist = camera.position.length();
     const distanceScale = Math.min(1, Math.max(0.2, (camDist - 4) / 8));
     const sizeScale = 0.7;
-    const baseScale = highlighted ? 1.4 : hovered ? 1.3 : 1;
-    mesh.scale.setScalar(baseScale * distanceScale * sizeScale);
+    // Idle 1.0 → hover ~1.18 → highlight ~1.28 (gentler than old 1.3/1.4 snaps)
+    const focusScale = highlighted ? 1 + 0.28 * ease : 1 + 0.18 * ease;
+    mesh.scale.setScalar(focusScale * distanceScale * sizeScale);
 
     const time = state.clock.getElapsedTime();
-    mesh.position.y = Math.sin(time * 0.45 + floatPhase) * 0.08;
+    // Slightly quieter float while focused so lift doesn’t fight the bob
+    const floatAmp = 0.08 * (1 - 0.35 * ease);
+    mesh.position.y = Math.sin(time * 0.45 + floatPhase) * floatAmp;
 
-    // Lift toward camera without disabling depthTest (that caused z-flicker)
-    const targetZ = isFront ? 0.45 : 0;
-    group.position.z += (targetZ - group.position.z) * 0.18;
+    // Soft lift toward camera (smaller distance + smooth blend)
+    const targetZ = 0.32 * ease;
+    group.position.z += (targetZ - group.position.z) * (1 - Math.exp(-8 * dt));
+
+    const mat = mesh.material as MeshStandardMaterial;
+    if (mat) {
+      const emissiveTarget = highlighted
+        ? EMISSIVE_HIGHLIGHT
+        : EMISSIVE_HOVER;
+      mat.emissive.copy(EMISSIVE_IDLE).lerp(emissiveTarget, ease);
+      mat.emissiveIntensity = (highlighted ? 0.85 : 0.28) * ease;
+    }
+
+    mesh.renderOrder = ease > 0.15 ? 20 : 1;
+
+    if (labelRef.current) {
+      const labelTarget =
+        (wantFocus || showLabelAlways) && ease > 0.35 ? 1 : 0;
+      const cur = labelRef.current.scale.x;
+      const next = cur + (labelTarget - cur) * (1 - Math.exp(-10 * dt));
+      labelRef.current.scale.setScalar(Math.max(0.001, next));
+      labelRef.current.visible = next > 0.05;
+    }
   });
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
@@ -106,7 +150,6 @@ export default function MemoryPoint({
         <group ref={groupRef}>
           <mesh
             ref={meshRef}
-            renderOrder={isFront ? 20 : 1}
             onClick={handleClick}
             onPointerOver={handlePointerOver}
             onPointerOut={handlePointerOut}
@@ -121,49 +164,53 @@ export default function MemoryPoint({
               polygonOffset
               polygonOffsetFactor={-2}
               polygonOffsetUnits={-2}
-              emissive={highlighted ? '#f59e0b' : hovered ? '#e5ddc7' : '#000000'}
-              emissiveIntensity={highlighted ? 1.0 : hovered ? 0.35 : 0}
+              emissive="#000000"
+              emissiveIntensity={0}
               side={2}
               toneMapped={false}
             />
           </mesh>
-          {!hideLabelInSpiral && (hovered || showLabelAlways || highlighted) && (name || location) && (
-            <group position={[0, -1, 0.05]}>
-              {name && (
-                <Text
-                  position={[0, 0.15, 0]}
-                  fontSize={0.14}
-                  letterSpacing={0.02}
-                  color="#e5ddc7"
-                  anchorX="center"
-                  anchorY="middle"
-                  outlineWidth={0.02}
-                  outlineColor="#000000"
-                  maxWidth={2}
-                  renderOrder={30}
-                  depthOffset={-2}
-                >
-                  {name}
-                </Text>
-              )}
-              {location && (
-                <Text
-                  position={[0, -0.05, 0]}
-                  fontSize={0.12}
-                  letterSpacing={0.02}
-                  color="#a5a5a5"
-                  anchorX="center"
-                  anchorY="middle"
-                  outlineWidth={0.02}
-                  outlineColor="#000000"
-                  maxWidth={2}
-                  renderOrder={30}
-                  depthOffset={-2}
-                >
-                  {location}
-                </Text>
-              )}
-            </group>
+          {mountLabels && (
+            // Nested Suspense: font load must not fall through to MemoryGlobe's
+            // Suspense fallback={null}, which blanked the whole scene on first hover.
+            <Suspense fallback={null}>
+              <group ref={labelRef} position={[0, -1, 0.05]} scale={0.001} visible={false}>
+                {name && (
+                  <Text
+                    position={[0, 0.15, 0]}
+                    fontSize={0.14}
+                    letterSpacing={0.02}
+                    color="#e5ddc7"
+                    anchorX="center"
+                    anchorY="middle"
+                    outlineWidth={0.02}
+                    outlineColor="#000000"
+                    maxWidth={2}
+                    renderOrder={30}
+                    depthOffset={-2}
+                  >
+                    {name}
+                  </Text>
+                )}
+                {location && (
+                  <Text
+                    position={[0, -0.05, 0]}
+                    fontSize={0.12}
+                    letterSpacing={0.02}
+                    color="#a5a5a5"
+                    anchorX="center"
+                    anchorY="middle"
+                    outlineWidth={0.02}
+                    outlineColor="#000000"
+                    maxWidth={2}
+                    renderOrder={30}
+                    depthOffset={-2}
+                  >
+                    {location}
+                  </Text>
+                )}
+              </group>
+            </Suspense>
           )}
         </group>
       </Billboard>
