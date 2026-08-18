@@ -8,6 +8,11 @@ import {
 } from "@/components/ui/InteractiveSkyline";
 import { ExploreMenu } from "@/components/ui/ExploreMenu";
 import { SKYLINE_PROMPT } from "@/data/skylinePrompts";
+import {
+  SKYLINE_FILTERS,
+  SKYLINE_FILTER_ORDER,
+  type SkylineFilterId,
+} from "@/data/skylineEvents";
 
 interface SkylineMemory {
   id: string;
@@ -15,29 +20,6 @@ interface SkylineMemory {
   prompt?: string | null;
   created_at: string;
 }
-
-type SkylineFilterId = "all" | "pilot" | "event2";
-
-const SKYLINE_FILTER_ORDER: SkylineFilterId[] = ["all", "pilot", "event2"];
-
-const SKYLINE_FILTERS: Record<
-  SkylineFilterId,
-  { label: string; since?: string; until?: string }
-> = {
-  all: {
-    label: "All memories",
-  },
-  pilot: {
-    label: "Pilot · 19 Mar",
-    since: "2026-03-19T00:00:00Z",
-    until: "2026-03-20T00:00:00Z",
-  },
-  event2: {
-    label: "Event 2 · 27 Jun",
-    since: "2026-06-27T00:00:00+01:00",
-    until: "2026-06-28T00:00:00+01:00",
-  },
-};
 
 function buildFilterQuery(filterId: SkylineFilterId): string {
   const filter = SKYLINE_FILTERS[filterId];
@@ -351,13 +333,25 @@ export default function SkylinePage() {
       {/* Explore mode: add memory + filters top-left */}
       {isExploring && (
         <div className="absolute top-4 left-4 z-[3] flex flex-col gap-2 max-w-xl pr-16">
-          <button
-            type="button"
-            onClick={openAddMemoryFlow}
-            className="self-start px-4 py-2 rounded-md border border-white/30 bg-black/60 hover:bg-black/80 text-xs sm:text-sm font-mono text-white/80 hover:text-white transition-all"
-          >
-            + Add a memory
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={openAddMemoryFlow}
+              className="px-4 py-2 rounded-md border border-white/30 bg-black/60 hover:bg-black/80 text-xs sm:text-sm font-mono text-white/80 hover:text-white transition-all"
+            >
+              + Add a memory
+            </button>
+            {memories.length > 0 && !isLoadingMemories && (
+              <a
+                href={`/api/skyline-pdf?filter=${activeFilter}`}
+                download
+                className="px-4 py-2 rounded-md border border-white/30 bg-black/60 hover:bg-black/80 text-xs sm:text-sm font-mono text-white/80 hover:text-white transition-all"
+                title="Download this skyline as a vector PDF (mintable as an NFT)"
+              >
+                ↓ Download PDF
+              </a>
+            )}
+          </div>
 
           <div
             className="flex flex-wrap gap-1.5"
